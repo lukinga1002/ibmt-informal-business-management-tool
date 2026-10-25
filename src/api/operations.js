@@ -49,13 +49,16 @@ export const OPERATIONS = {
     screens: ['TRA access', 'Privacy and data rights', 'TRA rent access logging'],
   },
   getConsents: {
-    method: 'GET', path: '/privacy/consents', auth: true, scope: ['operator', 'landlord', 'tenant', 'consumer'],
+    // Any subject can read their own consent state; the backend returns only the
+    // caller's own record.
+    method: 'GET', path: '/privacy/consents', auth: true, scope: ['*'],
     purpose: 'Separate consent switches with their own state',
     fields: ['registration_processing', 'listing_marketing', 'rent_history_credit', 'lender_sharing'],
     screens: ['Operator settings', 'Consumer settings', 'Tenant evidence and disputes'],
   },
   setConsent: {
-    method: 'PUT', path: '/privacy/consents/{key}', auth: true, scope: ['operator', 'landlord', 'tenant', 'consumer'],
+    // A subject changes only their own consent; the backend rejects any other.
+    method: 'PUT', path: '/privacy/consents/{key}', auth: true, scope: ['*'],
     purpose: 'Grant or withdraw one consent independently',
     fields: ['key', 'granted', 'effective_at'], screens: ['Privacy and data rights'],
   },

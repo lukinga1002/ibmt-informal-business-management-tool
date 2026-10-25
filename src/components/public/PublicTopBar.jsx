@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
-import BrandMark from './BrandMark';
-import LanguageSwitch from './LanguageSwitch';
-import DemoBadge from './DemoBadge';
+import BrandMark from '@/components/ibmt/BrandMark';
+import LanguageSwitch from '@/components/ibmt/LanguageSwitch';
+import DemoBadge from '@/components/ibmt/DemoBadge';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMT } from '@/api/IBMTContext';
 
