@@ -8,7 +8,7 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money, { AmountRow } from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
 import Timeline from '@/components/ibmt/Timeline';
-import Field, { TextInput, FormStatus } from '@/components/ibmt/Field';
+import { TextInput, FormStatus } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/format';
 

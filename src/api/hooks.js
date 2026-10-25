@@ -3,7 +3,7 @@ import { useIBMT } from './IBMTContext';
 import { newIdempotencyKey } from './ibmt';
 import { isIBMTError } from './errors';
 
-const IDLE = { status: 'idle', data: null, items: [], error: null, hasMore: false, cursor: null };
+const IDLE = { status: 'idle', data: null, items: [], error: null, hasMore: false, cursor: null, collection: false };
 
 /**
  * Read from the integration layer, with every required screen state derived
@@ -28,14 +28,16 @@ export function useIBMTQuery(operationId, params = {}, options = {}) {
       try {
         const payload = await invoke(operationId, { ...JSON.parse(paramsKey), cursor, limit });
         if (requestRef.current !== ticket) return;
-        const items = Array.isArray(payload?.items) ? payload.items : null;
+        const isCollection = Array.isArray(payload) || Array.isArray(payload?.items);
+        const items = isCollection ? (Array.isArray(payload) ? payload : payload.items) : [];
         setState((prev) => ({
           status: 'ready',
           data: payload,
-          items: items ? (append ? [...prev.items, ...items] : items) : [],
+          items: append ? [...prev.items, ...items] : items,
           error: null,
           hasMore: Boolean(payload?.has_more),
           cursor: payload?.next_cursor ?? null,
+          collection: isCollection,
         }));
       } catch (error) {
         if (requestRef.current !== ticket) return;
@@ -71,7 +73,7 @@ export function useIBMTQuery(operationId, params = {}, options = {}) {
     if (sessionState === 'expired') return 'session';
     if (offline && state.status !== 'ready') return 'offline';
     if (state.status === 'loading' || state.status === 'loading_more') return 'loading';
-    if (state.status === 'ready' && state.items.length === 0) return 'empty';
+    if (state.status === 'ready' && state.collection && state.items.length === 0) return 'empty';
     return 'ready';
   }, [enabled, state, offline, sessionState]);
 

@@ -17,8 +17,14 @@ const LINKS = [
 /** Header used by every public screen. */
 export default function PublicTopBar() {
   const { t } = useT();
-  const { isMock } = useIBMT();
+  const { isMock, setRole } = useIBMT();
   const [open, setOpen] = useState(false);
+  // Entering a workspace in demonstration mode adopts that role, so the entry
+  // point opens what the visitor chose to look at.
+  const enterAs = (role) => {
+    if (isMock) setRole(role);
+    setOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
@@ -40,6 +46,7 @@ export default function PublicTopBar() {
           <LanguageSwitch />
           <Link
             to="/operator"
+            onClick={() => enterAs('operator')}
             className="ibmt-tap hidden items-center rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-navy-deep sm:inline-flex"
           >
             {t('nav.openWorkspace')}
@@ -67,7 +74,7 @@ export default function PublicTopBar() {
               {t(link.labelKey)}
             </Link>
           ))}
-          <Link to="/operator" onClick={() => setOpen(false)} className="ibmt-tap flex items-center rounded-md px-2 text-sm font-semibold text-navy">
+          <Link to="/operator" onClick={() => enterAs('operator')} className="ibmt-tap flex items-center rounded-md px-2 text-sm font-semibold text-navy">
             {t('nav.openWorkspace')}
           </Link>
         </nav>

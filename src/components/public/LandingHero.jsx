@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
+import { useIBMT } from '@/api/IBMTContext';
 import VerifyEntryCard from './VerifyEntryCard';
 import Notice from '@/components/ibmt/Notice';
 
 export default function LandingHero() {
   const { t } = useT();
+  const { isMock, setRole } = useIBMT();
 
   return (
     <section className="mx-auto grid w-full max-w-[1440px] gap-10 px-4 pb-4 pt-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:px-10 lg:pt-16">
@@ -16,6 +18,7 @@ export default function LandingHero() {
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
             to="/operator"
+            onClick={() => isMock && setRole('operator')}
             className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-navy-deep"
           >
             {t('nav.openWorkspace')}

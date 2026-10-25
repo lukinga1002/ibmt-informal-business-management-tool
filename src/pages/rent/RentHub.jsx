@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, HardHat, Landmark, MapPin, Table2, UserCheck, Users } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTQuery } from '@/api/hooks';
+import { useIBMT } from '@/api/IBMTContext';
 import PublicTopBar from '@/components/public/PublicTopBar';
 import PublicFooter from '@/components/public/PublicFooter';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -12,17 +13,18 @@ import Notice from '@/components/ibmt/Notice';
 import PolicyList from '@/components/ibmt/PolicyList';
 
 const ENTRIES = [
-  { to: '/rent/landlord', labelKey: 'roles.landlord', Icon: Building2 },
-  { to: '/rent/tenant', labelKey: 'roles.tenant', Icon: Users },
-  { to: '/rent/agent', labelKey: 'roles.agent', Icon: HardHat },
-  { to: '/rent/manager', labelKey: 'roles.manager', Icon: UserCheck },
-  { to: '/rent/ward', labelKey: 'roles.ward', Icon: MapPin },
-  { to: '/rent/council', labelKey: 'roles.council', Icon: Landmark },
-  { to: '/rent/tra', labelKey: 'roles.tra', Icon: Table2 },
+  { to: '/rent/landlord', role: 'landlord', labelKey: 'roles.landlord', Icon: Building2 },
+  { to: '/rent/tenant', role: 'tenant', labelKey: 'roles.tenant', Icon: Users },
+  { to: '/rent/agent', role: 'agent', labelKey: 'roles.agent', Icon: HardHat },
+  { to: '/rent/manager', role: 'manager', labelKey: 'roles.manager', Icon: UserCheck },
+  { to: '/rent/ward', role: 'ward', labelKey: 'roles.ward', Icon: MapPin },
+  { to: '/rent/council', role: 'council', labelKey: 'roles.council', Icon: Landmark },
+  { to: '/rent/tra', role: 'tra', labelKey: 'roles.tra', Icon: Table2 },
 ];
 
 export default function RentHub() {
   const { t, tt } = useT();
+  const { isMock, setRole } = useIBMT();
   const policy = useIBMTQuery('getPolicyValues');
   const amnesty = useIBMTQuery('getAmnestyNotice');
 
@@ -87,10 +89,11 @@ export default function RentHub() {
           <div className="space-y-6">
             <SectionCard title={t('nav.workspace')} description={t('roles.external')}>
               <ul className="space-y-2">
-                {ENTRIES.map(({ to, labelKey, Icon }) => (
+                {ENTRIES.map(({ to, labelKey, Icon, role }) => (
                   <li key={to}>
                     <Link
                       to={to}
+                      onClick={() => isMock && setRole(role)}
                       className="ibmt-tap flex items-center justify-between gap-3 rounded-md border border-border px-4 text-[13px] font-medium text-navy transition-colors hover:bg-muted/50"
                     >
                       <span className="flex items-center gap-3">

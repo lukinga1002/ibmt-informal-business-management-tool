@@ -4,7 +4,6 @@ import { useIBMTMutation, useIBMTQuery } from '@/api/hooks';
 import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
-import DataTable from '@/components/ibmt/DataTable';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
@@ -276,12 +275,6 @@ export default function TenantCases() {
           </SectionCard>
         </TabsContent>
       </Tabs>
-
-      <DataTable
-        columns={[{ key: 'label', header: t('common.status') }]}
-        rows={[]}
-        caption={t('common.nativeReview')}
-      />
     </div>
   );
 }

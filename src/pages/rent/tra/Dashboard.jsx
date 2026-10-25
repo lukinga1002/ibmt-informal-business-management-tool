@@ -9,7 +9,7 @@ import Notice from '@/components/ibmt/Notice';
 import PolicyList from '@/components/ibmt/PolicyList';
 import Money from '@/components/ibmt/Money';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { formatDate, formatPercent } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 
 export default function RentTraDashboard() {
   const { t, tt, lang } = useT();
@@ -109,7 +109,7 @@ export default function RentTraDashboard() {
           {t('policy.tenantDetailsLimit')}
         </Notice>
         <p className="ibmt-hint mt-3">
-          {t('rent.units')}: {formatPercent(100, lang) === '100%' ? `${stats.data?.units?.awaiting_verification ?? '—'} ${t('status.pending')}` : ''}
+          {t('rent.unitStats')}: {stats.data?.units?.registered ?? '—'} · {t('status.pending')}: {stats.data?.units?.awaiting_verification ?? '—'}
         </p>
       </SectionCard>
     </div>

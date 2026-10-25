@@ -120,7 +120,6 @@ export function FormStatus({ mutation, successLabel, className }) {
     return (
       <p role="status" className={cn('text-[12px] font-medium text-success', className)}>
         {successLabel || t('states.successTitle')}
-        {mutation.hasIdempotencyKey === false ? null : null}
       </p>
     );
   }

@@ -444,7 +444,7 @@ export const OPERATIONS = {
     fields: ['eligible', 'certificate_id', 'issued_at', 'valid_until', 'statement', 'note'], screens: ['Landlord money'],
   },
   getAmnestyNotice: {
-    method: 'GET', path: '/rent/amnesty', auth: true, scope: ['landlord', 'tenant', 'council'],
+    method: 'GET', path: '/rent/amnesty', auth: true, scope: ['*'],
     purpose: 'Forward-only amnesty, registration window and assisted onboarding',
     fields: ['amnesty_forward_only', 'registration_window_days', 'window_placeholder', 'assisted_onboarding', 'proxy_registration', 'note'],
     screens: ['Landlord money', 'Landlord portfolio', 'Rent hub'],
@@ -570,6 +570,12 @@ export const OPERATIONS = {
     purpose: 'Preview of the items a party may choose to include in an evidence pack',
     fields: ['items[].id', 'items[].kind', 'items[].label', 'items[].period', 'items[].sensitive'],
     screens: ['Tenant evidence and disputes'],
+  },
+  ussdSession: {
+    method: 'POST', path: '/ussd/session', auth: false, scope: ['*'], idempotent: true,
+    purpose: 'One USSD session step: pay rent, balance due, verify receipt, verify agent licence',
+    fields: ['step', 'lines[].text', 'options[].key', 'options[].label', 'ended'],
+    screens: ['USSD simulator'],
   },
 };
 

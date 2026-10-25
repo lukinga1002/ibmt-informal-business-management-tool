@@ -3,7 +3,6 @@ import { CalendarClock, ShieldCheck } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTMutation, useIBMTQuery } from '@/api/hooks';
 import PageHeader from '@/components/ibmt/PageHeader';
-import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money from '@/components/ibmt/Money';

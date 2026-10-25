@@ -7,7 +7,7 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
 import StatusBadge from '@/components/ibmt/StatusBadge';
-import Money, { AmountRow } from '@/components/ibmt/Money';
+import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
 import Timeline from '@/components/ibmt/Timeline';
 import Field, { TextInput, FormStatus } from '@/components/ibmt/Field';
