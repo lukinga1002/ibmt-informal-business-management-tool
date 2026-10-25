@@ -10,10 +10,14 @@ export default function LandingHero() {
   const { isMock, setRole } = useIBMT();
 
   return (
-    <section className="mx-auto grid w-full max-w-[1440px] gap-10 px-4 pb-4 pt-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:px-10 lg:pt-16">
-      <div className="animate-ibmt-rise">
-        <p className="ibmt-kicker">{t('landing.kicker')}</p>
-        <h1 className="ibmt-display mt-4 max-w-2xl text-navy">{t('landing.title')}</h1>
+    <section className="relative mx-auto grid w-full max-w-[1440px] gap-10 px-4 pb-4 pt-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:px-10 lg:pt-16">
+      <div aria-hidden="true" className="ibmt-glow" />
+      <div className="relative z-10 animate-ibmt-rise">
+        <p className="ibmt-kicker flex items-center gap-2 text-gold-ink">
+          <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-gold" />
+          {t('landing.kicker')}
+        </p>
+        <h1 className="ibmt-hero mt-5 max-w-2xl text-navy">{t('landing.title')}</h1>
         <p className="ibmt-lede mt-5 text-[16px]">{t('landing.lede')}</p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
@@ -36,7 +40,7 @@ export default function LandingHero() {
           <Notice tone="policy">{t('policy.ibmtHoldsNoFunds')}</Notice>
         </div>
       </div>
-      <div className="animate-ibmt-rise">
+      <div className="relative z-10 animate-ibmt-rise">
         <VerifyEntryCard />
       </div>
     </section>

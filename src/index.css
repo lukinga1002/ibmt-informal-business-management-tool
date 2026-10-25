@@ -4,36 +4,38 @@
 
 /*
   IBMT design tokens.
-  Brand: Deep Navy #1B2A4A · Champagne Gold #C9A97A · Cream #F5EDD8
-  Accessible darker variants are provided for text on light surfaces.
+  Feel: high-contrast digital-agency systems, near-black ink surfaces,
+  one vivid signal-orange accent, warm-white pages, bold grotesque display type.
+  Ink #161618 · Signal Orange #FF4A1F · Warm White #F7F6F3
+  Accessible darker accent variants are provided for text on light surfaces.
 */
 @layer base {
   :root {
-    --navy: 221 47% 20%;
-    --navy-deep: 222 48% 12%;
-    --navy-soft: 221 32% 34%;
-    --navy-ink: 222 30% 26%;
-    --gold: 36 42% 63%;
-    --gold-ink: 34 45% 30%;
-    --gold-soft: 38 46% 88%;
-    --cream: 43 59% 90%;
-    --cream-deep: 44 34% 82%;
-    --cream-page: 43 39% 96%;
+    --navy: 240 6% 9%;
+    --navy-deep: 240 8% 4%;
+    --navy-soft: 240 4% 32%;
+    --navy-ink: 240 5% 20%;
+    --gold: 16 96% 52%;
+    --gold-ink: 15 86% 38%;
+    --gold-soft: 20 100% 94%;
+    --cream: 36 25% 96%;
+    --cream-deep: 35 14% 88%;
+    --cream-page: 40 16% 97%;
 
-    --background: 43 39% 96%;
-    --foreground: 222 47% 15%;
+    --background: 40 16% 97%;
+    --foreground: 240 8% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 15%;
+    --card-foreground: 240 8% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 15%;
-    --primary: 221 47% 20%;
-    --primary-foreground: 43 59% 96%;
-    --secondary: 43 45% 92%;
-    --secondary-foreground: 222 40% 22%;
-    --muted: 43 30% 92%;
-    --muted-foreground: 220 14% 36%;
-    --accent: 36 46% 88%;
-    --accent-foreground: 34 45% 24%;
+    --popover-foreground: 240 8% 10%;
+    --primary: 240 6% 9%;
+    --primary-foreground: 40 20% 97%;
+    --secondary: 40 14% 93%;
+    --secondary-foreground: 240 6% 14%;
+    --muted: 40 12% 93%;
+    --muted-foreground: 240 4% 34%;
+    --accent: 20 100% 94%;
+    --accent-foreground: 15 86% 30%;
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 100%;
     --success: 158 46% 26%;
@@ -42,78 +44,78 @@
     --warning-foreground: 0 0% 100%;
     --info: 214 55% 34%;
     --info-foreground: 0 0% 100%;
-    --border: 42 22% 84%;
-    --input: 42 22% 80%;
-    --ring: 221 47% 28%;
+    --border: 40 10% 88%;
+    --input: 40 10% 84%;
+    --ring: 16 96% 45%;
 
-    --chart-1: 221 47% 26%;
-    --chart-2: 36 42% 55%;
+    --chart-1: 240 6% 14%;
+    --chart-2: 16 96% 52%;
     --chart-3: 174 38% 32%;
     --chart-4: 22 45% 45%;
-    --chart-5: 220 12% 46%;
+    --chart-5: 240 4% 46%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
     --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
-    --sidebar-background: 221 47% 20%;
-    --sidebar-foreground: 43 45% 92%;
-    --sidebar-primary: 36 42% 63%;
-    --sidebar-primary-foreground: 222 48% 12%;
-    --sidebar-accent: 221 40% 26%;
-    --sidebar-accent-foreground: 43 59% 96%;
-    --sidebar-border: 221 34% 30%;
-    --sidebar-ring: 36 42% 63%;
+    --sidebar-background: 240 8% 7%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-primary: 16 96% 52%;
+    --sidebar-primary-foreground: 240 8% 5%;
+    --sidebar-accent: 240 6% 14%;
+    --sidebar-accent-foreground: 40 20% 94%;
+    --sidebar-border: 240 6% 16%;
+    --sidebar-ring: 16 96% 52%;
   }
 
   .dark {
-    --background: 222 42% 9%;
-    --foreground: 43 40% 94%;
-    --card: 222 38% 13%;
-    --card-foreground: 43 40% 94%;
-    --popover: 222 38% 13%;
-    --popover-foreground: 43 40% 94%;
-    --primary: 36 42% 63%;
-    --primary-foreground: 222 48% 12%;
-    --secondary: 222 30% 18%;
-    --secondary-foreground: 43 40% 94%;
-    --muted: 222 28% 18%;
-    --muted-foreground: 220 16% 72%;
-    --accent: 222 30% 20%;
-    --accent-foreground: 43 45% 92%;
+    --background: 240 8% 6%;
+    --foreground: 40 20% 92%;
+    --card: 240 6% 10%;
+    --card-foreground: 40 20% 92%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 40 20% 92%;
+    --primary: 16 96% 52%;
+    --primary-foreground: 240 8% 5%;
+    --secondary: 240 5% 14%;
+    --secondary-foreground: 40 20% 92%;
+    --muted: 240 5% 14%;
+    --muted-foreground: 240 4% 68%;
+    --accent: 240 5% 16%;
+    --accent-foreground: 40 20% 92%;
     --destructive: 0 58% 52%;
     --destructive-foreground: 0 0% 100%;
     --success: 158 40% 45%;
-    --success-foreground: 222 48% 10%;
+    --success-foreground: 240 8% 5%;
     --warning: 36 62% 58%;
-    --warning-foreground: 222 48% 10%;
+    --warning-foreground: 240 8% 5%;
     --info: 214 55% 62%;
-    --info-foreground: 222 48% 10%;
-    --border: 222 26% 24%;
-    --input: 222 26% 28%;
-    --ring: 36 42% 63%;
+    --info-foreground: 240 8% 5%;
+    --border: 240 5% 18%;
+    --input: 240 5% 22%;
+    --ring: 16 96% 52%;
 
-    --navy: 221 40% 30%;
-    --navy-deep: 222 48% 8%;
-    --navy-soft: 221 30% 60%;
-    --navy-ink: 220 20% 80%;
-    --gold: 36 42% 63%;
-    --gold-ink: 36 42% 68%;
-    --gold-soft: 36 20% 24%;
-    --cream: 43 30% 20%;
-    --cream-deep: 43 22% 26%;
-    --cream-page: 222 42% 9%;
+    --navy: 40 16% 90%;
+    --navy-deep: 40 12% 80%;
+    --navy-soft: 240 4% 60%;
+    --navy-ink: 40 16% 92%;
+    --gold: 18 100% 60%;
+    --gold-ink: 18 100% 66%;
+    --gold-soft: 16 45% 16%;
+    --cream: 40 12% 92%;
+    --cream-deep: 40 10% 82%;
+    --cream-page: 240 8% 6%;
 
-    --sidebar-background: 222 44% 11%;
-    --sidebar-foreground: 43 40% 92%;
-    --sidebar-primary: 36 42% 63%;
-    --sidebar-primary-foreground: 222 48% 12%;
-    --sidebar-accent: 222 34% 17%;
-    --sidebar-accent-foreground: 43 45% 94%;
-    --sidebar-border: 222 26% 22%;
-    --sidebar-ring: 36 42% 63%;
+    --sidebar-background: 240 8% 5%;
+    --sidebar-foreground: 40 20% 90%;
+    --sidebar-primary: 16 96% 52%;
+    --sidebar-primary-foreground: 240 8% 5%;
+    --sidebar-accent: 240 6% 13%;
+    --sidebar-accent-foreground: 40 20% 92%;
+    --sidebar-border: 240 5% 15%;
+    --sidebar-ring: 16 96% 52%;
   }
 }
 
@@ -173,6 +175,11 @@
     @apply max-w-2xl text-[15px] leading-relaxed text-muted-foreground;
   }
 
+  /* Oversized bold statement used on public heroes only */
+  .ibmt-hero {
+    @apply font-display text-4xl font-bold leading-[1.04] tracking-[-0.02em] sm:text-5xl lg:text-6xl;
+  }
+
   .ibmt-label {
     @apply text-[13px] font-medium leading-none;
   }
@@ -224,6 +231,17 @@
 @layer utilities {
   .ibmt-scroll-x {
     scrollbar-width: thin;
+  }
+
+  /* Soft signal-orange glow washes behind heroes and feature surfaces */
+  .ibmt-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(42% 55% at 80% 8%, hsl(var(--gold) / 0.18), transparent 72%),
+      radial-gradient(30% 42% at 8% 78%, hsl(var(--gold) / 0.1), transparent 72%);
   }
 
   .ibmt-sr-only-focusable:not(:focus) {
