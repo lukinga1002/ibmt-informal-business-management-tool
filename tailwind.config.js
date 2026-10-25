@@ -41,6 +41,34 @@ module.exports = {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
+  			success: {
+  				DEFAULT: 'hsl(var(--success))',
+  				foreground: 'hsl(var(--success-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))'
+  			},
+  			info: {
+  				DEFAULT: 'hsl(var(--info))',
+  				foreground: 'hsl(var(--info-foreground))'
+  			},
+  			navy: {
+  				DEFAULT: 'hsl(var(--navy))',
+  				deep: 'hsl(var(--navy-deep))',
+  				soft: 'hsl(var(--navy-soft))',
+  				ink: 'hsl(var(--navy-ink))'
+  			},
+  			gold: {
+  				DEFAULT: 'hsl(var(--gold))',
+  				ink: 'hsl(var(--gold-ink))',
+  				soft: 'hsl(var(--gold-soft))'
+  			},
+  			cream: {
+  				DEFAULT: 'hsl(var(--cream))',
+  				deep: 'hsl(var(--cream-deep))',
+  				page: 'hsl(var(--cream-page))'
+  			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
@@ -84,11 +112,22 @@ module.exports = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'ibmt-rise': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(6px)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translateY(0)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'ibmt-rise': 'ibmt-rise 0.28s ease-out both'
   		}
   	}
   },
