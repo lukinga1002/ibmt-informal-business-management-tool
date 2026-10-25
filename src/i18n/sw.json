@@ -128,6 +128,7 @@
     "errorBody": "Ombi halikukamilika. Hakuna kilichobadilishwa. Unaweza kujaribu tena salama.",
     "offlineTitle": "Hakuna mtandao",
     "offlineBody": "Mabadiliko hayawezi kutumwa wakati mtandao umekatika. Hakuna kilichowasilishwa.",
+    "queuedBody": "Imehifadhiwa kwenye kifaa hiki. Itawasilishwa kiotomatiki, bila kubadilika, mtandao ukirudi.",
     "permissionTitle": "Hakuna ruhusa kwa wajibu wako",
     "permissionBody": "Wajibu wako au eneo lako la mamlaka haviwezi kufungua kumbukumbu hii. Backend ndiyo inayolinda hili, si kiolesura.",
     "sessionTitle": "Kipindi chako kimeisha",
@@ -137,6 +138,12 @@
     "successTitle": "Imerekodiwa",
     "reload": "Pakia hali ya sasa",
     "keepMine": "Pitia mabadiliko yangu"
+  },
+  "sync": {
+    "title": "Mabadiliko yaliyohifadhiwa",
+    "body": "Mabadiliko {count} yanayosubiri kuwasilishwa.",
+    "now": "Sawazisha sasa",
+    "syncing": "Inasawazisha…"
   },
   "status": {
     "draft": "Rasimu",
@@ -440,6 +447,8 @@
     "mode": "Chanzo cha data",
     "mockMode": "Data ya majaribio",
     "apiMode": "API ya IBMT",
+    "platformMode": "Data halisi ya mfumo",
+    "platformNote": "Kumbukumbu zako mwenyewe, zinazohifadhiwa na kuthibitishwa na backend ya IBMT. Mabadiliko ya nje ya mtandao hurudi kiotomatiki.",
     "apiBase": "Anwani ya msingi ya API ya IBMT",
     "apiBaseHint": "Mpangilio wa wakati wa kutumia. Mamlaka yanatokana na mfumo wa kipindi ulioidhinishwa na backend, si thamani hii.",
     "scenario": "Hali ya majaribio",
