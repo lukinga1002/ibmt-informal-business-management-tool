@@ -38,6 +38,10 @@
     "decided_by_name": {
       "type": "string"
     },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "decision_note": {
       "type": "object",
       "properties": {
@@ -54,6 +58,10 @@
     },
     "ward": {
       "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never file the same evidence twice"
     }
   },
   "required": [

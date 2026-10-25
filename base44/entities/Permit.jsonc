@@ -41,14 +41,23 @@
       "enum": [
         "draft",
         "submitted",
-        "under_review",
+        "in_review",
+        "queried",
         "approved",
         "rejected"
       ],
       "default": "draft"
     },
+    "version": {
+      "type": "number",
+      "description": "Decision-state version incremented by the backend on every change"
+    },
     "decided_by": {
       "type": "string"
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "decision_note": {
       "type": "object",
@@ -84,6 +93,10 @@
           "business_name"
         ]
       }
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never create a second permit"
     },
     "policy_version": {
       "type": "string"

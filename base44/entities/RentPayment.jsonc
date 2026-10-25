@@ -9,6 +9,13 @@
     "tenancy_id": {
       "type": "string"
     },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string",
+      "description": "Unit serial reference, denormalized for display"
+    },
     "landlord_id": {
       "type": "string"
     },
@@ -18,9 +25,25 @@
     "agent_id": {
       "type": "string"
     },
+    "period_months": {
+      "type": "number",
+      "description": "Months of rent the payment covers"
+    },
     "amount": {
       "type": "number",
       "description": "Rent paid in TZS"
+    },
+    "deposit_amount": {
+      "type": "number",
+      "description": "Deposit share in TZS, capped by the active policy version"
+    },
+    "tenant_total": {
+      "type": "number",
+      "description": "Total the tenant pays: rent plus deposit, computed by the backend"
+    },
+    "new_tenancy": {
+      "type": "boolean",
+      "description": "True when the payment opens a new tenancy"
     },
     "withholding_amount": {
       "type": "number",
@@ -53,6 +76,10 @@
     "paid_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried pay can never charge the tenant twice"
     },
     "policy_version": {
       "type": "string"
@@ -98,9 +125,7 @@
       ]
     },
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "update": {
       "user_condition": {

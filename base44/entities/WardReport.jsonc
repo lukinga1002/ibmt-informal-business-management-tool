@@ -28,6 +28,13 @@
       ],
       "default": "submitted"
     },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decided_by_name": {
+      "type": "string"
+    },
     "review_note": {
       "type": "object",
       "properties": {
@@ -38,6 +45,10 @@
           "type": "string"
         }
       }
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never record the report twice"
     }
   },
   "required": [

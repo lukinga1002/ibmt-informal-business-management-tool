@@ -53,6 +53,14 @@
       ],
       "default": "registered"
     },
+    "version": {
+      "type": "number",
+      "description": "Registration-state version incremented by the backend on every change"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never register the unit twice"
+    },
     "policy_version": {
       "type": "string"
     }

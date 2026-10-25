@@ -91,10 +91,33 @@ export async function findExistingByKey(base44, entity, idempotencyKey) {
  * sequence is global, so the service role counts references; the caller still
  * only ever reads or writes its own records.
  */
-export async function nextReceiptReference(base44) {
-  const year = new Date().getFullYear();
-  const prefix = `IBMT-RCP-${year}-`;
-  const existing = await base44.asServiceRole.entities.Receipt.filter(
+/** Bilingual text pair, the shape every screen label in the interface expects. */
+export function bilingual(en, sw) {
+  return { en, sw };
+}
+
+/** True when the signed-in user holds one of the given IBMT roles (or is an app admin). */
+export function hasIbmtRole(user, roles) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const role = user.data && user.data.ibmt_role;
+  return Array.isArray(roles) ? roles.includes(role) : role === roles;
+}
+
+/** Days since an ISO timestamp, floored at zero. Used for queue and reminder ages. */
+export function ageDays(isoDate) {
+  if (!isoDate) return 0;
+  const ms = Date.now() - new Date(isoDate).getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
+/**
+ * Duplicate protection, generalized: serial numbers are unique per year for
+ * one entity. The service role counts existing references; the caller still
+ * only ever reads or writes its own records.
+ */
+export async function nextSerial(base44, entity, prefix) {
+  const existing = await base44.asServiceRole.entities[entity].filter(
     { reference: { $regex: `^${prefix}` } },
     { limit: 500, sort: '-reference' },
   );
@@ -107,9 +130,14 @@ export async function nextReceiptReference(base44) {
   let candidate = highest + 1;
   for (let attempt = 0; attempt < 10; attempt++) {
     const reference = `${prefix}${String(candidate + attempt).padStart(6, '0')}`;
-    const taken = await base44.asServiceRole.entities.Receipt.filter({ reference }, { limit: 1 });
+    const taken = await base44.asServiceRole.entities[entity].filter({ reference }, { limit: 1 });
     const takenRows = taken.items || taken;
     if (!Array.isArray(takenRows) || !takenRows.length) return reference;
   }
   return `${prefix}${Date.now().toString().slice(-8)}`;
+}
+
+export async function nextReceiptReference(base44) {
+  const year = new Date().getFullYear();
+  return nextSerial(base44, 'Receipt', `IBMT-RCP-${year}-`);
 }
