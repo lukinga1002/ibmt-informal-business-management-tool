@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIBMT } from './IBMTContext';
-import { newIdempotencyKey } from './ibmt';
+import { newIdempotencyKey, isIdempotent } from './ibmt';
+import { offlineQueue } from './offlineQueue';
 import { isIBMTError } from './errors';
 
 const IDLE = { status: 'idle', data: null, items: [], error: null, hasMore: false, cursor: null, collection: false };
@@ -100,7 +101,7 @@ export function useIBMTQuery(operationId, params = {}, options = {}) {
  * cleared only after a confirmed result or an explicit reset.
  */
 export function useIBMTMutation(operationId) {
-  const { invoke, notifyChange, sessionState } = useIBMT();
+  const { invoke, notifyChange, sessionState, mode, notifyQueueChange } = useIBMT();
   const [state, setState] = useState({ status: 'idle', error: null, result: null });
   const keyRef = useRef(null);
   const inFlight = useRef(false);
@@ -119,6 +120,15 @@ export function useIBMTMutation(operationId) {
         return result;
       } catch (error) {
         const normalised = isIBMTError(error) ? error : { kind: 'error', code: 'SERVER', message: String(error) };
+        // Offline: a duplicate-sensitive write is saved on this device with its
+        // idempotency key and replayed unchanged when the connection returns.
+        if (mode !== 'mock' && normalised.kind === 'offline' && isIdempotent(operationId) && keyRef.current) {
+          offlineQueue.enqueue({ operationId, params, idempotencyKey: keyRef.current });
+          notifyQueueChange();
+          keyRef.current = null;
+          setState({ status: 'queued', error: null, result: null });
+          return null;
+        }
         setState({ status: 'error', error: normalised, result: null });
         return null;
       } finally {
@@ -145,6 +155,7 @@ export function useIBMTMutation(operationId) {
     reset,
     status: state.status,
     saving: state.status === 'saving',
+    queued: state.status === 'queued',
     error: state.error,
     fieldErrors: (state.error && state.error.fieldErrors) || {},
     result: state.result,

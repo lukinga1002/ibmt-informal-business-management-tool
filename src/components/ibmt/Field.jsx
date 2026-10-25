@@ -116,6 +116,14 @@ export function FormStatus({ mutation, successLabel, className }) {
     );
   }
 
+  if (mutation.status === 'queued') {
+    return (
+      <p role="status" className={cn('text-[12px] font-medium text-navy', className)}>
+        {t('states.queuedBody')}
+      </p>
+    );
+  }
+
   if (mutation.status === 'success') {
     return (
       <p role="status" className={cn('text-[12px] font-medium text-success', className)}>

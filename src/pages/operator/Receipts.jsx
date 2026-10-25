@@ -8,6 +8,7 @@ import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money, { AmountRow } from '@/components/ibmt/Money';
+import SyncQueueBanner from '@/components/ibmt/SyncQueueBanner';
 import Notice from '@/components/ibmt/Notice';
 import Field, { TextInput, SelectControl, FormStatus } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,8 @@ export default function OperatorReceipts() {
         lede={t('notices.fiscal')}
         meta={[{ label: t('policy.turnoverVsTax') }]}
       />
+
+      <SyncQueueBanner />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <SectionCard

@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { invokeOperation } from './ibmt';
 import { offlineQueue } from './offlineQueue';
-import { isIdempotent } from './ibmt';
 import { prefs, defaultLangForRole, DEFAULT_API_BASE } from '@/lib/prefs';
 
 const IBMTContext = createContext(null);
@@ -81,7 +80,7 @@ export function IBMTProvider({ children }) {
   );
 
   const setMode = useCallback((next) => {
-    const value = next === 'api' ? 'api' : 'mock';
+    const value = ['api', 'platform'].includes(next) ? next : 'mock';
     prefs.setMode(value);
     setModeState(value);
   }, []);
@@ -183,8 +182,15 @@ export function IBMTProvider({ children }) {
       theme,
       setTheme,
       defaultLangForRole,
+      notifyQueueChange,
+      queue: {
+        items: offlineQueue.list(),
+        count: offlineQueue.size(),
+        syncing,
+        sync: syncQueue,
+      },
     }),
-    [mode, setMode, apiBase, setApiBase, role, setRole, scenario, setScenario, session, sessionState, loadSession, signOut, offline, invoke, dataVersion, notifyChange, theme, setTheme],
+    [mode, setMode, apiBase, setApiBase, role, setRole, scenario, setScenario, session, sessionState, loadSession, signOut, offline, invoke, dataVersion, notifyChange, theme, setTheme, notifyQueueChange, queueVersion, syncQueue, syncing],
   );
 
   return <IBMTContext.Provider value={value}>{children}</IBMTContext.Provider>;

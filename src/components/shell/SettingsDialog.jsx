@@ -25,8 +25,8 @@ export default function SettingsDialog({ open, onOpenChange }) {
         <div className="mt-4 space-y-6">
           <section>
             <h3 className="ibmt-kicker">{t('settings.integration')}</h3>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {['mock', 'api'].map((value) => (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {['mock', 'platform', 'api'].map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -36,9 +36,11 @@ export default function SettingsDialog({ open, onOpenChange }) {
                     mode === value ? 'border-navy bg-navy/[0.05]' : 'border-border hover:bg-muted/50'
                   }`}
                 >
-                  <span className="text-[13px] font-semibold text-navy">{value === 'mock' ? t('settings.mockMode') : t('settings.apiMode')}</span>
+                  <span className="text-[13px] font-semibold text-navy">
+                    {value === 'mock' ? t('settings.mockMode') : value === 'platform' ? t('settings.platformMode') : t('settings.apiMode')}
+                  </span>
                   <span className="text-[11px] leading-snug text-muted-foreground">
-                    {value === 'mock' ? t('common.demonstrationNote') : t('roles.external')}
+                    {value === 'mock' ? t('common.demonstrationNote') : value === 'platform' ? t('settings.platformNote') : t('roles.external')}
                   </span>
                 </button>
               ))}

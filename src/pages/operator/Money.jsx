@@ -7,6 +7,7 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
 import Money, { AmountRow } from '@/components/ibmt/Money';
+import SyncQueueBanner from '@/components/ibmt/SyncQueueBanner';
 import Notice from '@/components/ibmt/Notice';
 import PolicyList from '@/components/ibmt/PolicyList';
 import UploadField from '@/components/ibmt/UploadField';
@@ -60,6 +61,8 @@ export default function OperatorMoney() {
         lede={t('policy.expenseEvidence')}
         meta={[{ label: t('policy.expenseEvidence') }]}
       />
+
+      <SyncQueueBanner />
 
       <Tabs defaultValue="expenses">
         <TabsList className="ibmt-no-print h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
