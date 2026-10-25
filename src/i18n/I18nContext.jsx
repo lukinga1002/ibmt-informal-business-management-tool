@@ -35,6 +35,10 @@ export function I18nProvider({ children }) {
 
   const t = useCallback(
     (key, vars) => {
+      // Dynamic record values can arrive as undefined or as a bilingual
+      // {en, sw} object; neither is a translation key, so render them safely.
+      if (key === null || key === undefined) return '';
+      if (typeof key !== 'string') return key[lang] || key.en || '';
       // Swahili first, then English, then the key itself — a missing string is
       // never rendered as a blank space.
       const value = lookup(RESOURCES[lang], key) ?? lookup(RESOURCES.en, key);
