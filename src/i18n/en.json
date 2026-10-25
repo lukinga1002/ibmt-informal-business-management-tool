@@ -178,7 +178,9 @@
     "released": "Released",
     "not_connected": "Not connected",
     "human_review": "Human review",
-    "not_effective": "Not yet in force"
+    "not_effective": "Not yet in force",
+    "reviewed": "Reviewed",
+    "flagged": "Flagged"
   },
   "term": {
     "unit": "Unit",

@@ -134,7 +134,9 @@ export default function LandlordPortfolio() {
                               label={t('rent.ownershipEvidence')}
                               hint={t('policy.addressMeterPrivate')}
                               purpose="ownership_evidence"
-                              onUploaded={() => submitOwnership.run({ id: unit.id, label: 'Ownership evidence' })}
+                              onUploaded={(result) =>
+                                submitOwnership.run({ id: unit.id, unit_id: unit.id, evidence_uri: result?.file_id, kind: 'title_deed' })
+                              }
                             />
                             <FormStatus mutation={submitOwnership} className="mt-2" />
                           </div>

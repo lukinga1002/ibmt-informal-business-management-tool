@@ -178,7 +178,9 @@
     "released": "Imetolewa",
     "not_connected": "Haijaunganishwa",
     "human_review": "Mapitio ya mtu",
-    "not_effective": "Bado haijaanza"
+    "not_effective": "Bado haijaanza",
+    "reviewed": "Imekaguliwa",
+    "flagged": "Imewekwa alama"
   },
   "term": {
     "unit": "Kitengo",

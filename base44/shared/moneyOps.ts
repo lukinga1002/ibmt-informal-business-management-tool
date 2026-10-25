@@ -116,21 +116,19 @@ export function ageDays(isoDate) {
  * one entity. The service role counts existing references; the caller still
  * only ever reads or writes its own records.
  */
-export async function nextSerial(base44, entity, prefix) {
-  const existing = await base44.asServiceRole.entities[entity].filter(
-    { reference: { $regex: `^${prefix}` } },
-    { limit: 500, sort: '-reference' },
-  );
+export async function nextSerial(base44, entity, prefix, fieldName = 'reference') {
+  const query = { [fieldName]: { $regex: `^${prefix}` } };
+  const existing = await base44.asServiceRole.entities[entity].filter(query, { limit: 500 });
   const rows = existing.items || existing;
   let highest = 0;
   for (const row of rows) {
-    const seq = Number(String(row.reference || '').slice(prefix.length));
+    const seq = Number(String(row[fieldName] || '').slice(prefix.length));
     if (Number.isFinite(seq) && seq > highest) highest = seq;
   }
   let candidate = highest + 1;
   for (let attempt = 0; attempt < 10; attempt++) {
     const reference = `${prefix}${String(candidate + attempt).padStart(6, '0')}`;
-    const taken = await base44.asServiceRole.entities[entity].filter({ reference }, { limit: 1 });
+    const taken = await base44.asServiceRole.entities[entity].filter({ [fieldName]: reference }, { limit: 1 });
     const takenRows = taken.items || taken;
     if (!Array.isArray(takenRows) || !takenRows.length) return reference;
   }

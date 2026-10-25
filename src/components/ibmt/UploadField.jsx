@@ -27,7 +27,7 @@ export default function UploadField({ label, hint, purpose, accept = '.pdf,.jpg,
     const selected = event.target.files?.[0];
     if (!selected) return;
     setFile(selected);
-    const result = await upload.run({ bytes: selected.size, content_type: selected.type, label: selected.name, purpose });
+    const result = await upload.run({ bytes: selected.size, content_type: selected.type, label: selected.name, purpose, file: selected });
     if (result && onUploaded) onUploaded(result, selected);
     event.target.value = '';
   };
