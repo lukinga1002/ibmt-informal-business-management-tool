@@ -47,8 +47,11 @@ function write(key, value) {
 }
 
 export const prefs = {
-  getMode: () => (read(KEYS.mode, 'mock') === 'api' ? 'api' : 'mock'),
-  setMode: (mode) => write(KEYS.mode, mode === 'api' ? 'api' : 'mock'),
+  getMode: () => {
+    const value = read(KEYS.mode, 'mock');
+    return ['api', 'platform'].includes(value) ? value : 'mock';
+  },
+  setMode: (mode) => write(KEYS.mode, ['api', 'platform'].includes(mode) ? mode : 'mock'),
 
   getLang: () => {
     const value = read(KEYS.lang, null);

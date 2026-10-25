@@ -12,6 +12,10 @@
     "business_name": {
       "type": "string"
     },
+    "district": {
+      "type": "string",
+      "description": "Business district, denormalized for jurisdiction-scoped official access"
+    },
     "issued_on": {
       "type": "string",
       "format": "date"
@@ -22,6 +26,10 @@
     "buyer_contact": {
       "type": "string"
     },
+    "buyer_ref": {
+      "type": "string",
+      "description": "Consumer reference, when the buyer is a registered IBMT subject"
+    },
     "total": {
       "type": "number",
       "description": "Total in TZS, computed by the backend from lines"
@@ -31,10 +39,29 @@
       "enum": [
         "draft",
         "issued",
+        "awaiting_confirmation",
         "confirmed",
         "void"
       ],
       "default": "draft"
+    },
+    "buyer_confirmation": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "awaiting_confirmation",
+        "confirmed"
+      ],
+      "default": "draft"
+    },
+    "confirmation_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Buyer confirmation window from the active policy version"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "fiscal_status": {
       "type": "string",
@@ -47,6 +74,10 @@
     "version": {
       "type": "number",
       "description": "Optimistic-concurrency version incremented by the backend on every change"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never create a second receipt"
     },
     "lines": {
       "type": "array",

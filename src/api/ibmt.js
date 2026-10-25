@@ -10,6 +10,7 @@ import { OPERATIONS, IDEMPOTENT_OPERATIONS } from './operations';
 import { IBMTError } from './errors';
 import { mockInvoke, resetMockStore } from './mock';
 import { liveInvoke } from './live';
+import { platformInvoke } from './platform';
 
 export { OPERATIONS, IDEMPOTENT_OPERATIONS };
 export { IBMTError } from './errors';
@@ -43,6 +44,12 @@ export async function invokeOperation({
   }
 
   const key = idempotencyKey || (spec.idempotent ? newIdempotencyKey(operationId) : null);
+
+  if (mode === 'platform') {
+    // The live IBMT backend on this platform. Same contract, real records;
+    // a failure is never answered with demonstration data.
+    return platformInvoke({ id: operationId, params });
+  }
 
   if (mode === 'api') {
     if (!apiBase) {

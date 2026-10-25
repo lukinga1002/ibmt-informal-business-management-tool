@@ -1,5 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { invokeOperation } from './ibmt';
+import { offlineQueue } from './offlineQueue';
+import { isIdempotent } from './ibmt';
 import { prefs, defaultLangForRole, DEFAULT_API_BASE } from '@/lib/prefs';
 
 const IBMTContext = createContext(null);
@@ -22,6 +24,9 @@ export function IBMTProvider({ children }) {
   const [sessionState, setSessionState] = useState('loading');
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false);
   const [dataVersion, setDataVersion] = useState(0);
+  const [queueVersion, setQueueVersion] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const syncingRef = useRef(false);
 
   useEffect(() => {
     const goOnline = () => setOffline(false);
@@ -104,6 +109,51 @@ export function IBMTProvider({ children }) {
   }, []);
 
   const notifyChange = useCallback(() => setDataVersion((value) => value + 1), []);
+
+  const notifyQueueChange = useCallback(() => setQueueVersion((value) => value + 1), []);
+
+  /** Removes a queued item only when a later attempt provably cannot succeed. */
+  const isPermanentFailure = (error) => ['VALIDATION', 'CONFLICT', 'FORBIDDEN', 'JURISDICTION', 'NOT_FOUND'].includes(error?.code);
+
+  const syncQueue = useCallback(async () => {
+    if (syncingRef.current || offline || mode === 'mock') return;
+    const items = offlineQueue.list();
+    if (!items.length) return;
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      for (const item of items) {
+        try {
+          await invokeOperation({
+            operationId: item.operationId,
+            params: { ...item.params, idempotencyKey: item.idempotencyKey },
+            mode,
+            apiBase,
+            role: session?.role || role,
+            onSessionExpired: () => setSessionState('expired'),
+          });
+          offlineQueue.remove(item.idempotencyKey);
+          notifyChange();
+        } catch (error) {
+          if (isPermanentFailure(error)) {
+            offlineQueue.remove(item.idempotencyKey);
+          } else if (error?.kind === 'offline' || error?.code === 'OFFLINE' || error?.code === 'NETWORK') {
+            break;
+          }
+        }
+      }
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+      notifyQueueChange();
+    }
+  }, [offline, mode, apiBase, role, session, notifyChange, notifyQueueChange]);
+
+  // The connection returning submits every saved write, each with the key it
+  // was created with, so nothing is recorded twice.
+  useEffect(() => {
+    if (!offline && mode !== 'mock' && offlineQueue.size() > 0) syncQueue();
+  }, [offline, mode, queueVersion, syncQueue]);
 
   const signOut = useCallback(() => {
     setSession(null);

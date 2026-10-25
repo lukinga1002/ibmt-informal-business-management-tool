@@ -42,6 +42,10 @@
       "type": "string",
       "description": "Private uploaded evidence file URI"
     },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never record the expense twice"
+    },
     "policy_version": {
       "type": "string"
     }
