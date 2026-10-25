@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/I18nContext';
 
 const CONTROL =
   'ibmt-tap w-full rounded-md border border-input bg-card px-3 text-[15px] text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring';
@@ -98,3 +99,43 @@ export function TextInput({ id, describedBy, invalid, ...props }) {
 }
 
 export const CONTROL_CLASS = CONTROL;
+
+/**
+ * Result of a write, shown where the write happened: nothing is reported as a
+ * success unless the integration layer confirmed it.
+ */
+export function FormStatus({ mutation, successLabel, className }) {
+  const { t } = useT();
+  if (!mutation || mutation.status === 'idle') return null;
+
+  if (mutation.status === 'saving') {
+    return (
+      <p role="status" className={cn('text-[12px] text-muted-foreground', className)}>
+        {t('common.working')}…
+      </p>
+    );
+  }
+
+  if (mutation.status === 'success') {
+    return (
+      <p role="status" className={cn('text-[12px] font-medium text-success', className)}>
+        {successLabel || t('states.successTitle')}
+        {mutation.hasIdempotencyKey === false ? null : null}
+      </p>
+    );
+  }
+
+  const fieldMessages = Object.values(mutation.fieldErrors || {});
+  return (
+    <div role="alert" className={cn('text-[12px] font-medium text-destructive', className)}>
+      <p>{mutation.error?.message || t('states.errorBody')}</p>
+      {fieldMessages.length > 0 && (
+        <ul className="mt-1 list-disc pl-4 font-normal">
+          {fieldMessages.map((message) => (
+            <li key={message}>{message}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
