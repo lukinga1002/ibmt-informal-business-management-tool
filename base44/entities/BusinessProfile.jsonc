@@ -1,0 +1,119 @@
+{
+  "name": "BusinessProfile",
+  "type": "object",
+  "properties": {
+    "business_name": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "sector": {
+      "type": "string",
+      "description": "e.g. food_vending, carpentry, electronics, tailoring"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "mtaa": {
+      "type": "string"
+    },
+    "tin": {
+      "type": "string",
+      "description": "TRA Taxpayer Identification Number, when registered"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "verified",
+        "suspended"
+      ],
+      "default": "draft"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_name",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "ward_reporter"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

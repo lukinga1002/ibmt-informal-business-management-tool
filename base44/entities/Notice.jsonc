@@ -1,0 +1,109 @@
+{
+  "name": "Notice",
+  "type": "object",
+  "properties": {
+    "tenancy_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "rent_increase",
+        "termination",
+        "entry",
+        "other"
+      ]
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "body": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "issued_by_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant"
+      ]
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "kind",
+    "effective_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

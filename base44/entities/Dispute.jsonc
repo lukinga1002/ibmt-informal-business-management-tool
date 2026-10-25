@@ -1,0 +1,166 @@
+{
+  "name": "Dispute",
+  "type": "object",
+  "properties": {
+    "tenancy_id": {
+      "type": "string"
+    },
+    "deposit_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "deposit",
+        "repairs",
+        "entry",
+        "notice",
+        "other"
+      ]
+    },
+    "opened_by_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant"
+      ]
+    },
+    "body": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "mediation",
+        "resolved",
+        "closed"
+      ],
+      "default": "open"
+    },
+    "resolution_note": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "kind",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

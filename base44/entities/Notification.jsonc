@@ -1,0 +1,63 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "User id the notification is for"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "title": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "read_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "subject_id",
+    "kind"
+  ],
+  "rls": {
+    "read": {
+      "data.subject_id": "{{user.id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "data.subject_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.subject_id": "{{user.id}}"
+    }
+  }
+}

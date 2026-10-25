@@ -1,0 +1,124 @@
+{
+  "name": "Receipt",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string",
+      "description": "Serial number issued by the backend, e.g. IBMT-RCP-2026-000118"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "business_name": {
+      "type": "string"
+    },
+    "issued_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "buyer_contact": {
+      "type": "string"
+    },
+    "total": {
+      "type": "number",
+      "description": "Total in TZS, computed by the backend from lines"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "issued",
+        "confirmed",
+        "void"
+      ],
+      "default": "draft"
+    },
+    "fiscal_status": {
+      "type": "string",
+      "enum": [
+        "unreported",
+        "reported"
+      ],
+      "default": "unreported"
+    },
+    "version": {
+      "type": "number",
+      "description": "Optimistic-concurrency version incremented by the backend on every change"
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number"
+          },
+          "unit_amount": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "description",
+          "qty",
+          "unit_amount",
+          "line_total"
+        ]
+      }
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "reference",
+    "business_id",
+    "issued_on",
+    "total"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

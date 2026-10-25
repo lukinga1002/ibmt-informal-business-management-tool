@@ -1,0 +1,98 @@
+{
+  "name": "SecurityDeposit",
+  "type": "object",
+  "properties": {
+    "tenancy_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Held deposit in TZS, capped by the active policy version"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "held",
+        "partially_released",
+        "released",
+        "claimed"
+      ],
+      "default": "held"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

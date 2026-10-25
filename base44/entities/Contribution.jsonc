@@ -1,0 +1,96 @@
+{
+  "name": "Contribution",
+  "type": "object",
+  "properties": {
+    "group_name": {
+      "type": "string",
+      "description": "VICOBA or committee name"
+    },
+    "member_name": {
+      "type": "string"
+    },
+    "member_id": {
+      "type": "string",
+      "description": "User id of the member, when registered"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "deposit",
+        "loan_repayment",
+        "fine",
+        "dividend"
+      ],
+      "default": "deposit"
+    },
+    "amount": {
+      "type": "number",
+      "description": "TZS. Contributions are savings, not revenue."
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "balance": {
+      "type": "number",
+      "description": "Running member balance in TZS"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "group_name",
+    "member_name",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

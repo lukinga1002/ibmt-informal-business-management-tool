@@ -1,0 +1,61 @@
+{
+  "name": "PolicyVersion",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Human policy version, e.g. 2026.1"
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "retired"
+      ],
+      "default": "draft"
+    },
+    "values": {
+      "type": "object",
+      "description": "Every rate, fee, cap and threshold used by money math: presumptive tax bands, permit fees, deposit caps, rent withholding rate, platform fee, agent commission, registration windows, amnesty flags"
+    },
+    "notes": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "version",
+    "effective_from",
+    "values"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

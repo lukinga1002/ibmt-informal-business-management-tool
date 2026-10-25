@@ -1,0 +1,74 @@
+{
+  "name": "AgentCommission",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "mandate_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "payment_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Commission in TZS, paid by the landlord side only"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accrued",
+        "paid",
+        "reversed"
+      ],
+      "default": "accrued"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "agent_id",
+    "mandate_id",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

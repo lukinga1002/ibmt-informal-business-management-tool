@@ -1,0 +1,112 @@
+{
+  "name": "Tenancy",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Monthly rent in TZS agreed on the lease"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "notice_period",
+        "ended"
+      ],
+      "default": "pending"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit_id",
+    "landlord_id",
+    "tenant_id",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

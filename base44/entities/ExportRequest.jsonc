@@ -1,0 +1,57 @@
+{
+  "name": "ExportRequest",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "What the subject asked to export, e.g. receipts, tenancy history, evidence pack"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "csv"
+      ],
+      "default": "pdf"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "preparing",
+        "ready",
+        "delivered"
+      ],
+      "default": "requested"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private file URI of the generated export"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

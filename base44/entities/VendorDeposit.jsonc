@@ -1,0 +1,79 @@
+{
+  "name": "VendorDeposit",
+  "type": "object",
+  "properties": {
+    "booking_id": {
+      "type": "string"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "business_owner_id": {
+      "type": "string"
+    },
+    "vendor_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "TZS"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "held",
+        "released",
+        "forfeited"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "booking_id",
+    "vendor_name",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.business_owner_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.business_owner_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

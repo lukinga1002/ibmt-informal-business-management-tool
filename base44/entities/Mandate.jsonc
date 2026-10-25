@@ -1,0 +1,97 @@
+{
+  "name": "Mandate",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_name": {
+      "type": "string"
+    },
+    "fee_basis": {
+      "type": "string",
+      "enum": [
+        "monthly_flat",
+        "share_of_rent"
+      ],
+      "default": "monthly_flat"
+    },
+    "fee_amount": {
+      "type": "number",
+      "description": "Commission payable by the landlord only, per the active policy version"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offered",
+        "active",
+        "ended"
+      ],
+      "default": "offered"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit_id",
+    "landlord_id",
+    "agent_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

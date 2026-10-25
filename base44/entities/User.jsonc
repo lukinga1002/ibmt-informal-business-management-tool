@@ -1,4 +1,6 @@
 {
+  "name": "User",
+  "type": "object",
   "properties": {
     "role": {
       "type": "string",
@@ -7,11 +9,57 @@
         "admin",
         "user"
       ]
+    },
+    "ibmt_role": {
+      "type": "string",
+      "description": "IBMT platform role (separate from the Base44 admin/user role). Assigned by an administrator or a backend function; users cannot set their own.",
+      "enum": [
+        "operator",
+        "consumer",
+        "landlord",
+        "tenant",
+        "agent",
+        "mtaa_officer",
+        "district_official",
+        "tra_admin",
+        "ward_reporter",
+        "super_admin"
+      ],
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "district": {
+      "type": "string",
+      "description": "Jurisdiction: district this official or subject operates in (e.g. Kinondoni, Ilala)",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "ward_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Jurisdiction: ward ids an mtaa officer or ward reporter covers",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
     "role"
-  ],
-  "name": "User",
-  "type": "object"
+  ]
 }

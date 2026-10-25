@@ -1,0 +1,129 @@
+{
+  "name": "OwnershipEvidence",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "submitted_by_name": {
+      "type": "string"
+    },
+    "evidence_uri": {
+      "type": "string",
+      "description": "Private uploaded evidence file URI"
+    },
+    "evidence_kind": {
+      "type": "string",
+      "enum": [
+        "title_deed",
+        "lease_agreement",
+        "utility_bill",
+        "tax_receipt",
+        "other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "submitted"
+    },
+    "decided_by_name": {
+      "type": "string"
+    },
+    "decision_note": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit_id",
+    "evidence_uri"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

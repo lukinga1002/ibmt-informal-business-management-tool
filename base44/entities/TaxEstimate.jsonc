@@ -1,0 +1,73 @@
+{
+  "name": "TaxEstimate",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "period": {
+      "type": "string",
+      "description": "e.g. 2026-Q3 or 2026-10"
+    },
+    "turnover": {
+      "type": "number",
+      "description": "Gross recorded turnover in TZS. Turnover is not tax."
+    },
+    "band": {
+      "type": "string",
+      "description": "Presumptive band from the active policy version"
+    },
+    "indicative_amount": {
+      "type": "number",
+      "description": "Indicative estimate in TZS, computed by the backend only"
+    },
+    "disclaimer": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "period",
+    "indicative_amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

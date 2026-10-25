@@ -1,0 +1,105 @@
+{
+  "name": "AgentLicence",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_name": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "licence_no": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "suspended"
+      ],
+      "default": "pending"
+    },
+    "decided_by": {
+      "type": "string"
+    },
+    "decision_note": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_name",
+    "district"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$and": [
+        {
+          "user_condition": {
+            "data.ibmt_role": "district_official"
+          }
+        },
+        {
+          "data.district": "{{user.data.district}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "user_condition": {
+            "data.ibmt_role": "district_official"
+          }
+        },
+        {
+          "data.district": "{{user.data.district}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

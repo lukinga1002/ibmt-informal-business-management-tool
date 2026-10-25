@@ -1,0 +1,144 @@
+{
+  "name": "RentalUnit",
+  "type": "object",
+  "properties": {
+    "unit_ref": {
+      "type": "string",
+      "description": "Serial reference, e.g. IBMT-UNIT-2026-002315"
+    },
+    "landlord_id": {
+      "type": "string",
+      "description": "User id of the landlord"
+    },
+    "landlord_name": {
+      "type": "string"
+    },
+    "manager_id": {
+      "type": "string",
+      "description": "User id of a delegated property manager"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "street": {
+      "type": "string"
+    },
+    "property_type": {
+      "type": "string",
+      "enum": [
+        "apartment",
+        "house",
+        "room",
+        "shop",
+        "plot"
+      ]
+    },
+    "bedrooms": {
+      "type": "number"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Monthly rent in TZS"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "registered",
+        "evidence_pending",
+        "verified",
+        "suspended"
+      ],
+      "default": "registered"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit_ref",
+    "landlord_id",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.manager_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "ward_reporter"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "AccessLog",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "User whose record was opened"
+    },
+    "actor_role": {
+      "type": "string"
+    },
+    "actor_org": {
+      "type": "string",
+      "description": "e.g. TRA, Kinondoni Council, Mtaa Office"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string"
+    },
+    "record_reference": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "subject_id",
+    "actor_role",
+    "occurred_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.subject_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

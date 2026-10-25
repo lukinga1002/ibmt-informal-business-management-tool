@@ -1,0 +1,166 @@
+{
+  "name": "Permit",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string",
+      "description": "Serial number, e.g. IBMT-PRM-2026-000042"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "vendor_count": {
+      "type": "number"
+    },
+    "fee_amount": {
+      "type": "number",
+      "description": "Fee computed by the backend from the active policy version"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft"
+    },
+    "decided_by": {
+      "type": "string"
+    },
+    "decision_note": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "vendors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "business_name": {
+            "type": "string"
+          },
+          "deposit_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "business_name"
+        ]
+      }
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "reference",
+    "business_id",
+    "event_name",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

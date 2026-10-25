@@ -1,0 +1,99 @@
+{
+  "name": "ConditionReport",
+  "type": "object",
+  "properties": {
+    "deposit_id": {
+      "type": "string"
+    },
+    "tenancy_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant",
+        "agent"
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "area": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "photo_uri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "area",
+          "condition"
+        ]
+      }
+    },
+    "agreed": {
+      "type": "boolean",
+      "default": false
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "author_role"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

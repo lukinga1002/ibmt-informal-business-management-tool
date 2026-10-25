@@ -1,0 +1,122 @@
+{
+  "name": "Lease",
+  "type": "object",
+  "properties": {
+    "tenancy_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "terms": {
+      "type": "object",
+      "description": "Lease terms: rent, interval, deposit, notice period, obligations, bilingual clauses"
+    },
+    "lease_version": {
+      "type": "number",
+      "description": "Lease version incremented on every amendment"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "awaiting_signature",
+        "signed",
+        "amended",
+        "terminated"
+      ],
+      "default": "draft"
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "enum": [
+              "landlord",
+              "tenant"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "stamp_duty_assessment": {
+      "type": "object",
+      "description": "Stamp duty computed by the backend from the active policy version",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "basis": {
+          "type": "string"
+        },
+        "policy_version": {
+          "type": "string"
+        }
+      }
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenancy_id",
+    "landlord_id",
+    "tenant_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

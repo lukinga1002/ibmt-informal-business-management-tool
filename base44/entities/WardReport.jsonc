@@ -1,0 +1,117 @@
+{
+  "name": "WardReport",
+  "type": "object",
+  "properties": {
+    "ward": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "period": {
+      "type": "string",
+      "description": "e.g. 2026-W43 or 2026-10"
+    },
+    "submitted_by_name": {
+      "type": "string"
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Ward metrics: businesses visited, receipts verified, disputes mediated, permits pending"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "reviewed",
+        "flagged"
+      ],
+      "default": "submitted"
+    },
+    "review_note": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "ward",
+    "district",
+    "period"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.ibmt_role": "ward_reporter"
+          }
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "mtaa_officer"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

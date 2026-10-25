@@ -1,0 +1,116 @@
+{
+  "name": "RentPayment",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string",
+      "description": "e.g. IBMT-RPT-2026-000921"
+    },
+    "tenancy_id": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Rent paid in TZS"
+    },
+    "withholding_amount": {
+      "type": "number",
+      "description": "TRA withholding split at source, computed by the backend"
+    },
+    "platform_fee": {
+      "type": "number"
+    },
+    "agent_commission": {
+      "type": "number",
+      "description": "Agent commission paid by the landlord side, never deducted from tenant funds"
+    },
+    "net_to_landlord": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "quoted",
+        "pending",
+        "settled",
+        "failed",
+        "refunded"
+      ],
+      "default": "quoted"
+    },
+    "receipt_reference": {
+      "type": "string"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "reference",
+    "tenancy_id",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

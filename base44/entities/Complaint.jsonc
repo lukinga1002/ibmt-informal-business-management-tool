@@ -1,0 +1,172 @@
+{
+  "name": "Complaint",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string",
+      "description": "e.g. IBMT-CMP-2026-000031"
+    },
+    "subject_type": {
+      "type": "string",
+      "enum": [
+        "business",
+        "receipt",
+        "permit",
+        "unit",
+        "agent"
+      ]
+    },
+    "subject_reference": {
+      "type": "string"
+    },
+    "complainant_name": {
+      "type": "string"
+    },
+    "complainant_contact": {
+      "type": "string"
+    },
+    "respondent_name": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "body": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_review",
+        "resolved",
+        "closed"
+      ],
+      "default": "open"
+    },
+    "replies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "author_role": {
+            "type": "string"
+          },
+          "text": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "string"
+              },
+              "sw": {
+                "type": "string"
+              }
+            }
+          },
+          "replied_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "reference",
+    "subject_type",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

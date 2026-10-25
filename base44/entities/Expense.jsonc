@@ -1,0 +1,79 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "supplier_name": {
+      "type": "string"
+    },
+    "supplier_tin": {
+      "type": "string",
+      "description": "Supplier TIN, used for verification grading"
+    },
+    "supplier_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "amount": {
+      "type": "number",
+      "description": "TZS"
+    },
+    "issued_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "evidence_grade": {
+      "type": "string",
+      "enum": [
+        "none",
+        "photo",
+        "supplier_receipt",
+        "verified_supplier",
+        "audited"
+      ],
+      "default": "none"
+    },
+    "evidence_uri": {
+      "type": "string",
+      "description": "Private uploaded evidence file URI"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "description",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

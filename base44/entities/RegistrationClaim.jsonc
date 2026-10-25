@@ -1,0 +1,115 @@
+{
+  "name": "RegistrationClaim",
+  "type": "object",
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "description": "Serial reference, e.g. IBMT-CLM-2026-000058"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "tenant_name": {
+      "type": "string"
+    },
+    "tenant_contact": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "awaiting_landlord",
+        "landlord_approved",
+        "council_review",
+        "registered",
+        "rejected"
+      ],
+      "default": "awaiting_landlord"
+    },
+    "landlord_notified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "response_due": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "council_review_state": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_review",
+        "cleared"
+      ],
+      "default": "not_started"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_id",
+    "unit_id",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "tra_admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

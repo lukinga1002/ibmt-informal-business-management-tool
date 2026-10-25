@@ -1,0 +1,104 @@
+{
+  "name": "EvidencePack",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "User id of the tenant who owns the pack"
+    },
+    "case_kind": {
+      "type": "string",
+      "description": "e.g. deposit dispute, unlawful eviction, habitability"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "string"
+              },
+              "sw": {
+                "type": "string"
+              }
+            }
+          },
+          "included": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "kind",
+          "uri"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "building",
+        "exported"
+      ],
+      "default": "building"
+    },
+    "exported_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

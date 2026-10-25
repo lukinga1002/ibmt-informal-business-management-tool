@@ -1,0 +1,103 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "business_owner_id": {
+      "type": "string",
+      "description": "User id of the operator, denormalized for access checks"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "consumer_name": {
+      "type": "string"
+    },
+    "consumer_contact": {
+      "type": "string"
+    },
+    "slot": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "confirmed",
+        "cancelled",
+        "attended"
+      ],
+      "default": "requested"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "event_name",
+    "consumer_name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.business_owner_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.business_owner_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

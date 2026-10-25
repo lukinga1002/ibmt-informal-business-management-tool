@@ -1,0 +1,121 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "mandate_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "listed",
+        "paused",
+        "let"
+      ],
+      "default": "draft"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only when the unit passed ownership verification"
+    },
+    "headline": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "rent_amount": {
+      "type": "number"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit_id",
+    "status",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "listed"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "district_official"
+              }
+            },
+            {
+              "data.district": "{{user.data.district}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
