@@ -5,6 +5,9 @@
     "tenancy_id": {
       "type": "string"
     },
+    "lease_id": {
+      "type": "string"
+    },
     "landlord_id": {
       "type": "string"
     },
@@ -13,7 +16,11 @@
     },
     "amount": {
       "type": "number",
-      "description": "Held deposit in TZS, capped by the active policy version"
+      "description": "Held deposit as a whole number of shillings, capped by the active policy version"
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
     },
     "status": {
       "type": "string",
@@ -24,6 +31,12 @@
         "claimed"
       ],
       "default": "held"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
     },
     "district": {
       "type": "string"
@@ -52,30 +65,9 @@
           "data.tenant_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "mtaa_officer"
-              }
-            },
-            {
-              "data.ward": {
-                "$in": "{{user.data.ward_ids}}"
-              }
-            }
-          ]
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
