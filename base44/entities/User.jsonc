@@ -20,6 +20,9 @@
         "tenant",
         "agent",
         "mtaa_officer",
+        "council_official",
+        "district_commissioner",
+        "regional_commissioner",
         "district_official",
         "tra_admin",
         "ward_reporter",
@@ -36,6 +39,28 @@
     "district": {
       "type": "string",
       "description": "Jurisdiction: district this official or subject operates in (e.g. Kinondoni, Ilala)",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "region": {
+      "type": "string",
+      "description": "Jurisdiction: region for a regional commissioner's aggregate view",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "council_id": {
+      "type": "string",
+      "description": "Jurisdiction: the one council a council official belongs to. Bound in every council-scoped access rule.",
       "rls": {
         "update": {
           "user_condition": {

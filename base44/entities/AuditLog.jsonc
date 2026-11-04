@@ -1,0 +1,99 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "actor_id": {
+      "type": "string",
+      "description": "User id of whoever performed the action"
+    },
+    "actor_role": {
+      "type": "string",
+      "description": "Role the actor held at the time, e.g. council_official"
+    },
+    "action": {
+      "type": "string",
+      "description": "Verb performed, e.g. unit.verified, lease.signed, record.confirmed, enforcement.proposed"
+    },
+    "subject_type": {
+      "type": "string",
+      "description": "Entity the action touched"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "subject_ref": {
+      "type": "string",
+      "description": "Human reference for the subject, e.g. IBMT-UNIT-2026-002315"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "allowed",
+        "refused",
+        "proposed",
+        "confirmed",
+        "withdrawn"
+      ],
+      "enumColors": [
+        "green",
+        "red",
+        "yellow",
+        "blue",
+        "gray"
+      ],
+      "default": "allowed"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detail": {
+      "type": "object",
+      "description": "Before and after values for the change. No money totals belong here."
+    }
+  },
+  "required": [
+    "action",
+    "subject_type",
+    "occurred_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.actor_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "audit_entries_are_immutable"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "audit_entries_are_immutable"
+      }
+    }
+  }
+}

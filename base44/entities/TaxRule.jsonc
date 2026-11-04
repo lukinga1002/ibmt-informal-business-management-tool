@@ -1,0 +1,93 @@
+{
+  "name": "TaxRule",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Tax rule version this row belongs to, e.g. 2026.1-stage1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "placeholder",
+        "confirmed"
+      ],
+      "enumColors": [
+        "yellow",
+        "green"
+      ],
+      "default": "placeholder",
+      "description": "placeholder = a working figure nobody has signed off. confirmed = an approved figure, and it names who approved it."
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "effective_to": {
+      "type": "string",
+      "format": "date"
+    },
+    "confirmed_by": {
+      "type": "string"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rental_tax_rate": {
+      "type": "number",
+      "description": "Rate applied to rental income. 0 while Stage 1 records only."
+    },
+    "rental_tax_basis": {
+      "type": "string",
+      "description": "What the rate applies to, e.g. gross monthly rent"
+    },
+    "exemption_threshold": {
+      "type": "number",
+      "description": "Annual rental income below which no tax is shown, in whole TZS"
+    },
+    "withholding_rate": {
+      "type": "number",
+      "description": "Rate withheld at source. 0 in Stage 1."
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
+    },
+    "notes": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "version",
+    "status",
+    "rental_tax_rate",
+    "exemption_threshold"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

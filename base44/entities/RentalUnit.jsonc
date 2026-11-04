@@ -6,16 +6,35 @@
       "type": "string",
       "description": "Serial reference, e.g. IBMT-UNIT-2026-002315"
     },
+    "property_id": {
+      "type": "string",
+      "description": "The building this unit sits in"
+    },
     "landlord_id": {
       "type": "string",
-      "description": "User id of the landlord"
+      "description": "User id of the landlord. Access anchor for every unit rule."
     },
     "landlord_name": {
       "type": "string"
     },
     "manager_id": {
       "type": "string",
-      "description": "User id of a delegated property manager"
+      "description": "User id of a delegated property manager. Parked in Stage 1."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent holding the active mandate. Cleared when the mandate ends, so an agent sees only mandated units."
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant on the active lease. Cleared when the tenancy ends."
+    },
+    "council_id": {
+      "type": "string",
+      "description": "Council the unit sits in. Bound in every council-scoped access rule."
+    },
+    "region": {
+      "type": "string"
     },
     "district": {
       "type": "string"
@@ -23,8 +42,36 @@
     "ward": {
       "type": "string"
     },
+    "mtaa": {
+      "type": "string",
+      "description": "Street or mtaa level, the smallest area officials work in"
+    },
     "street": {
       "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "description": "Anwani ya Makazi: full residential address. Never public, never in an aggregate."
+    },
+    "tanesco_meter": {
+      "type": "string",
+      "description": "TANESCO meter number for the unit"
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "room",
+        "flat",
+        "house",
+        "shop"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "green",
+        "yellow"
+      ],
+      "default": "room"
     },
     "property_type": {
       "type": "string",
@@ -34,14 +81,31 @@
         "room",
         "shop",
         "plot"
-      ]
+      ],
+      "description": "Earlier field, kept so existing records keep their meaning. unit_type is the one to read."
     },
     "bedrooms": {
       "type": "number"
     },
     "rent_amount": {
       "type": "number",
-      "description": "Monthly rent in TZS"
+      "description": "Monthly rent as a whole number of shillings. Never a decimal."
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
+    },
+    "occupancy": {
+      "type": "string",
+      "enum": [
+        "vacant",
+        "occupied"
+      ],
+      "enumColors": [
+        "gray",
+        "green"
+      ],
+      "default": "vacant"
     },
     "status": {
       "type": "string",
@@ -51,7 +115,30 @@
         "verified",
         "suspended"
       ],
-      "default": "registered"
+      "enumColors": [
+        "blue",
+        "yellow",
+        "green",
+        "red"
+      ],
+      "default": "registered",
+      "description": "Registration state. Distinct from verification_status, which records the ownership decision."
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "pending",
+        "verified",
+        "rejected"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "red"
+      ],
+      "default": "unverified"
     },
     "version": {
       "type": "number",
@@ -68,6 +155,7 @@
   "required": [
     "unit_ref",
     "landlord_id",
+    "council_id",
     "district",
     "ward"
   ],
@@ -75,25 +163,19 @@
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.landlord_id": "{{user.id}}"
         },
         {
-          "data.landlord_id": "{{user.id}}"
+          "created_by_id": "{{user.id}}"
         },
         {
           "data.manager_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
         },
         {
           "$and": [
@@ -113,31 +195,26 @@
           "$and": [
             {
               "user_condition": {
-                "data.ibmt_role": "ward_reporter"
+                "data.ibmt_role": "council_official"
               }
             },
             {
-              "data.ward": {
-                "$in": "{{user.data.ward_ids}}"
-              }
+              "data.council_id": "{{user.data.council_id}}"
             }
           ]
         },
         {
           "user_condition": {
-            "data.ibmt_role": "tra_admin"
+            "role": "admin"
           }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "data.landlord_id": "{{user.id}}"
     },
     "update": {
       "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
         {
           "data.landlord_id": "{{user.id}}"
         },

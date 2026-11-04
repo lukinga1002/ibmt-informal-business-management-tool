@@ -1,0 +1,144 @@
+{
+  "name": "Property",
+  "type": "object",
+  "properties": {
+    "property_ref": {
+      "type": "string",
+      "description": "Serial reference, e.g. IBMT-PROP-2026-000118"
+    },
+    "landlord_id": {
+      "type": "string",
+      "description": "User id of the owner. Every unit of this building inherits it."
+    },
+    "landlord_name": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "How the owner calls the building, e.g. Nyumba ya Kariakoo"
+    },
+    "council_id": {
+      "type": "string",
+      "description": "Council the building sits in. Bound in every council-scoped access rule."
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "mtaa": {
+      "type": "string",
+      "description": "Street or mtaa level, the smallest area officials work in"
+    },
+    "address": {
+      "type": "string",
+      "description": "Anwani ya Makazi: the full residential address. Never shown to the public, never shown in aggregates."
+    },
+    "unit_count": {
+      "type": "number",
+      "description": "Number of rentable units in the building"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "pending",
+        "verified",
+        "rejected"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "red"
+      ],
+      "default": "unverified"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "property_ref",
+    "landlord_id",
+    "council_id",
+    "district",
+    "ward"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.landlord_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

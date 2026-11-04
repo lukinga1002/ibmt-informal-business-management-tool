@@ -1,0 +1,126 @@
+{
+  "name": "PolicyRule",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Policy version this row belongs to, e.g. 2026.1-stage1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "placeholder",
+        "confirmed"
+      ],
+      "enumColors": [
+        "yellow",
+        "green"
+      ],
+      "default": "placeholder",
+      "description": "placeholder = a working figure nobody has signed off. confirmed = an approved figure, and it names who approved it."
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "effective_to": {
+      "type": "string",
+      "format": "date"
+    },
+    "confirmed_by": {
+      "type": "string",
+      "description": "Who confirmed the figures. Empty while status is placeholder."
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "landlord_service_fee_rate": {
+      "type": "number",
+      "description": "Fee charged to the landlord share. Share of rent as a decimal, e.g. 0.01 = 1%. Stage 1 placeholder; never deducted from tenant funds."
+    },
+    "commission_cap": {
+      "type": "number",
+      "description": "Maximum agent commission, as a share of one month's rent"
+    },
+    "advance_rent_limit": {
+      "type": "number",
+      "description": "Months of advance rent a landlord may demand"
+    },
+    "advance_rent_enforced": {
+      "type": "boolean",
+      "default": false,
+      "description": "Off by default: the limit is stated but not enforced in Stage 1."
+    },
+    "registration_window_days": {
+      "type": "number",
+      "description": "Days to register once a council opens a window. Dormant while the council is voluntary."
+    },
+    "deposit_cap_months": {
+      "type": "number"
+    },
+    "reminder_day": {
+      "type": "number",
+      "default": 3,
+      "description": "Day the other party is reminded that a record is still unconfirmed"
+    },
+    "unconfirmed_day": {
+      "type": "number",
+      "default": 7,
+      "description": "Day a record without a response becomes unconfirmed"
+    },
+    "suppression_min_units": {
+      "type": "number",
+      "default": 5,
+      "description": "Fewest contributing units before an area total may be shown"
+    },
+    "suppression_min_landlords": {
+      "type": "number",
+      "default": 3,
+      "description": "Fewest contributing landlords before an area total may be shown"
+    },
+    "suppression_max_single_share": {
+      "type": "number",
+      "default": 0.5,
+      "description": "Largest share one landlord may hold of a shown total"
+    },
+    "rounding_tzs": {
+      "type": "number",
+      "default": 100000,
+      "description": "Displayed money is rounded to this many shillings"
+    },
+    "notes": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "version",
+    "status"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -6,35 +6,57 @@
       "type": "string",
       "description": "User id the consent belongs to; always the creator"
     },
-    "registration_processing": {
-      "type": "boolean",
-      "default": true
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "core_service",
+        "council_sharing",
+        "listings",
+        "rent_history_credit"
+      ],
+      "enumColors": [
+        "green",
+        "blue",
+        "purple",
+        "yellow"
+      ],
+      "description": "One row per purpose. The four choices are never bundled: core service, sharing building and registration data with the council, listings, rent history for credit."
     },
-    "listing_marketing": {
+    "granted": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Current state of this one purpose. Withdrawing sets it false and stamps withdrawn_at; it does not delete the row."
     },
-    "rent_history_credit": {
-      "type": "boolean",
-      "default": false
+    "version": {
+      "type": "string",
+      "description": "Wording version the person agreed to, so a later change of words is visible"
     },
-    "lender_sharing": {
-      "type": "boolean",
-      "default": false
+    "granted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "withdrawn_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "policy_version": {
+      "type": "string"
     }
   },
   "required": [
-    "subject_id"
+    "subject_id",
+    "purpose",
+    "version"
   ],
   "rls": {
     "read": {
-      "created_by_id": "{{user.id}}"
+      "data.subject_id": "{{user.id}}"
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "data.subject_id": "{{user.id}}"
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "data.subject_id": "{{user.id}}"
     },
     "delete": {
       "user_condition": {
