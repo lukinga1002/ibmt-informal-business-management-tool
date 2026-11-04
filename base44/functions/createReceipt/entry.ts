@@ -9,6 +9,7 @@ import {
   nextReceiptReference,
   todayISO,
 } from '../../shared/moneyOps.ts';
+import { requireModule } from '../../shared/moduleGate.ts';
 
 /**
  * Records a receipt draft. The serial number, the line totals and the business
@@ -20,6 +21,9 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
+
+    const blocked = await requireModule(base44, 'operator_module');
+    if (blocked) return blocked;
 
     const payload = await req.json().catch(() => ({}));
 

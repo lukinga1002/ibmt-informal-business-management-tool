@@ -7,6 +7,7 @@ import {
   isoNow,
   json,
 } from '../../shared/moneyOps.ts';
+import { requireModule } from '../../shared/moduleGate.ts';
 
 /**
  * A district official reviews a submitted ward report. The reason is
@@ -18,6 +19,9 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
+
+    const blocked = await requireModule(base44, 'ward_reports_module');
+    if (blocked) return blocked;
     if (!hasIbmtRole(user, 'district_official')) {
       return fail(403, 'FORBIDDEN', 'Only a district official can review ward reports');
     }

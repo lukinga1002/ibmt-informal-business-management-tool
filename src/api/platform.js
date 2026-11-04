@@ -622,8 +622,15 @@ async function session() {
   return {
     subject_id: user.id,
     display_name: user.full_name || user.email,
-    role: data.ibmt_role || 'public',
-    jurisdiction: { wards: data.ward_ids || [], district: data.district || null },
+    // The platform admin role (founder) is not an IBMT role value: it is shown
+    // as `admin` so navigation and guards can open every workspace. Every admin
+    // action is written to the audit log by the backend.
+    role: data.ibmt_role || (user.role === 'admin' ? 'admin' : 'public'),
+    jurisdiction: {
+      wards: data.ward_ids || [],
+      district: data.district || null,
+      region: data.region || null,
+    },
     policy_version: null,
     demonstration: false,
   };

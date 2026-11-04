@@ -8,6 +8,7 @@ import {
   json,
   nextSerial,
 } from '../../shared/moneyOps.ts';
+import { requireModule } from '../../shared/moduleGate.ts';
 
 /**
  * Submits an event permit application. The serial reference and the fee
@@ -20,6 +21,9 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
+
+    const blocked = await requireModule(base44, 'permits_module');
+    if (blocked) return blocked;
 
     const payload = await req.json().catch(() => ({}));
 

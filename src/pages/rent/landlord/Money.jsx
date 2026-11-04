@@ -19,8 +19,7 @@ export default function LandlordMoney() {
   const { t, tt, lang } = useT();
   const payments = useIBMTQuery('listRentPayments', { scope: 'landlord', limit: 8 });
   const deposits = useIBMTQuery('listDeposits', { limit: 8 });
-  const compliance = useIBMTQuery('getTaxCompliance');
-  const amnesty = useIBMTQuery('getAmnestyNotice');
+
   const [paymentId, setPaymentId] = useState(null);
   const selected = (payments.items || []).find((payment) => payment.id === paymentId);
 
@@ -40,9 +39,6 @@ export default function LandlordMoney() {
           </TabsTrigger>
           <TabsTrigger value="deposits" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
             {t('rent.deposit')}
-          </TabsTrigger>
-          <TabsTrigger value="compliance" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.amnesty')}
           </TabsTrigger>
         </TabsList>
 
@@ -106,45 +102,6 @@ export default function LandlordMoney() {
           </SectionCard>
         </TabsContent>
 
-        <TabsContent value="compliance" className="mt-4">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title={t('docs.tabTax')} description={t('policy.registrationNoOwnership')}>
-              <DataState query={compliance} skeleton="lines">
-                {(record) => (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <StatusBadge status={record.eligible ? 'verified' : 'unverified'} label={record.eligible ? t('rent.eligible') : t('rent.notEligible')} />
-                      <span className="ibmt-num text-[12px] text-muted-foreground">{record.certificate_id}</span>
-                    </div>
-                    <dl className="space-y-2 text-[13px]">
-                      <div className="flex items-center justify-between gap-4">
-                        <dt className="text-muted-foreground">{t('verify.issuedOn')}</dt>
-                        <dd className="ibmt-num">{formatDate(record.issued_at, lang)}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <dt className="text-muted-foreground">{t('rent.responseDue')}</dt>
-                        <dd className="ibmt-num">{formatDate(record.valid_until, lang)}</dd>
-                      </div>
-                    </dl>
-                    <Notice tone="policy">{t(record.statement)}</Notice>
-                    <p className="ibmt-hint">{tt(record.note)}</p>
-                  </div>
-                )}
-              </DataState>
-            </SectionCard>
-
-            <SectionCard title={t('rent.amnesty')} description={t('policy.registrationWindow')}>
-              <DataState query={amnesty} skeleton="lines">
-                {(record) => (
-                  <div className="space-y-3">
-                    <Notice tone="policy">{t(record.note)}</Notice>
-                    <PolicyList keys={record.statements || []} />
-                  </div>
-                )}
-              </DataState>
-            </SectionCard>
-          </div>
-        </TabsContent>
       </Tabs>
 
       <Dialog open={Boolean(paymentId)} onOpenChange={(open) => !open && setPaymentId(null)}>

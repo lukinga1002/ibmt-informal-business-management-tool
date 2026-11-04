@@ -4,7 +4,6 @@ import { useT } from '@/i18n/I18nContext';
 import { useIBMT } from '@/api/IBMTContext';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import DemoBadge from '@/components/ibmt/DemoBadge';
 import StateBanner from '@/components/ibmt/StateBanner';
 
 /**
@@ -20,7 +19,6 @@ export default function AppShell() {
     <div className="flex min-h-screen bg-background">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        {isMock && <DemoBadge />}
         <StateBanner />
         <TopBar onOpenNav={() => setMobileNavOpen(true)} />
         <main className="flex-1">

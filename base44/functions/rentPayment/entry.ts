@@ -155,7 +155,7 @@ function paymentShape(payment, allocation) {
     new_tenancy: Boolean(payment.new_tenancy),
     allocation,
     allocation_note: 'policy.allocationTitle',
-    partner: bilingual('Approved payment partner', 'Mshirika wa malipo aliyeidhinishwa'),
+    partner: bilingual('Payment partner (not used in this stage)', 'Mshirika wa malipo (hautumiki katika hatua hii)'),
     statuses: {
       payment_confirmation: settled ? 'settled' : 'pending',
       tax_remittance: 'not_connected',

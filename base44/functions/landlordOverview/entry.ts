@@ -61,8 +61,8 @@ export default async function (req) {
         { key: 'units', label: bilingual('Units registered', 'Vitego vilivyosajiliwa'), value: String(units.length) },
         { key: 'occupancy', label: bilingual('Occupancy', 'Ukaaji'), value: `${tenancies.length} of ${units.length}` },
         { key: 'rent_due', label: bilingual('Rent due this month', 'Kodi inayotakiwa mwezi huu'), value: tzs(rentDue) },
-        { key: 'collected', label: bilingual('Collected through the payment partner', 'Iliyokusanywa kupitia mshirika wa malipo'), value: tzs(collected) },
-        { key: 'tax_withheld', label: bilingual('Tax withheld (status separate)', 'Kodi iliyozuiliwa (hali ni tofauti)'), value: tzs(taxWithheld) },
+        { key: 'collected', label: bilingual('Recorded as paid by the tenant', 'Iliyorekodiwa kama imelipwa na mpangaji'), value: tzs(collected) },
+        { key: 'tax_withheld', label: bilingual('Tax deducted (none in this stage)', 'Kodi iliyozuiliwa (hakuna katika hatua hii)'), value: tzs(taxWithheld) },
         { key: 'arrears', label: bilingual('Arrears', 'Malimbikizo'), value: tzs(arrears) },
       ],
       arrears_note: bilingual(

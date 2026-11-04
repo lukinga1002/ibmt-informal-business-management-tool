@@ -12,6 +12,7 @@ const ICONS = {
   validation: TriangleAlert,
   rate_limited: CloudOff,
   not_found: CloudOff,
+  not_connected: CloudOff,
 };
 
 const SKEletons = {

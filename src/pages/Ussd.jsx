@@ -55,6 +55,10 @@ export default function Ussd() {
       <main className="ibmt-page">
         <PageHeader kicker={t('brand.rent')} title={t('ussd.title')} lede={t('ussd.lede')} />
 
+        <Notice tone="caution" className="mt-4">
+          {t('ussd.simulation')}
+        </Notice>
+
         <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr]">
           <div className="mx-auto w-full max-w-[320px]">
             <div className="rounded-[20px] border border-border bg-navy-deep p-3 shadow-lg">

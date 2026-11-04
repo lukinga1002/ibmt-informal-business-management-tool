@@ -76,7 +76,7 @@ export const UNITS = [
     documents: [],
     verification: { status: 'unverified', verified_by: null, verified_at: null, reason: null },
     eligible_for_rent: false,
-    certificate_note: 'policy.registrationCompulsory',
+    certificate_note: 'policy.registrationVoluntary',
   },
 ];
 
@@ -257,7 +257,7 @@ export const AMNESTY = {
   proxy_registration: true,
   migration_preserves_terms: true,
   note: 'policy.registrationWindow',
-  statements: ['policy.amnestyForward', 'policy.migration', 'policy.assistedOnboarding', 'policy.proxyRegistration', 'policy.registrationCompulsory'],
+  statements: ['policy.amnestyForward', 'policy.migration', 'policy.assistedOnboarding', 'policy.proxyRegistration', 'policy.registrationVoluntary'],
 };
 
 export const TENANT_REGISTRATION = {

@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMT } from '@/api/IBMTContext';
-import { ROLE_NAV, SHARED_NAV, MODULE_LABEL, ROLE_ICON } from '@/config/roleNav';
+import { navForRole, resolveNavRole, SHARED_NAV, MODULE_LABEL, ROLE_ICON } from '@/config/roleNav';
 import BrandMark from '@/components/ibmt/BrandMark';
 import { cn } from '@/lib/utils';
 
@@ -14,8 +14,10 @@ export default function Sidebar({ mobileOpen, onClose }) {
   const { t } = useT();
   const { role, isMock } = useIBMT();
   const location = useLocation();
-  const sections = ROLE_NAV[role] || ROLE_NAV.public;
-  const RoleIcon = ROLE_ICON[role] || ROLE_ICON.public;
+  const navRole = resolveNavRole(role);
+  const sections = navForRole(role);
+  const RoleIcon = ROLE_ICON[navRole] || ROLE_ICON.public;
+  const sharedItems = SHARED_NAV.filter((item) => !item.adminOnly || navRole === 'admin');
   const current = `${location.pathname}${location.search}`;
 
   const isActive = (to) => {
@@ -72,7 +74,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       <div className="border-t border-sidebar-border px-2 py-3">
         <ul className="space-y-1">
-          {SHARED_NAV.map(({ to, labelKey, Icon }) => (
+          {sharedItems.map(({ to, labelKey, Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}

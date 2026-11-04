@@ -1,0 +1,116 @@
+{
+  "name": "Council",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Council name, e.g. Kinondoni Municipal Council"
+    },
+    "code": {
+      "type": "string",
+      "description": "Short code used in references, e.g. KIN"
+    },
+    "region": {
+      "type": "string",
+      "description": "Region above the council, e.g. Dar es Salaam"
+    },
+    "district": {
+      "type": "string",
+      "description": "District the council sits in. A district may hold more than one council, so this is not the council key."
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": [
+        "voluntary",
+        "registration_window",
+        "compulsory"
+      ],
+      "enumColors": [
+        "green",
+        "yellow",
+        "red"
+      ],
+      "default": "voluntary",
+      "description": "Drives nothing but wording until an official proposes and an admin confirms it."
+    },
+    "bylaw_reference": {
+      "type": "string",
+      "description": "By-law number or citation that authorises any enforcement"
+    },
+    "bylaw_effective_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "registration_window_days": {
+      "type": "number",
+      "description": "Days a landlord has to register after a window opens. Only used when enforcement is not voluntary."
+    },
+    "rent_stage": {
+      "type": "string",
+      "enum": [
+        "record",
+        "partner",
+        "tax_split"
+      ],
+      "enumColors": [
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "default": "record",
+      "description": "record = stage 1, IBMT records only. partner = stage 2. tax_split = stage 3."
+    },
+    "wards": {
+      "type": "array",
+      "description": "Example ward list for the pilot. Not an authoritative administrative list.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean",
+            "default": false
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    "ward_list_note": {
+      "type": "string",
+      "description": "Warning shown beside the ward list, e.g. verify against the official list"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "region",
+    "district"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

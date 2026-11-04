@@ -16,6 +16,7 @@ export const KIND = {
   VALIDATION: 'validation',
   NOT_FOUND: 'not_found',
   RATE_LIMITED: 'rate_limited',
+  NOT_CONNECTED: 'not_connected',
 };
 
 const STATE_KEYS = {
@@ -27,6 +28,7 @@ const STATE_KEYS = {
   [KIND.VALIDATION]: { title: 'states.errorTitle', body: 'states.errorBody', retry: false },
   [KIND.NOT_FOUND]: { title: 'states.emptyTitle', body: 'states.emptyBody', retry: false },
   [KIND.RATE_LIMITED]: { title: 'states.errorTitle', body: 'states.errorBody', retry: true },
+  [KIND.NOT_CONNECTED]: { title: 'states.notConnectedTitle', body: 'states.notConnectedBody', retry: false },
 };
 
 export class IBMTError extends Error {
@@ -64,7 +66,8 @@ const CODE_TO_KIND = {
   RATE_LIMITED: KIND.RATE_LIMITED,
   SERVER: KIND.ERROR,
   BAD_REQUEST: KIND.ERROR,
-  NOT_CONNECTED: KIND.ERROR,
+  NOT_CONNECTED: KIND.NOT_CONNECTED,
+  MODULE_OFF: KIND.NOT_CONNECTED,
 };
 
 export function httpStatusToCode(status) {

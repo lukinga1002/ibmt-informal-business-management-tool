@@ -44,13 +44,15 @@ export default function TenantPay() {
     <div className="space-y-6">
       <PageHeader
         kicker={t('brand.rent')}
-        title={t('nav.pay')}
+        title={t('nav.recordPayment')}
         lede={t('policy.tenantPaysExact')}
         meta={[{ label: t('policy.ibmtHoldsNoFunds') }, { label: t('forms.idempotency') }]}
       />
 
+      <Notice tone="policy">{t('policy.noCustodyStage1')}</Notice>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
-        <SectionCard title={t('nav.pay')} description={t('policy.tenantPaysExact')}>
+        <SectionCard title={t('nav.recordPayment')} description={t('policy.tenantPaysExact')}>
           <div className="space-y-4">
             <Field label={t('rent.rentAmount')} hint="TZS">
               {(props) => (
@@ -136,7 +138,7 @@ export default function TenantPay() {
                       })
                     }
                   >
-                    {pay.saving ? t('common.working') : t('common.pay')}
+                    {pay.saving ? t('common.working') : t('nav.recordPayment')}
                   </Button>
                   <FormStatus mutation={pay} />
                 </div>

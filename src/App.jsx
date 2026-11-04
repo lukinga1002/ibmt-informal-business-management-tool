@@ -8,6 +8,14 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import { I18nProvider } from '@/i18n/I18nContext';
 import { IBMTProvider } from '@/api/IBMTContext';
+import { DEMO_MODE } from '@/lib/demoMode';
+import DemoBanner from '@/components/ibmt/DemoBanner';
+import ModuleGate from '@/components/gates/ModuleGate';
+import WorkspaceGuard from '@/components/gates/WorkspaceGuard';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 // Add page imports here
 import Landing from '@/pages/Landing';
 import Verify from '@/pages/Verify';
@@ -86,48 +94,65 @@ const AuthenticatedApp = () => {
       <Route path="/ussd" element={<Ussd />} />
       <Route path="/documents" element={<Documents />} />
       <Route path="/data-rights" element={<DataRights />} />
-      <Route path="/handover" element={<Handover />} />
       <Route path="/rent" element={<RentHub />} />
 
-      {/* Shared workspace shell: one navigation, one identity, both modules */}
+      {/* Authentication */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* Delivery notes — platform admin only */}
+      <Route
+        path="/handover"
+        element={
+          <WorkspaceGuard adminOnly>
+            <Handover />
+          </WorkspaceGuard>
+        }
+      />
+
+      {/* Shared workspace shell: one navigation, one identity, one product */}
       <Route element={<AppShell />}>
-        <Route path="/operator" element={<OperatorDashboard />} />
-        <Route path="/operator/onboarding" element={<OperatorOnboarding />} />
-        <Route path="/operator/receipts" element={<OperatorReceipts />} />
-        <Route path="/operator/money" element={<OperatorMoney />} />
-        <Route path="/operator/operations" element={<OperatorOperations />} />
-        <Route path="/operator/settings" element={<OperatorSettings />} />
+        {/* Rental workspaces — each one guarded by role */}
+        <Route path="/rent/landlord" element={<WorkspaceGuard allow={['landlord']}><LandlordDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/portfolio" element={<WorkspaceGuard allow={['landlord']}><LandlordPortfolio /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/tenancies" element={<WorkspaceGuard allow={['landlord']}><LandlordTenancies /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/money" element={<WorkspaceGuard allow={['landlord']}><LandlordMoney /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
 
-        <Route path="/consumer" element={<ConsumerDashboard />} />
-        <Route path="/consumer/cases" element={<ConsumerCases />} />
-        <Route path="/consumer/contributions" element={<ConsumerContributions />} />
-        <Route path="/consumer/settings" element={<ConsumerSettings />} />
+        <Route path="/rent/tenant" element={<WorkspaceGuard allow={['tenant']}><TenantDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/tenant/find" element={<WorkspaceGuard allow={['tenant']}><TenantFind /></WorkspaceGuard>} />
+        <Route path="/rent/tenant/lease" element={<WorkspaceGuard allow={['tenant']}><TenantLease /></WorkspaceGuard>} />
+        <Route path="/rent/tenant/pay" element={<WorkspaceGuard allow={['tenant']}><TenantPay /></WorkspaceGuard>} />
+        <Route path="/rent/tenant/register" element={<WorkspaceGuard allow={['tenant']}><TenantRegister /></WorkspaceGuard>} />
+        <Route path="/rent/tenant/cases" element={<WorkspaceGuard allow={['tenant']}><TenantCases /></WorkspaceGuard>} />
 
-        <Route path="/council" element={<CouncilDashboard />} />
-        <Route path="/council/permits" element={<CouncilPermits />} />
-        <Route path="/council/complaints" element={<CouncilComplaints />} />
+        <Route path="/rent/agent" element={<WorkspaceGuard allow={['agent']}><AgentDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/ward" element={<WorkspaceGuard allow={['mtaa_officer']}><WardDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/council" element={<WorkspaceGuard allow={['council_official', 'district_commissioner', 'regional_commissioner']}><RentCouncilDashboard /></WorkspaceGuard>} />
 
-        <Route path="/tra" element={<TraOverview />} />
-        <Route path="/tra/access" element={<TraAccess />} />
+        {/* Parked modules — the flag decides, never the link */}
+        <Route path="/operator" element={<ModuleGate flag="operator_module"><OperatorDashboard /></ModuleGate>} />
+        <Route path="/operator/onboarding" element={<ModuleGate flag="operator_module"><OperatorOnboarding /></ModuleGate>} />
+        <Route path="/operator/receipts" element={<ModuleGate flag="operator_module"><OperatorReceipts /></ModuleGate>} />
+        <Route path="/operator/money" element={<ModuleGate flag="expenses_module"><OperatorMoney /></ModuleGate>} />
+        <Route path="/operator/operations" element={<ModuleGate flag="operator_module"><OperatorOperations /></ModuleGate>} />
+        <Route path="/operator/settings" element={<ModuleGate flag="operator_module"><OperatorSettings /></ModuleGate>} />
 
-        <Route path="/rent/landlord" element={<LandlordDashboard />} />
-        <Route path="/rent/landlord/portfolio" element={<LandlordPortfolio />} />
-        <Route path="/rent/landlord/tenancies" element={<LandlordTenancies />} />
-        <Route path="/rent/landlord/money" element={<LandlordMoney />} />
-        <Route path="/rent/landlord/cases" element={<LandlordCases />} />
+        <Route path="/consumer" element={<ModuleGate flag="consumer_module"><ConsumerDashboard /></ModuleGate>} />
+        <Route path="/consumer/cases" element={<ModuleGate flag="consumer_module"><ConsumerCases /></ModuleGate>} />
+        <Route path="/consumer/contributions" element={<ModuleGate flag="contributions_module"><ConsumerContributions /></ModuleGate>} />
+        <Route path="/consumer/settings" element={<ModuleGate flag="consumer_module"><ConsumerSettings /></ModuleGate>} />
 
-        <Route path="/rent/tenant" element={<TenantDashboard />} />
-        <Route path="/rent/tenant/find" element={<TenantFind />} />
-        <Route path="/rent/tenant/lease" element={<TenantLease />} />
-        <Route path="/rent/tenant/pay" element={<TenantPay />} />
-        <Route path="/rent/tenant/register" element={<TenantRegister />} />
-        <Route path="/rent/tenant/cases" element={<TenantCases />} />
+        <Route path="/council" element={<ModuleGate flag="events_module"><CouncilDashboard /></ModuleGate>} />
+        <Route path="/council/permits" element={<ModuleGate flag="permits_module"><CouncilPermits /></ModuleGate>} />
+        <Route path="/council/complaints" element={<ModuleGate flag="events_module"><CouncilComplaints /></ModuleGate>} />
 
-        <Route path="/rent/agent" element={<AgentDashboard />} />
-        <Route path="/rent/manager" element={<ManagerDashboard />} />
-        <Route path="/rent/ward" element={<WardDashboard />} />
-        <Route path="/rent/council" element={<RentCouncilDashboard />} />
-        <Route path="/rent/tra" element={<RentTraDashboard />} />
+        <Route path="/tra" element={<ModuleGate flag="tra_module"><TraOverview /></ModuleGate>} />
+        <Route path="/tra/access" element={<ModuleGate flag="tra_module"><TraAccess /></ModuleGate>} />
+        <Route path="/rent/tra" element={<ModuleGate flag="tra_module"><RentTraDashboard /></ModuleGate>} />
+        <Route path="/rent/manager" element={<ModuleGate flag="property_manager_module"><ManagerDashboard /></ModuleGate>} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
@@ -144,6 +169,7 @@ function App() {
         <Router>
           <I18nProvider>
             <IBMTProvider>
+              {DEMO_MODE && <DemoBanner />}
               <ScrollToTop />
               <AuthenticatedApp />
             </IBMTProvider>

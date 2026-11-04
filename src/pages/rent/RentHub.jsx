@@ -16,17 +16,14 @@ const ENTRIES = [
   { to: '/rent/landlord', role: 'landlord', labelKey: 'roles.landlord', Icon: Building2 },
   { to: '/rent/tenant', role: 'tenant', labelKey: 'roles.tenant', Icon: Users },
   { to: '/rent/agent', role: 'agent', labelKey: 'roles.agent', Icon: HardHat },
-  { to: '/rent/manager', role: 'manager', labelKey: 'roles.manager', Icon: UserCheck },
-  { to: '/rent/ward', role: 'ward', labelKey: 'roles.ward', Icon: MapPin },
-  { to: '/rent/council', role: 'council', labelKey: 'roles.council', Icon: Landmark },
-  { to: '/rent/tra', role: 'tra', labelKey: 'roles.tra', Icon: Table2 },
+  { to: '/rent/ward', role: 'mtaa_officer', labelKey: 'roles.mtaa_officer', Icon: MapPin },
+  { to: '/rent/council', role: 'council_official', labelKey: 'roles.council_official', Icon: Landmark },
 ];
 
 export default function RentHub() {
   const { t, tt } = useT();
   const { isMock, setRole } = useIBMT();
   const policy = useIBMTQuery('getPolicyValues');
-  const amnesty = useIBMTQuery('getAmnestyNotice');
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +35,7 @@ export default function RentHub() {
           lede={t('landing.rentPilot')}
           meta={[
             { label: `Policy ${policy.data?.version || '—'}` },
-            { label: t('policy.registrationCompulsory') },
+            { label: t('policy.registrationVoluntary') },
           ]}
         />
 
@@ -61,29 +58,6 @@ export default function RentHub() {
               <p className="ibmt-hint mt-3">{tt(policy.data?.note)}</p>
             </SectionCard>
 
-            <SectionCard title={t('rent.amnesty')}>
-              <DataState query={amnesty} skeleton="lines">
-                {(record) => (
-                  <div className="space-y-3">
-                    <DataTable
-                      dense
-                      columns={[
-                        { key: 'label', header: t('common.details') },
-                        { key: 'value', header: t('common.status'), className: 'ibmt-num text-right' },
-                      ]}
-                      rows={[
-                        { id: 'a1', label: t('rent.amnesty'), value: record.amnesty_forward_only ? t('common.yes') : t('common.no') },
-                        { id: 'a2', label: t('rent.registrationWindow'), value: `${record.registration_window_days} d${record.window_placeholder ? ' (placeholder)' : ''}` },
-                        { id: 'a3', label: t('rent.assisted'), value: record.assisted_onboarding ? t('common.yes') : t('common.no') },
-                        { id: 'a4', label: t('rent.proxy'), value: record.proxy_registration ? t('common.yes') : t('common.no') },
-                        { id: 'a5', label: t('rent.migration'), value: record.migration_preserves_terms ? t('common.yes') : t('common.no') },
-                      ]}
-                    />
-                    <Notice tone="caution">{t(record.note)}</Notice>
-                  </div>
-                )}
-              </DataState>
-            </SectionCard>
           </div>
 
           <div className="space-y-6">

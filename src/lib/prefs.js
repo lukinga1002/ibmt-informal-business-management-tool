@@ -21,11 +21,14 @@ const KEYS = {
 
 export const DEFAULT_API_BASE = 'https://api.ibmt.go.tz/v2';
 
-/** Roles that read Swahili first, per the product language rules. */
-const SW_FIRST = ['operator', 'tenant', 'landlord', 'agent', 'manager', 'ward', 'consumer'];
+/**
+ * Swahili first is the rule for the rental pilot: landlords, tenants, agents and
+ * mtaa officers read Swahili. Government oversight desks read English first.
+ */
+const EN_FIRST = ['council_official', 'district_commissioner', 'regional_commissioner', 'tra_admin', 'admin'];
 
 export function defaultLangForRole(role) {
-  return SW_FIRST.includes(role) ? 'sw' : 'en';
+  return EN_FIRST.includes(role) ? 'en' : 'sw';
 }
 
 function read(key, fallback) {
@@ -47,11 +50,13 @@ function write(key, value) {
 }
 
 export const prefs = {
+  // The pilot reads the platform backend with seeded records. Demonstration
+  // fixtures are never the default, and no screen may present them as live.
   getMode: () => {
-    const value = read(KEYS.mode, 'mock');
-    return ['api', 'platform'].includes(value) ? value : 'mock';
+    const value = read(KEYS.mode, 'platform');
+    return ['api', 'platform'].includes(value) ? value : 'platform';
   },
-  setMode: (mode) => write(KEYS.mode, ['api', 'platform'].includes(mode) ? mode : 'mock'),
+  setMode: (mode) => write(KEYS.mode, ['api', 'platform'].includes(mode) ? mode : 'platform'),
 
   getLang: () => {
     const value = read(KEYS.lang, null);

@@ -39,7 +39,7 @@ export default function LandlordDashboard() {
       <div className="grid gap-3 lg:grid-cols-3">
         <Notice tone="policy">{t('policy.ibmtHoldsNoFunds')}</Notice>
         <Notice tone="policy">{t('policy.ownershipVerifiedFirst')}</Notice>
-        <Notice tone="policy">{t('policy.registrationCompulsory')}</Notice>
+        <Notice tone="policy">{t('policy.registrationVoluntary')}</Notice>
       </div>
 
       <SectionCard

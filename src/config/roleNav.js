@@ -4,98 +4,41 @@ import {
   CircleHelp,
   ClipboardList,
   Download,
-  Eye,
-  FileDown,
   FileText,
   Gauge,
   HardHat,
   House,
-  IdCard,
   KeyRound,
   Landmark,
-  ListChecks,
   Lock,
   MapPin,
-  MessagesSquare,
-  Receipt,
   Scale,
-  ScrollText,
   Search,
   ShieldCheck,
   Signature,
-  Stamp,
-  Store,
   Table2,
   UserCheck,
-  Users,
-  Wallet,
 } from 'lucide-react';
 
 /**
- * Role navigation map — one source used by the shell and by the handover page.
- * `Icon` entries must be real lucide exports; a missing one breaks the screen.
+ * Role navigation — rental pilot only.
+ *
+ * Keys are the canonical IBMT role values (what the session reports), so the
+ * sidebar cannot drift from the access rules. `admin` is the platform admin
+ * role, used for the founder's account only.
+ *
+ * Parked workspaces (operator, consumer, events council, TRA, property manager)
+ * have no navigation entry at all; their routes are gated separately and show
+ * the notice page if opened directly.
  */
 export const ROLE_NAV = {
-  operator: [
-    {
-      section: 'nav.workspace',
-      items: [
-        { to: '/operator', labelKey: 'nav.dashboard', Icon: Gauge },
-        { to: '/operator/onboarding', labelKey: 'nav.onboarding', Icon: Store },
-        { to: '/operator/receipts', labelKey: 'nav.receipts', Icon: Receipt },
-      ],
-    },
-    {
-      section: 'nav.money',
-      items: [
-        { to: '/operator/money', labelKey: 'nav.money', Icon: Wallet },
-        { to: '/operator/operations', labelKey: 'nav.operations', Icon: ClipboardList },
-      ],
-    },
-    { section: 'nav.settings', items: [{ to: '/operator/settings', labelKey: 'nav.settings', Icon: Lock }] },
-  ],
-  consumer: [
-    {
-      section: 'nav.workspace',
-      items: [
-        { to: '/consumer', labelKey: 'nav.dashboard', Icon: Gauge },
-        { to: '/consumer/cases', labelKey: 'term.complaint', Icon: MessagesSquare },
-        { to: '/consumer/contributions', labelKey: 'nav.contributions', Icon: Users },
-        { to: '/consumer/settings', labelKey: 'nav.settings', Icon: Lock },
-      ],
-    },
-  ],
-  council: [
-    {
-      section: 'brand.events',
-      items: [
-        { to: '/council', labelKey: 'nav.dashboard', Icon: Gauge },
-        { to: '/council/permits', labelKey: 'nav.permits', Icon: Stamp },
-        { to: '/council/complaints', labelKey: 'term.complaint', Icon: MessagesSquare },
-      ],
-    },
-    {
-      section: 'brand.rent',
-      items: [{ to: '/rent/council', labelKey: 'nav.oversight', Icon: Building2 }],
-    },
-  ],
-  tra: [
-    {
-      section: 'brand.events',
-      items: [
-        { to: '/tra', labelKey: 'nav.dashboard', Icon: Gauge },
-        { to: '/tra/access', labelKey: 'nav.access', Icon: Eye },
-      ],
-    },
-    { section: 'brand.rent', items: [{ to: '/rent/tra', labelKey: 'nav.oversight', Icon: Table2 }] },
-  ],
   landlord: [
     {
       section: 'nav.workspace',
       items: [
         { to: '/rent/landlord', labelKey: 'nav.dashboard', Icon: Gauge },
         { to: '/rent/landlord/portfolio', labelKey: 'nav.portfolio', Icon: Building2 },
-        { to: '/rent/landlord/tenancies', labelKey: 'nav.tenancies', Icon: ScrollText },
+        { to: '/rent/landlord/tenancies', labelKey: 'nav.tenancies', Icon: FileText },
         { to: '/rent/landlord/money', labelKey: 'nav.money', Icon: Banknote },
         { to: '/rent/landlord/cases', labelKey: 'nav.cases', Icon: Scale },
       ],
@@ -108,8 +51,8 @@ export const ROLE_NAV = {
         { to: '/rent/tenant', labelKey: 'nav.dashboard', Icon: Gauge },
         { to: '/rent/tenant/find', labelKey: 'nav.find', Icon: Search },
         { to: '/rent/tenant/lease', labelKey: 'nav.lease', Icon: Signature },
-        { to: '/rent/tenant/pay', labelKey: 'nav.pay', Icon: Banknote },
-        { to: '/rent/tenant/register', labelKey: 'nav.register', Icon: IdCard },
+        { to: '/rent/tenant/pay', labelKey: 'nav.recordPayment', Icon: Banknote },
+        { to: '/rent/tenant/register', labelKey: 'nav.register', Icon: House },
         { to: '/rent/tenant/cases', labelKey: 'nav.evidence', Icon: FileText },
       ],
     },
@@ -124,11 +67,44 @@ export const ROLE_NAV = {
       ],
     },
   ],
-  manager: [
-    { section: 'nav.workspace', items: [{ to: '/rent/manager', labelKey: 'nav.dashboard', Icon: Gauge }] },
+  mtaa_officer: [
+    {
+      section: 'nav.workspace',
+      items: [{ to: '/rent/ward', labelKey: 'nav.dashboard', Icon: MapPin }],
+    },
   ],
-  ward: [
-    { section: 'nav.workspace', items: [{ to: '/rent/ward', labelKey: 'nav.dashboard', Icon: MapPin }] },
+  council_official: [
+    {
+      section: 'nav.workspace',
+      items: [
+        { to: '/rent/council', labelKey: 'nav.dashboard', Icon: Landmark },
+        { to: '/verify', labelKey: 'nav.verify', Icon: ShieldCheck },
+      ],
+    },
+  ],
+  district_commissioner: [
+    {
+      section: 'nav.workspace',
+      items: [{ to: '/rent/council', labelKey: 'nav.oversight', Icon: Landmark }],
+    },
+  ],
+  regional_commissioner: [
+    {
+      section: 'nav.workspace',
+      items: [{ to: '/rent/council', labelKey: 'nav.oversight', Icon: Table2 }],
+    },
+  ],
+  admin: [
+    {
+      section: 'nav.workspace',
+      items: [
+        { to: '/rent/landlord', labelKey: 'nav.portfolio', Icon: Building2 },
+        { to: '/rent/tenant', labelKey: 'nav.tenancies', Icon: House },
+        { to: '/rent/agent', labelKey: 'roles.agent', Icon: HardHat },
+        { to: '/rent/ward', labelKey: 'roles.mtaa_officer', Icon: MapPin },
+        { to: '/rent/council', labelKey: 'nav.oversight', Icon: Landmark },
+      ],
+    },
   ],
   public: [
     {
@@ -136,46 +112,56 @@ export const ROLE_NAV = {
       items: [
         { to: '/', labelKey: 'nav.home', Icon: Landmark },
         { to: '/verify', labelKey: 'nav.verify', Icon: ShieldCheck },
+        { to: '/documents', labelKey: 'nav.documents', Icon: Download },
         { to: '/ussd', labelKey: 'nav.ussd', Icon: KeyRound },
-        { to: '/documents', labelKey: 'nav.documents', Icon: FileDown },
         { to: '/data-rights', labelKey: 'nav.dataRights', Icon: Lock },
       ],
     },
   ],
 };
 
-/** Cross-role links offered to everybody at the foot of the sidebar. */
+/** Old role keys still found in demonstration fixtures and stored data. */
+const ROLE_ALIASES = {
+  ward: 'mtaa_officer',
+  council: 'council_official',
+  manager: 'public',
+  operator: 'public',
+  consumer: 'public',
+  tra: 'public',
+  ward_reporter: 'mtaa_officer',
+  district_official: 'public',
+};
+
+export function resolveNavRole(role) {
+  if (ROLE_NAV[role]) return role;
+  const alias = ROLE_ALIASES[role];
+  return alias && ROLE_NAV[alias] ? alias : 'public';
+}
+
+export function navForRole(role) {
+  return ROLE_NAV[resolveNavRole(role)];
+}
+
+/** Cross-role links. Delivery notes are for the platform admin only. */
 export const SHARED_NAV = [
   { to: '/verify', labelKey: 'nav.verify', Icon: Search },
   { to: '/documents', labelKey: 'nav.documents', Icon: Download },
-  { to: '/handover', labelKey: 'nav.handover', Icon: ListChecks },
   { to: '/data-rights', labelKey: 'nav.dataRights', Icon: CircleHelp },
+  { to: '/handover', labelKey: 'nav.handover', Icon: ClipboardList, adminOnly: true },
 ];
 
 export const ROLE_LIST = Object.keys(ROLE_NAV);
 
-export const MODULE_LABEL = {
-  operator: 'brand.events',
-  consumer: 'brand.events',
-  council: 'brand.events',
-  tra: 'brand.events',
-  landlord: 'brand.rent',
-  tenant: 'brand.rent',
-  agent: 'brand.rent',
-  manager: 'brand.rent',
-  ward: 'brand.rent',
-  public: 'brand.name',
-};
+export const MODULE_LABEL = Object.fromEntries(ROLE_LIST.map((role) => [role, 'brand.rent']));
 
 export const ROLE_ICON = {
-  operator: Store,
-  consumer: Users,
-  council: Landmark,
-  tra: Table2,
   landlord: Building2,
   tenant: House,
   agent: HardHat,
-  manager: UserCheck,
-  ward: MapPin,
+  mtaa_officer: MapPin,
+  council_official: Landmark,
+  district_commissioner: Landmark,
+  regional_commissioner: Table2,
+  admin: UserCheck,
   public: CircleHelp,
 };

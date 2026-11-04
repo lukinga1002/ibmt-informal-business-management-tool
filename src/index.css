@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Teko:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,111 +13,116 @@
 */
 @layer base {
   :root {
-    --navy: 240 6% 9%;
-    --navy-deep: 240 8% 4%;
-    --navy-soft: 240 4% 32%;
-    --navy-ink: 240 5% 20%;
-    --gold: 16 96% 52%;
-    --gold-ink: 15 86% 38%;
-    --gold-soft: 20 100% 94%;
-    --cream: 36 25% 96%;
-    --cream-deep: 35 14% 88%;
-    --cream-page: 40 16% 97%;
+    /* IBMT Rent palette: Navy #1B2A4A · Gold #C9A97A · Cream #F5EDD8 */
+    --navy: 221 47% 20%;
+    --navy-deep: 220 55% 13%;
+    --navy-soft: 218 17% 35%;
+    --navy-ink: 221 40% 24%;
+    --gold: 36 42% 63%;
+    /* Gold never carries text on cream (1.9:1). gold-ink is the accessible
+       variant for gold-toned text and links: 5.3:1 on cream. */
+    --gold-ink: 37 48% 32%;
+    --gold-soft: 41 52% 87%;
+    --cream: 43 59% 90%;
+    --cream-deep: 42 43% 84%;
+    --cream-page: 43 59% 90%;
 
-    --background: 40 16% 97%;
-    --foreground: 240 8% 10%;
+    --background: 43 59% 90%;
+    --foreground: 221 47% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 240 8% 10%;
+    --card-foreground: 221 47% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 8% 10%;
-    --primary: 240 6% 9%;
-    --primary-foreground: 40 20% 97%;
-    --secondary: 40 14% 93%;
-    --secondary-foreground: 240 6% 14%;
-    --muted: 40 12% 93%;
-    --muted-foreground: 240 4% 34%;
-    --accent: 20 100% 94%;
-    --accent-foreground: 15 86% 30%;
-    --destructive: 0 62% 40%;
+    --popover-foreground: 221 47% 20%;
+    --primary: 221 47% 20%;
+    --primary-foreground: 43 60% 96%;
+    --secondary: 43 40% 85%;
+    --secondary-foreground: 221 47% 20%;
+    --muted: 42 34% 86%;
+    --muted-foreground: 218 17% 35%;
+    --accent: 41 52% 87%;
+    --accent-foreground: 37 48% 30%;
+    --destructive: 0 62% 38%;
     --destructive-foreground: 0 0% 100%;
-    --success: 158 46% 26%;
+    --success: 158 46% 24%;
     --success-foreground: 0 0% 100%;
-    --warning: 30 78% 32%;
+    --warning: 30 78% 30%;
     --warning-foreground: 0 0% 100%;
-    --info: 214 55% 34%;
+    --info: 214 55% 32%;
     --info-foreground: 0 0% 100%;
-    --border: 40 10% 88%;
-    --input: 40 10% 84%;
-    --ring: 16 96% 45%;
+    --border: 42 30% 80%;
+    --input: 42 28% 76%;
+    --ring: 37 48% 32%;
 
-    --chart-1: 240 6% 14%;
-    --chart-2: 16 96% 52%;
-    --chart-3: 174 38% 32%;
-    --chart-4: 22 45% 45%;
-    --chart-5: 240 4% 46%;
+    --chart-1: 221 47% 20%;
+    --chart-2: 36 42% 56%;
+    --chart-3: 174 38% 30%;
+    --chart-4: 22 45% 42%;
+    --chart-5: 218 17% 45%;
 
     --radius: 0.625rem;
-    --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Teko', 'Barlow', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
-    --sidebar-background: 240 8% 7%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 16 96% 52%;
-    --sidebar-primary-foreground: 240 8% 5%;
-    --sidebar-accent: 240 6% 14%;
-    --sidebar-accent-foreground: 40 20% 94%;
-    --sidebar-border: 240 6% 16%;
-    --sidebar-ring: 16 96% 52%;
+    --sidebar-background: 220 55% 13%;
+    --sidebar-foreground: 43 50% 92%;
+    --sidebar-primary: 36 42% 63%;
+    --sidebar-primary-foreground: 220 55% 10%;
+    --sidebar-accent: 220 45% 18%;
+    --sidebar-accent-foreground: 43 50% 94%;
+    --sidebar-border: 220 40% 22%;
+    --sidebar-ring: 36 42% 63%;
   }
 
+  /* Dark surfaces are for government oversight desks; landlord and tenant
+     screens stay on the light cream theme. */
   .dark {
-    --background: 240 8% 6%;
-    --foreground: 40 20% 92%;
-    --card: 240 6% 10%;
-    --card-foreground: 40 20% 92%;
-    --popover: 240 6% 10%;
-    --popover-foreground: 40 20% 92%;
-    --primary: 16 96% 52%;
-    --primary-foreground: 240 8% 5%;
-    --secondary: 240 5% 14%;
-    --secondary-foreground: 40 20% 92%;
-    --muted: 240 5% 14%;
-    --muted-foreground: 240 4% 68%;
-    --accent: 240 5% 16%;
-    --accent-foreground: 40 20% 92%;
-    --destructive: 0 58% 52%;
+    --background: 220 45% 9%;
+    --foreground: 43 50% 92%;
+    --card: 221 40% 12%;
+    --card-foreground: 43 50% 92%;
+    --popover: 221 40% 12%;
+    --popover-foreground: 43 50% 92%;
+    --primary: 36 42% 63%;
+    --primary-foreground: 220 55% 10%;
+    --secondary: 220 35% 16%;
+    --secondary-foreground: 43 50% 92%;
+    --muted: 220 35% 16%;
+    --muted-foreground: 43 15% 70%;
+    --accent: 220 35% 18%;
+    --accent-foreground: 43 50% 92%;
+    --destructive: 0 58% 56%;
     --destructive-foreground: 0 0% 100%;
-    --success: 158 40% 45%;
-    --success-foreground: 240 8% 5%;
-    --warning: 36 62% 58%;
-    --warning-foreground: 240 8% 5%;
-    --info: 214 55% 62%;
-    --info-foreground: 240 8% 5%;
-    --border: 240 5% 18%;
-    --input: 240 5% 22%;
-    --ring: 16 96% 52%;
+    --success: 158 40% 52%;
+    --success-foreground: 220 55% 10%;
+    --warning: 36 62% 60%;
+    --warning-foreground: 220 55% 10%;
+    --info: 214 55% 66%;
+    --info-foreground: 220 55% 10%;
+    --border: 220 30% 20%;
+    --input: 220 30% 24%;
+    --ring: 36 42% 63%;
 
-    --navy: 40 16% 90%;
-    --navy-deep: 40 12% 80%;
-    --navy-soft: 240 4% 60%;
-    --navy-ink: 40 16% 92%;
-    --gold: 18 100% 60%;
-    --gold-ink: 18 100% 66%;
-    --gold-soft: 16 45% 16%;
-    --cream: 40 12% 92%;
-    --cream-deep: 40 10% 82%;
-    --cream-page: 240 8% 6%;
+    --navy: 43 50% 92%;
+    --navy-deep: 43 40% 80%;
+    --navy-soft: 43 15% 68%;
+    --navy-ink: 43 45% 90%;
+    --gold: 36 46% 66%;
+    --gold-ink: 36 60% 74%;
+    --gold-soft: 220 35% 18%;
+    --cream: 43 30% 90%;
+    --cream-deep: 43 25% 78%;
+    --cream-page: 220 45% 9%;
 
-    --sidebar-background: 240 8% 5%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 16 96% 52%;
-    --sidebar-primary-foreground: 240 8% 5%;
-    --sidebar-accent: 240 6% 13%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 240 5% 15%;
-    --sidebar-ring: 16 96% 52%;
+    --sidebar-background: 220 50% 7%;
+    --sidebar-foreground: 43 45% 90%;
+    --sidebar-primary: 36 42% 63%;
+    --sidebar-primary-foreground: 220 55% 10%;
+    --sidebar-accent: 220 40% 14%;
+    --sidebar-accent-foreground: 43 45% 92%;
+    --sidebar-border: 220 35% 18%;
+    --sidebar-ring: 36 42% 63%;
   }
 }
 

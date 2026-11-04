@@ -1,0 +1,90 @@
+{
+  "name": "ModuleSettings",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Singleton key. The live row uses: module-settings"
+    },
+    "operator_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "General business receipts workspace. Parked for the rental pilot."
+    },
+    "expenses_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Expense records and financial summaries. Parked."
+    },
+    "consumer_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Consumer committee and contributions workspace. Parked."
+    },
+    "events_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Events council workspace, event complaints and council statistics. Parked."
+    },
+    "permits_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Event permit applications and decisions. Parked."
+    },
+    "tra_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "TRA oversight views and access history. Parked until stage 3."
+    },
+    "ward_reports_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ward field reports. Parked."
+    },
+    "ratings_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Business ratings and moderation. Parked."
+    },
+    "contributions_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Committee contribution ledger. Parked."
+    },
+    "property_manager_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Delegated property manager workspace. Parked; assisted registration covers the need."
+    },
+    "tax_estimates_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Presumptive tax estimates. Parked; stage 1 shows landlords an indicative statement only."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Why a module is on or off. Never used for access decisions."
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
