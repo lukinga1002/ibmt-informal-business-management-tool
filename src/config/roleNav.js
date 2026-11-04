@@ -96,13 +96,13 @@ export const ROLE_NAV = {
   district_commissioner: [
     {
       section: 'nav.workspace',
-      items: [{ to: '/rent/council', labelKey: 'nav.oversight', Icon: Landmark }],
+      items: [{ to: '/rent/district', labelKey: 'nav.oversight', Icon: Landmark }],
     },
   ],
   regional_commissioner: [
     {
       section: 'nav.workspace',
-      items: [{ to: '/rent/council', labelKey: 'nav.oversight', Icon: Table2 }],
+      items: [{ to: '/rent/region', labelKey: 'nav.oversight', Icon: Table2 }],
     },
   ],
   admin: [

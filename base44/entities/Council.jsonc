@@ -45,6 +45,39 @@
       "type": "number",
       "description": "Days a landlord has to register after a window opens. Only used when enforcement is not voluntary."
     },
+    "stock_estimates": {
+      "type": "array",
+      "description": "Estimated rental stock per ward. An input, never a calculated figure: every row carries the source it came from.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ward": {
+            "type": "string"
+          },
+          "units": {
+            "type": "number",
+            "description": "Estimated number of rental units in the ward"
+          },
+          "source": {
+            "type": "string",
+            "description": "Where the figure came from. Required: an estimate without a source is never shown."
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "ward",
+          "units",
+          "source"
+        ]
+      }
+    },
+    "stock_source_note": {
+      "type": "string",
+      "description": "What the estimate covers and what it does not, shown beside the figure"
+    },
     "rent_stage": {
       "type": "string",
       "enum": [

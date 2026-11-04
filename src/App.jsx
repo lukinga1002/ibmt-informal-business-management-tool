@@ -63,6 +63,8 @@ import AgentDashboard from '@/pages/rent/agent/Dashboard';
 import ManagerDashboard from '@/pages/rent/manager/Dashboard';
 import WardDashboard from '@/pages/rent/ward/Dashboard';
 import RentCouncilDashboard from '@/pages/rent/council/Dashboard';
+import RentDistrictDashboard from '@/pages/rent/district/Dashboard';
+import RentRegionDashboard from '@/pages/rent/region/Dashboard';
 import RentTraDashboard from '@/pages/rent/tra/Dashboard';
 import LandlordLeases from '@/pages/rent/landlord/Leases';
 import LandlordLeaseNew from '@/pages/rent/landlord/LeaseNew';
@@ -158,7 +160,9 @@ const AuthenticatedApp = () => {
         <Route path="/rent/assisted/register" element={<WorkspaceGuard allow={['agent', 'mtaa_officer', 'landlord']}><AssistedRegister /></WorkspaceGuard>} />
         <Route path="/rent/ward" element={<WorkspaceGuard allow={['mtaa_officer']}><WardDashboard /></WorkspaceGuard>} />
         <Route path="/rent/ward/verification" element={<WorkspaceGuard allow={['mtaa_officer']}><WardVerification /></WorkspaceGuard>} />
-        <Route path="/rent/council" element={<WorkspaceGuard allow={['council_official', 'district_commissioner', 'regional_commissioner']}><RentCouncilDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/council" element={<WorkspaceGuard allow={['council_official']}><RentCouncilDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/district" element={<WorkspaceGuard allow={['district_commissioner']}><RentDistrictDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/region" element={<WorkspaceGuard allow={['regional_commissioner']}><RentRegionDashboard /></WorkspaceGuard>} />
 
         {/* Parked modules — the flag decides, never the link */}
         <Route path="/operator" element={<ModuleGate flag="operator_module"><OperatorDashboard /></ModuleGate>} />

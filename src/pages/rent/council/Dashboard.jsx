@@ -1,174 +1,164 @@
 import { useState } from 'react';
-import { useT } from '@/i18n/I18nContext';
-import { useIBMTMutation, useIBMTQuery } from '@/api/hooks';
+import { Building2, KeyRound, Scale, Settings2 } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
-import DataState from '@/components/ibmt/DataState';
-import DataTable from '@/components/ibmt/DataTable';
-import StatusBadge from '@/components/ibmt/StatusBadge';
-import Money from '@/components/ibmt/Money';
+import StatGrid from '@/components/ibmt/StatGrid';
 import Notice from '@/components/ibmt/Notice';
-import ReasonDialog from '@/components/ibmt/ReasonDialog';
-import { Button } from '@/components/ui/button';
+import { MetaChip } from '@/components/ibmt/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDate, formatPercent } from '@/lib/format';
+import AsyncBlock from '@/components/gov/AsyncBlock';
+import Figure from '@/components/gov/Figure';
+import WardRegisterTable from '@/components/gov/WardRegisterTable';
+import BuildingRegisterTable from '@/components/gov/BuildingRegisterTable';
+import OversightQueues from '@/components/gov/OversightQueues';
+import EnforcementSettings from '@/components/gov/EnforcementSettings';
+import ExportBar from '@/components/gov/ExportBar';
+import { useFn } from '@/hooks/useFn';
+import { ENFORCEMENT_LABEL, SUPERSESSION } from '@/lib/gov';
+import { useT } from '@/i18n/I18nContext';
 
+const TAB_TRIGGER = 'ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground';
+
+/** Council desk: ward register, building register, review queues, settings. */
 export default function RentCouncilDashboard() {
-  const { t, tt, lang } = useT();
-  const licences = useIBMTQuery('listAgentLicences', { limit: 8 });
-  const compliance = useIBMTQuery('listComplianceQueue', { limit: 8 });
-  const complaints = useIBMTQuery('listComplaints', { limit: 6 });
-  const stats = useIBMTQuery('getAreaStats');
-  const decide = useIBMTMutation('decideAgentLicence');
-  const [decision, setDecision] = useState(null);
+  const { tt } = useT();
+  const [tab, setTab] = useState('register');
 
-  const submit = async (reason) => {
-    const result = await decide.run({ id: decision.licence.agent_id, decision: decision.kind, reason });
-    if (result) setDecision(null);
-  };
+  const register = useFn('councilDesk', { action: 'register' });
+  const buildings = useFn('councilDesk', { action: 'buildings' }, { enabled: tab === 'buildings' });
+  const queues = useFn('councilDesk', { action: 'queues' }, { enabled: tab === 'queues' });
+  const settings = useFn('councilDesk', { action: 'settings' }, { enabled: tab === 'settings' });
+
+  const council = register.data && register.data.council;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t('brand.rent')}
-        title={t('roles.council')}
-        lede={t('policy.licenceRule')}
-        meta={[{ label: t('rent.complianceQueue') }, { label: t('policy.humanReviewOnly') }]}
-      />
+        kicker={tt({ en: 'IBMT Rent · Council desk', sw: 'IBMT Kodi · Dawati la halmashauri' })}
+        title={(council && council.name) || tt({ en: 'Council desk', sw: 'Dawati la halmashauri' })}
+        lede={tt({
+          en: 'Registered buildings and units by ward, the building register used for property-rates work, and the queues a person decides.',
+          sw: 'Majengo na vitengo vilivyosajiliwa kwa kata, rejista ya majengo kwa kazi ya pango, na foleni zinazoamuliwa na mtu.',
+        })}
+        meta={[
+          ...(council ? [{ label: `${council.district} · ${council.region}` }] : []),
+          ...(council
+            ? [{ label: tt(ENFORCEMENT_LABEL[council.enforcement_mode] || { en: council.enforcement_mode, sw: council.enforcement_mode }) }]
+            : []),
+        ]}
+      >
+        <MetaChip Icon={Scale}>{tt({ en: 'Small cells under 5 units suppressed', sw: 'Seli ndogo chini ya vitengo 5 zimefichwa' })}</MetaChip>
+      </PageHeader>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Notice tone="caution">{t('policy.humanReviewOnly')}</Notice>
-        <Notice tone="privacy">{t('policy.addressesNeverPublic')}</Notice>
-      </div>
-
-      <Tabs defaultValue="licences">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="ibmt-no-print h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
-          <TabsTrigger value="licences" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.licensing')}
+          <TabsTrigger value="register" className={TAB_TRIGGER}>
+            <Building2 className="mr-2 h-4 w-4" aria-hidden="true" />
+            {tt({ en: 'Ward register', sw: 'Rejista ya kata' })}
           </TabsTrigger>
-          <TabsTrigger value="compliance" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.complianceQueue')}
+          <TabsTrigger value="buildings" className={TAB_TRIGGER}>
+            <KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />
+            {tt({ en: 'Building register', sw: 'Rejista ya majengo' })}
           </TabsTrigger>
-          <TabsTrigger value="complaints" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('term.complaint')}
+          <TabsTrigger value="queues" className={TAB_TRIGGER}>
+            <Scale className="mr-2 h-4 w-4" aria-hidden="true" />
+            {tt({ en: 'Review queues', sw: 'Foleni za mapitio' })}
           </TabsTrigger>
-          <TabsTrigger value="stats" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.areaStats')}
+          <TabsTrigger value="settings" className={TAB_TRIGGER}>
+            <Settings2 className="mr-2 h-4 w-4" aria-hidden="true" />
+            {tt({ en: 'Settings', sw: 'Mipangilio' })}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="licences" className="mt-4">
-          <SectionCard title={t('rent.licensing')} description={t('policy.licenceRule')}>
-            <DataState query={licences} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <ul className="space-y-3">
-                  {licences.items.map((licence) => (
-                    <li key={licence.agent_id} className="rounded-md border border-border px-4 py-3">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-[13px] font-semibold text-navy">{licence.name}</p>
-                          <p className="ibmt-num text-[11px] text-muted-foreground">
-                            {licence.licence_number || t('states.emptyTitle')} · {licence.wards?.join(' · ')}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusBadge status={licence.status} />
-                          <StatusBadge status={licence.ibmt_business ? 'verified' : 'unverified'} label={licence.ibmt_business ? t('brand.name') : t('status.unverified')} />
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {[
-                          { kind: 'active', label: t('common.approve') },
-                          { kind: 'pending', label: t('common.query') },
-                          { kind: 'expired', label: t('common.reject') },
-                        ].map((action) => (
-                          <Button key={action.kind} type="button" variant="outline" size="sm" onClick={() => setDecision({ licence, kind: action.kind })}>
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DataState>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="compliance" className="mt-4">
-          <SectionCard title={t('rent.complianceQueue')} description={t('policy.humanReviewOnly')}>
-            <DataState query={compliance} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <DataTable
-                  columns={[
-                    { key: 'unit_ref', header: t('term.unit'), className: 'ibmt-num font-medium' },
-                    { key: 'flag', header: t('common.reason'), render: (row) => tt(row.flag) },
-                    { key: 'raised_at', header: t('common.date'), className: 'ibmt-num', render: (row) => formatDate(row.raised_at, lang) },
-                    { key: 'status', header: t('common.status'), render: (row) => <StatusBadge status={row.status} /> },
-                    { key: 'automatic_action', header: t('policy.noAutoEnforcement'), hideBelow: 'lg', render: (row) => (row.automatic_action ? t('common.yes') : t('common.no')) },
+        <TabsContent value="register" className="mt-4 space-y-4">
+          <AsyncBlock state={register}>
+            {(data) => (
+              <>
+                <StatGrid
+                  columns={4}
+                  items={[
+                    { key: 'units', label: tt({ en: 'Registered units', sw: 'Vitengo vilivyosajiliwa' }), value: <Figure value={data.totals.units} label={data.suppression.label} /> },
+                    { key: 'verified', label: tt({ en: 'Verified', sw: 'Zimethibitishwa' }), value: <Figure value={data.totals.verified} label={data.suppression.label} /> },
+                    { key: 'pending', label: tt({ en: 'Awaiting evidence', sw: 'Zinasubiri ushahidi' }), value: <Figure value={data.totals.pending} label={data.suppression.label} /> },
+                    {
+                      key: 'rate',
+                      label: tt({ en: 'Verification rate', sw: 'Kiwango cha uthibitisho' }),
+                      value: <Figure value={data.totals.verification_rate} label={data.suppression.label} suffix={data.totals.verification_rate === null ? '' : '%'} />,
+                    },
                   ]}
-                  rows={compliance.items}
                 />
-              )}
-            </DataState>
-            <Notice tone="policy" className="mt-4">
-              {t('policy.humanReviewOnly')}
-            </Notice>
-          </SectionCard>
+
+                <SectionCard
+                  title={tt({ en: 'Buildings and units by ward', sw: 'Majengo na vitengo kwa kata' })}
+                  description={tt({ en: 'Verified against pending, per ward.', sw: 'Zilizothibitishwa dhidi ya zinazosubiri, kwa kata.' })}
+                >
+                  <WardRegisterTable rows={data.wards} suppression={data.suppression} />
+                </SectionCard>
+
+                <Notice tone="privacy">{tt(SUPERSESSION)}</Notice>
+              </>
+            )}
+          </AsyncBlock>
         </TabsContent>
 
-        <TabsContent value="complaints" className="mt-4">
-          <SectionCard title={t('term.complaint')} description={t('policy.noAutoPublication')}>
-            <DataState query={complaints} skeleton="lines" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <ul className="space-y-3">
-                  {complaints.items.map((complaint) => (
-                    <li key={complaint.id} className="rounded-md border border-border px-4 py-3">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-[13px] font-semibold text-navy">{tt(complaint.subject)}</p>
-                        <StatusBadge status={complaint.status} />
-                      </div>
-                      <p className="ibmt-num mt-1 text-[11px] text-muted-foreground">{complaint.reference} · {formatDate(complaint.filed_at, lang)}</p>
-                      <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{tt(complaint.body)}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DataState>
-          </SectionCard>
+        <TabsContent value="buildings" className="mt-4 space-y-4">
+          <AsyncBlock state={buildings}>
+            {(data) => (
+              <>
+                <Notice tone="policy" title={tt({ en: 'Legal basis for this register', sw: 'Msingi wa kisheria wa rejista hii' })}>
+                  {tt(data.basis.note)}
+                  <span className="mt-2 block text-[12px]">
+                    {data.basis.by_law
+                      ? tt({
+                          en: `By-law in force: ${data.basis.by_law.reference} (effective ${data.basis.by_law.effective_date || 'date not recorded'}). ${data.basis.available_rows} buildings shown in full.`,
+                          sw: `Sheria ndogo inatumika: ${data.basis.by_law.reference} (ilianza ${data.basis.by_law.effective_date || 'tarehe haijaandikwa'}). Majengo ${data.basis.available_rows} yanaonyeshwa kikamilifu.`,
+                        })
+                      : tt({
+                          en: `No by-law is in force. ${data.basis.consenting_owners} owner(s) consented to council sharing; ${data.basis.withheld_rows} building(s) withheld.`,
+                          sw: `Hakuna sheria ndogo inayotumika. Wamiliki ${data.basis.consenting_owners} wamekubali kushirikisha halmashauri; majengo ${data.basis.withheld_rows} yamefichwa.`,
+                        })}
+                  </span>
+                </Notice>
+
+                <SectionCard
+                  title={tt({ en: 'Building register', sw: 'Rejista ya majengo' })}
+                  description={tt({
+                    en: 'Property-rates work: owner, building, meter number and verification status. The basis is shown on every row.',
+                    sw: 'Kazi ya pango: mmiliki, jengo, namba ya mita na hali ya uthibitisho. Msingi unaonyeshwa kwenye kila safu.',
+                  })}
+                  footer={tt({
+                    en: `${data.units_without_building} registered unit(s) are not linked to a building yet.`,
+                    sw: `Vitengo ${data.units_without_building} vilivyosajiliwa bado havijaunganishwa na jengo.`,
+                  })}
+                >
+                  <BuildingRegisterTable rows={data.rows} />
+                  <div className="mt-4">
+                    <ExportBar
+                      fn="councilDesk"
+                      payload={{ action: 'export', kind: 'buildings' }}
+                      label={{ en: 'Export the building register', sw: 'Toa rejista ya majengo' }}
+                      note={{
+                        en: 'Only rows with a stated basis are exported. Every export is written to the audit log.',
+                        sw: 'Safu zenye msingi pekee ndizo zinazotolewa. Kila utoaji huandikwa kwenye kumbukumbu ya ukaguzi.',
+                      }}
+                    />
+                  </div>
+                </SectionCard>
+              </>
+            )}
+          </AsyncBlock>
         </TabsContent>
 
-        <TabsContent value="stats" className="mt-4">
-          <SectionCard title={t('rent.areaStats')} description={tt(stats.data?.note)}>
-            <DataState query={stats} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {(record) => (
-                <DataTable
-                  columns={[
-                    { key: 'ward_id', header: t('term.ward'), className: 'font-medium' },
-                    { key: 'units', header: t('rent.units'), align: 'right', className: 'ibmt-num' },
-                    { key: 'registered_percent', header: t('term.registration'), align: 'right', render: (row) => formatPercent(row.registered_percent, lang) },
-                    { key: 'median_rent', header: t('rent.rentAmount'), align: 'right', render: (row) => <Money amount={row.median_rent} /> },
-                    { key: 'occupancy_percent', header: t('rent.occupancy'), align: 'right', render: (row) => formatPercent(row.occupancy_percent, lang) },
-                  ]}
-                  rows={record.wards || []}
-                />
-              )}
-            </DataState>
-          </SectionCard>
+        <TabsContent value="queues" className="mt-4">
+          <AsyncBlock state={queues}>{(data) => <OversightQueues data={data} />}</AsyncBlock>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4">
+          <AsyncBlock state={settings}>
+            {(data) => <EnforcementSettings data={data} onSaved={settings.reload} />}
+          </AsyncBlock>
         </TabsContent>
       </Tabs>
-
-      <ReasonDialog
-        open={Boolean(decision)}
-        onOpenChange={(open) => !open && setDecision(null)}
-        title={`${t('common.reason')} — ${decision?.licence?.name || ''}`}
-        description={t('common.reasonRequired')}
-        confirmLabel={t('common.confirm')}
-        busy={decide.saving}
-        fieldError={decide.fieldErrors?.reason}
-        serverError={decide.status === 'error' && !decide.fieldErrors?.reason ? decide.error?.message : null}
-        onConfirm={submit}
-      />
     </div>
   );
 }
