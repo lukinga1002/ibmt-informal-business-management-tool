@@ -4,9 +4,12 @@
   "properties": {
     "reference": {
       "type": "string",
-      "description": "e.g. IBMT-RPT-2026-000921"
+      "description": "Rent record reference, e.g. IBMT-RPT-2026-000921"
     },
     "tenancy_id": {
+      "type": "string"
+    },
+    "lease_id": {
       "type": "string"
     },
     "unit_id": {
@@ -25,39 +28,103 @@
     "agent_id": {
       "type": "string"
     },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "period_month": {
+      "type": "string",
+      "description": "Rent period the record covers, e.g. 2026-11. Drives area totals after confirmation."
+    },
     "period_months": {
       "type": "number",
-      "description": "Months of rent the payment covers"
+      "description": "Months of rent the record covers"
     },
     "amount": {
       "type": "number",
-      "description": "Rent paid in TZS"
+      "description": "Rent as a whole number of shillings. Never a decimal."
     },
     "deposit_amount": {
       "type": "number",
-      "description": "Deposit share in TZS, capped by the active policy version"
+      "description": "Deposit share as a whole number of shillings"
     },
     "tenant_total": {
       "type": "number",
-      "description": "Total the tenant pays: rent plus deposit, computed by the backend"
+      "description": "Total the tenant paid: rent plus deposit, computed by the backend"
     },
     "new_tenancy": {
       "type": "boolean",
-      "description": "True when the payment opens a new tenancy"
+      "description": "True when the record opens a new tenancy"
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
     },
     "withholding_amount": {
       "type": "number",
-      "description": "TRA withholding split at source, computed by the backend"
+      "description": "Dormant in Stage 1. Set only under a confirmed TaxRule."
     },
     "platform_fee": {
-      "type": "number"
+      "type": "number",
+      "description": "Landlord-side service fee, whole shillings. Never deducted from tenant funds."
     },
     "agent_commission": {
       "type": "number",
-      "description": "Agent commission paid by the landlord side, never deducted from tenant funds"
+      "description": "Paid by the landlord side, never deducted from tenant funds"
     },
     "net_to_landlord": {
       "type": "number"
+    },
+    "record_status": {
+      "type": "string",
+      "enum": [
+        "recorded",
+        "confirmed",
+        "disputed",
+        "unconfirmed"
+      ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "red",
+        "gray"
+      ],
+      "default": "recorded",
+      "description": "Stage 1 lifecycle of the record. The other party confirms it; only a confirmed record produces a receipt reference."
+    },
+    "entered_by_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant"
+      ],
+      "description": "Who entered the record. The other party is the one who confirms it."
+    },
+    "entered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_by_id": {
+      "type": "string"
+    },
+    "disputed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dispute_reason": {
+      "type": "string"
     },
     "status": {
       "type": "string",
@@ -68,10 +135,19 @@
         "failed",
         "refunded"
       ],
-      "default": "quoted"
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "red",
+        "purple"
+      ],
+      "default": "quoted",
+      "description": "Dormant in Stage 1: the movement of money returns in Stage 2. Do not read this for Stage 1 state; read record_status."
     },
     "receipt_reference": {
-      "type": "string"
+      "type": "string",
+      "description": "Issued at the moment of confirmation, including a late confirmation, and never earlier."
     },
     "paid_at": {
       "type": "string",
@@ -79,7 +155,7 @@
     },
     "idempotency_key": {
       "type": "string",
-      "description": "Client action key: a retried pay can never charge the tenant twice"
+      "description": "Client action key: a retried submit can never record the same payment twice"
     },
     "policy_version": {
       "type": "string"
@@ -88,14 +164,12 @@
   "required": [
     "reference",
     "tenancy_id",
-    "amount"
+    "amount",
+    "record_status"
   ],
   "rls": {
     "read": {
       "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
         {
           "data.landlord_id": "{{user.id}}"
         },
@@ -103,34 +177,39 @@
           "data.tenant_id": "{{user.id}}"
         },
         {
-          "data.agent_id": "{{user.id}}"
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
-            "data.ibmt_role": "tra_admin"
+            "role": "admin"
           }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {
