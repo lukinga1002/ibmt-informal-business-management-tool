@@ -61,6 +61,12 @@ import ManagerDashboard from '@/pages/rent/manager/Dashboard';
 import WardDashboard from '@/pages/rent/ward/Dashboard';
 import RentCouncilDashboard from '@/pages/rent/council/Dashboard';
 import RentTraDashboard from '@/pages/rent/tra/Dashboard';
+import LandlordRegister from '@/pages/rent/landlord/Register';
+import LandlordMigrate from '@/pages/rent/landlord/Migrate';
+import AssistedRegister from '@/pages/rent/assisted/Register';
+import WardVerification from '@/pages/rent/ward/Verification';
+import RegistrationCertificate from '@/pages/rent/certificate/Own';
+import PublicCertificate from '@/pages/certificate/Public';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -95,6 +101,7 @@ const AuthenticatedApp = () => {
       <Route path="/documents" element={<Documents />} />
       <Route path="/data-rights" element={<DataRights />} />
       <Route path="/rent" element={<RentHub />} />
+      <Route path="/cert/:certificateNo" element={<PublicCertificate />} />
 
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
@@ -120,6 +127,9 @@ const AuthenticatedApp = () => {
         <Route path="/rent/landlord/tenancies" element={<WorkspaceGuard allow={['landlord']}><LandlordTenancies /></WorkspaceGuard>} />
         <Route path="/rent/landlord/money" element={<WorkspaceGuard allow={['landlord']}><LandlordMoney /></WorkspaceGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/migrate" element={<WorkspaceGuard allow={['landlord']}><LandlordMigrate /></WorkspaceGuard>} />
+        <Route path="/rent/certificate/:caseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><RegistrationCertificate /></WorkspaceGuard>} />
 
         <Route path="/rent/tenant" element={<WorkspaceGuard allow={['tenant']}><TenantDashboard /></WorkspaceGuard>} />
         <Route path="/rent/tenant/find" element={<WorkspaceGuard allow={['tenant']}><TenantFind /></WorkspaceGuard>} />
@@ -129,7 +139,9 @@ const AuthenticatedApp = () => {
         <Route path="/rent/tenant/cases" element={<WorkspaceGuard allow={['tenant']}><TenantCases /></WorkspaceGuard>} />
 
         <Route path="/rent/agent" element={<WorkspaceGuard allow={['agent']}><AgentDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/assisted/register" element={<WorkspaceGuard allow={['agent', 'mtaa_officer', 'landlord']}><AssistedRegister /></WorkspaceGuard>} />
         <Route path="/rent/ward" element={<WorkspaceGuard allow={['mtaa_officer']}><WardDashboard /></WorkspaceGuard>} />
+        <Route path="/rent/ward/verification" element={<WorkspaceGuard allow={['mtaa_officer']}><WardVerification /></WorkspaceGuard>} />
         <Route path="/rent/council" element={<WorkspaceGuard allow={['council_official', 'district_commissioner', 'regional_commissioner']}><RentCouncilDashboard /></WorkspaceGuard>} />
 
         {/* Parked modules — the flag decides, never the link */}

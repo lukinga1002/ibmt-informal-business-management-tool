@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTMutation, useIBMTQuery } from '@/api/hooks';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -77,6 +78,15 @@ export default function LandlordPortfolio() {
         title={t('nav.portfolio')}
         lede={t('policy.unitCompliance')}
         meta={[{ label: t('policy.addressMeterPrivate') }, { label: t('policy.registrationNoOwnership') }]}
+        actions={
+          <Link
+            to="/rent/landlord/register"
+            className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground hover:bg-navy-deep"
+          >
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            {t('nav.register')}
+          </Link>
+        }
       />
 
       <Tabs defaultValue="units">

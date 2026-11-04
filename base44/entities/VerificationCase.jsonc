@@ -1,0 +1,330 @@
+{
+  "name": "VerificationCase",
+  "type": "object",
+  "properties": {
+    "case_ref": {
+      "type": "string",
+      "description": "e.g. IBMT-REG-2026-104512"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "property_ref": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "landlord_name": {
+      "type": "string"
+    },
+    "landlord_phone": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "self",
+        "assisted",
+        "proxy",
+        "migrated"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "yellow",
+        "gray"
+      ],
+      "default": "self",
+      "description": "self = landlord registers; assisted/proxy = an authorised helper registers and the landlord confirms by OTP; migrated = an existing tenancy is brought onto the register."
+    },
+    "helper_name": {
+      "type": "string"
+    },
+    "helper_role": {
+      "type": "string"
+    },
+    "helper_licence": {
+      "type": "string"
+    },
+    "helper_relation": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Private uploads. Each item is a kind plus the private file reference.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "title_deed",
+              "residential_licence",
+              "offer_letter",
+              "mtaa_letter",
+              "inheritance_letter",
+              "other"
+            ]
+          },
+          "uri": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "uri"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_otp",
+        "submitted",
+        "approved",
+        "queried",
+        "rejected"
+      ],
+      "enumColors": [
+        "yellow",
+        "blue",
+        "green",
+        "purple",
+        "red"
+      ],
+      "default": "awaiting_otp"
+    },
+    "duplicate_flag": {
+      "type": "boolean",
+      "default": false
+    },
+    "duplicate_kind": {
+      "type": "string",
+      "enum": [
+        "meter",
+        "address",
+        "meter_and_address"
+      ]
+    },
+    "duplicate_of_unit_ref": {
+      "type": "string"
+    },
+    "duplicate_note": {
+      "type": "string",
+      "description": "Plain note shown to the officer. A duplicate is never a rejection."
+    },
+    "decision_reason": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      },
+      "description": "Mandatory for approve, query and reject. Always shown to the landlord."
+    },
+    "decided_by_id": {
+      "type": "string"
+    },
+    "decided_by_name": {
+      "type": "string"
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "certificate_no": {
+      "type": "string",
+      "description": "Issued only on approval"
+    },
+    "certificate_issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "otp_code_hash": {
+      "type": "string"
+    },
+    "otp_sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "otp_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "otp_channel": {
+      "type": "string",
+      "description": "Demo build: in-app. SMS arrives with the notification adapter."
+    },
+    "migration": {
+      "type": "object",
+      "description": "Set for channel=migrated: the existing tenancy as the landlord reports it. Terms stay unchanged; no new lease is created.",
+      "properties": {
+        "tenant_name": {
+          "type": "string"
+        },
+        "tenant_phone": {
+          "type": "string"
+        },
+        "rent_amount": {
+          "type": "number"
+        },
+        "started_on": {
+          "type": "string",
+          "format": "date"
+        },
+        "terms_unchanged": {
+          "type": "boolean",
+          "default": true
+        },
+        "tenancy_id": {
+          "type": "string"
+        }
+      }
+    },
+    "consent": {
+      "type": "object",
+      "properties": {
+        "core": {
+          "type": "boolean",
+          "default": false
+        },
+        "council_sharing": {
+          "type": "boolean",
+          "default": false
+        },
+        "granted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "policy_version": {
+          "type": "string"
+        }
+      }
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "mtaa": {
+      "type": "string"
+    },
+    "disclaimer": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string"
+        },
+        "sw": {
+          "type": "string"
+        }
+      }
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_ref",
+    "unit_id",
+    "ward",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "mtaa_officer"
+              }
+            },
+            {
+              "data.ward": {
+                "$in": "{{user.data.ward_ids}}"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

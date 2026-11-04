@@ -38,6 +38,8 @@ export const ROLE_NAV = {
       items: [
         { to: '/rent/landlord', labelKey: 'nav.dashboard', Icon: Gauge },
         { to: '/rent/landlord/portfolio', labelKey: 'nav.portfolio', Icon: Building2 },
+        { to: '/rent/landlord/register', labelKey: 'nav.register', Icon: House },
+        { to: '/rent/landlord/migrate', labelKey: 'nav.tenancies', Icon: ClipboardList },
         { to: '/rent/landlord/tenancies', labelKey: 'nav.tenancies', Icon: FileText },
         { to: '/rent/landlord/money', labelKey: 'nav.money', Icon: Banknote },
         { to: '/rent/landlord/cases', labelKey: 'nav.cases', Icon: Scale },
@@ -64,13 +66,17 @@ export const ROLE_NAV = {
         { to: '/rent/agent', labelKey: 'nav.dashboard', Icon: Gauge },
         { to: '/rent/agent?tab=mandates', labelKey: 'term.mandate', Icon: ClipboardList },
         { to: '/rent/agent?tab=commissions', labelKey: 'term.commission', Icon: Banknote },
+        { to: '/rent/assisted/register', labelKey: 'nav.register', Icon: House },
       ],
     },
   ],
   mtaa_officer: [
     {
       section: 'nav.workspace',
-      items: [{ to: '/rent/ward', labelKey: 'nav.dashboard', Icon: MapPin }],
+      items: [
+        { to: '/rent/ward', labelKey: 'nav.dashboard', Icon: MapPin },
+        { to: '/rent/ward/verification', labelKey: 'nav.verify', Icon: ShieldCheck },
+      ],
     },
   ],
   council_official: [
