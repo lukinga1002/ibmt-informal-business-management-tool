@@ -113,6 +113,22 @@ Tags: **BLOCKER** real use impossible · **RULING** your decision needed · **QU
 
 ---
 
+## K. NIDA identity number — raised 4 November 2026 (9)
+
+Capture the NIDA number for landowners, agents, tenants and buyers, to make the register easier. Nothing is built. No NIDA field exists anywhere today; masking helpers for phones and ID numbers are already in place.
+
+78. **QUESTION** Who must give a number: owners and brokers only, or every adult (tenants, buyers, sellers too)?
+79. **QUESTION** Mandatory or optional per role? A missing number either blocks registration or marks the record "identity not confirmed". I propose mandatory for owners and brokers, optional for tenants in Stage 1.
+80. **QUESTION** Is there a NIDA verification agreement, or do you intend to obtain one? There is no API here and no way for this app to verify a number itself, so until an agreement exists the number is typed by hand and marked **"not verified by NIDA"**, with a mock adapter and no claim of any link — the same rule already applied to e-Ardhi.
+81. **RULING** Storage shape: the full number is never shown again after entry. Keep a hash for matching, the last four digits for the human, and a masked display. Who may ever see the full value, and under what circumstance?
+82. **RULING** Legal basis: a statutory function under the council's by-law, or consent for a stated purpose? A national ID number is sensitive personal data under the Personal Data Protection Act, so before the first number is stored the data controller must be named and the retention and breach duties written down.
+83. **QUESTION** Duplicates: the same NIDA number on two accounts is flagged for review and never merged automatically — a merge would rewrite ownership history. Confirm.
+84. **QUESTION** Where it must never appear: certificates, the public check, aggregates, council exports and the DC/RC dashboards. Confirm, so those show masked counts only.
+85. **DEBT** Estates and companies have no NIDA number of their own, so the sale and inheritance routes need a second identifier (registration or estate number) — this ties into the co-owner question at 33.
+86. **DEBT** Every view of a NIDA number goes to the `AuditLog`, and the number is stripped from all logs, exports and error messages — the masking rule exists and must be applied to this field the day it is added.
+
+---
+
 ### The five that gate the next build
 
 9 (certificate wording), 10 (ownership anchor), 11 (broker multi-council rule), 12 (verified phone source), 40 (reminder schedule).
