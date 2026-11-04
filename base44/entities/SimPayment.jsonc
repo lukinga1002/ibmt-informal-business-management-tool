@@ -1,0 +1,223 @@
+{
+  "name": "SimPayment",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string",
+      "description": "Simulated payment reference, e.g. IBMT-SIM-2026-000014"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "stage1_record_only",
+        "stage2_partner",
+        "stage3_tax_split"
+      ],
+      "enumColors": [
+        "gray",
+        "blue",
+        "purple"
+      ],
+      "default": "stage2_partner",
+      "description": "Which stage this simulated run belongs to. Stages 2 and 3 are simulation only in this app."
+    },
+    "tenancy_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "rent_total": {
+      "type": "number",
+      "description": "Rent for the period, whole shillings"
+    },
+    "monthly_rent": {
+      "type": "number"
+    },
+    "months": {
+      "type": "number"
+    },
+    "new_tenancy": {
+      "type": "boolean",
+      "default": true
+    },
+    "deposit_amount": {
+      "type": "number",
+      "description": "Deposit added on the first payment only"
+    },
+    "tenant_pays": {
+      "type": "number",
+      "description": "Rent plus deposit. The tenant is never charged anything else."
+    },
+    "tax": {
+      "type": "number"
+    },
+    "agent_commission": {
+      "type": "number",
+      "description": "Zero on a renewal"
+    },
+    "service_fee": {
+      "type": "number",
+      "description": "Always zero at stage 1"
+    },
+    "landlord_remainder": {
+      "type": "number",
+      "description": "Rent less the lines above; also receives every rounding remainder"
+    },
+    "split_lines": {
+      "type": "array",
+      "description": "The split exactly as the server computed it, in order",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "basis": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rates_snapshot": {
+      "type": "object",
+      "description": "The rates used, so a later policy change never rewrites a past split"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "initiated",
+        "pending",
+        "succeeded",
+        "failed",
+        "reversed"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "red",
+        "purple"
+      ],
+      "default": "initiated"
+    },
+    "state_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provider": {
+      "type": "string",
+      "default": "mock_partner",
+      "description": "The mock partner. No real provider is connected."
+    },
+    "provider_reference": {
+      "type": "string"
+    },
+    "provider_status_check": {
+      "type": "object",
+      "description": "Result of the separate status check, never the callback's word alone"
+    },
+    "signature_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "callback_received_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "succeeded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reversed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refunded_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
+    },
+    "simulation": {
+      "type": "boolean",
+      "default": true
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit can never create a second payment"
+    }
+  },
+  "required": [
+    "reference",
+    "state",
+    "rent_total"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

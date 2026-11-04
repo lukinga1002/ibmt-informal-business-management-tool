@@ -1,0 +1,75 @@
+{
+  "name": "RetentionPolicy",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Singleton key. The live row uses: retention"
+    },
+    "periods": {
+      "type": "array",
+      "description": "One row per data class. Every period is a placeholder until it is signed off.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "entity": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "label": {
+            "type": "object"
+          },
+          "keeps": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "entity",
+          "days"
+        ]
+      }
+    },
+    "placeholder": {
+      "type": "boolean",
+      "default": true,
+      "description": "True means no lawyer or commissioner has signed these periods off"
+    },
+    "last_run_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_result": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,144 @@
+import { useState } from 'react';
+import { Calculator } from 'lucide-react';
+import { useT } from '@/i18n/I18nContext';
+import { useFn } from '@/hooks/useFn';
+import SectionCard from '@/components/ibmt/SectionCard';
+import AsyncBlock from '@/components/gov/AsyncBlock';
+import Notice from '@/components/ibmt/Notice';
+import Money from '@/components/ibmt/Money';
+import Field, { SelectControl } from '@/components/ibmt/Field';
+import { Button } from '@/components/ui/button';
+import { PLACEHOLDER_RATES, SPLIT_LABEL, STAGE_OPTION } from '@/lib/money';
+
+/** The split, computed on the server from rates, never in the browser. */
+export default function SplitPanel({ onStart, busy = false }) {
+  const { tt } = useT();
+  const [rentTotal, setRentTotal] = useState(3000000);
+  const [months, setMonths] = useState(6);
+  const [monthlyRent, setMonthlyRent] = useState(500000);
+  const [deposit, setDeposit] = useState(0);
+  const [newTenancy, setNewTenancy] = useState(true);
+  const [stage, setStage] = useState('stage3_tax_split');
+  const [placeholder, setPlaceholder] = useState(true);
+
+  const quote = useFn('simPayment', {
+    action: 'quote',
+    rent_total: rentTotal,
+    months,
+    monthly_rent: monthlyRent,
+    new_tenancy: newTenancy,
+    deposit_amount: deposit,
+    stage,
+    demo_rates: placeholder ? PLACEHOLDER_RATES : undefined,
+  });
+
+  return (
+    <SectionCard
+      title={tt({ en: 'Split engine', sw: 'Injini ya mgawanyo' })}
+      description={tt({
+        en: 'Order: tax, agent commission, landlord service fee, then the remainder to the landlord. Every remainder from rounding goes to the landlord.',
+        sw: 'Mpangilio: kodi, kamisheni ya wakala, ada ya huduma, kisha salio kwa mmiliki. Salio lolote la kuzungusha huenda kwa mmiliki.',
+      })}
+      actions={<Calculator className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Field label={tt({ en: 'Rent for the period (TZS)', sw: 'Kodi ya kipindi (TZS)' })} type="number" min="1" value={rentTotal} onChange={(event) => setRentTotal(Number(event.target.value))} />
+        <Field label={tt({ en: 'Months covered', sw: 'Miezi' })} type="number" min="1" value={months} onChange={(event) => setMonths(Number(event.target.value))} />
+        <Field label={tt({ en: 'Monthly rent (TZS)', sw: 'Kodi ya mwezi (TZS)' })} type="number" min="1" value={monthlyRent} onChange={(event) => setMonthlyRent(Number(event.target.value))} />
+        <Field label={tt({ en: 'Deposit on the first payment (TZS)', sw: 'Amana kwenye malipo ya kwanza (TZS)' })} type="number" min="0" value={deposit} onChange={(event) => setDeposit(Number(event.target.value))} hint={tt({ en: 'Ignored on a renewal.', sw: 'Haizingatiwi kwenye upya.' })} />
+        <Field label={tt({ en: 'Stage', sw: 'Hatua' })}>
+          {({ id, className }) => (
+            <SelectControl id={id} className={className} value={stage} onChange={(event) => setStage(event.target.value)}>
+              {STAGE_OPTION.map((option) => (
+                <option key={option.value} value={option.value}>{tt(option.label)}</option>
+              ))}
+            </SelectControl>
+          )}
+        </Field>
+        <div className="flex flex-col justify-end gap-2 pb-1">
+          <label className="flex items-center gap-2 text-[13px]">
+            <input type="checkbox" checked={newTenancy} onChange={(event) => setNewTenancy(event.target.checked)} className="h-4 w-4" />
+            {tt({ en: 'New tenancy (agent commission applies)', sw: 'Upangaji mpya (kamisheni inatumika)' })}
+          </label>
+          <label className="flex items-center gap-2 text-[13px]">
+            <input type="checkbox" checked={placeholder} onChange={(event) => setPlaceholder(event.target.checked)} className="h-4 w-4" />
+            {tt({ en: 'Placeholder rates: 10% tax, 1% fee, one period commission', sw: 'Viwango vya mfano: kodi 10%, ada 1%, kamisheni ya kipindi kimoja' })}
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <AsyncBlock state={quote}>
+          {(data) => (
+            <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+              <div className="rounded-md border border-border">
+                {!data.split.runs && (
+                  <p className="border-b border-border bg-muted/40 px-4 py-3 text-[12px] text-muted-foreground">
+                    {tt(data.split.note)}
+                  </p>
+                )}
+                {data.split.lines.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">
+                    {tt({ en: 'No split runs at this stage.', sw: 'Hakuna mgawanyo katika hatua hii.' })}
+                  </p>
+                ) : (
+                  data.split.lines.map((line) => (
+                    <div key={line.key} className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0">
+                      <div>
+                        <p className="text-[13px] font-medium">{tt(SPLIT_LABEL[line.key] || { en: line.key, sw: line.key })}</p>
+                        <p className="ibmt-hint">{line.basis}</p>
+                      </div>
+                      <Money amount={line.amount} strong={line.key === 'landlord_remainder'} />
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="space-y-3">
+                <div className="rounded-md border border-navy/20 bg-navy/[0.03] px-4 py-3">
+                  <p className="ibmt-kicker">{tt({ en: 'Tenant pays exactly', sw: 'Mpangaji hulipa kwa hakika' })}</p>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <Money amount={data.split.tenant_pays} strong />
+                    <span className="text-[11px] text-muted-foreground">
+                      {tt({ en: 'rent plus deposit', sw: 'kodi pamoja na amana' })}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                    {tt({ en: 'Never a fee, a viewing charge or a commission.', sw: 'Kamwe si ada, malipo ya kuona, wala kamisheni.' })}
+                  </p>
+                </div>
+                <Notice tone="privacy">
+                  {tt({ en: 'Rates used:', sw: 'Viwango vilivyotumika:' })}{' '}
+                  <span className="ibmt-num">
+                    tax {(Number(data.rates_used.tax_rate) * 100).toFixed(2)}% · fee {(Number(data.rates_used.service_fee_rate) * 100).toFixed(2)}% · commission {(Number(data.rates_used.commission_share) * 100).toFixed(0)}%
+                  </span>
+                  <span className="mt-1 block text-[11px]">{data.rates_source} · {data.policy_version || '—'}</span>
+                </Notice>
+                <p className={data.split.balanced ? 'text-[12px] font-medium text-success' : 'text-[12px] font-medium text-destructive'}>
+                  {data.split.balanced
+                    ? tt({ en: 'The lines add up to the rent.', sw: 'Mistari inajumlisha hadi kodi.' })
+                    : tt({ en: 'The lines do not add up. Nothing may be written.', sw: 'Mistari haijumlishi. Hakuna kinachoweza kuandikwa.' })}
+                </p>
+              </div>
+            </div>
+          )}
+        </AsyncBlock>
+      </div>
+
+      {onStart && (
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <Button
+            type="button"
+            className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
+            disabled={busy}
+            onClick={() => onStart({ rent_total: rentTotal, months, monthly_rent: monthlyRent, new_tenancy: newTenancy, deposit_amount: deposit, stage, demo_rates: placeholder ? PLACEHOLDER_RATES : undefined })}
+          >
+            {busy ? tt({ en: 'Starting…', sw: 'Inaanza…' }) : tt({ en: 'Start a simulated payment', sw: 'Anzisha malipo ya majaribio' })}
+          </Button>
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            {tt({ en: 'This creates a simulated payment in the initiated state. No money moves.', sw: 'Hii huunda malipo ya majaribio katika hali ya kuanza. Hakuna fedha zinazohamia.' })}
+          </p>
+        </div>
+      )}
+    </SectionCard>
+  );
+}

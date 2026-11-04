@@ -520,5 +520,10 @@
     "policyVersion": "Viwango vya sera vinaonyeshwa kutoka backend na vina toleo.",
     "noFunds": "IBMT haishikilii fedha.",
     "staleRecord": "Kumbukumbu hii ilibadilika baada ya wewe kuifungua."
+  },
+  "r7": {
+    "payouts": "Taarifa za malipo",
+    "simulation": "Injini ya fedha (majaribio)",
+    "privacy": "Kituo cha faragha"
   }
 }

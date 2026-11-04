@@ -77,6 +77,9 @@ import AssistedRegister from '@/pages/rent/assisted/Register';
 import WardVerification from '@/pages/rent/ward/Verification';
 import RegistrationCertificate from '@/pages/rent/certificate/Own';
 import PublicCertificate from '@/pages/certificate/Public';
+import MoneyEngine from '@/pages/rent/sim/Engine';
+import LandlordPayouts from '@/pages/rent/landlord/Payouts';
+import PrivacyCentre from '@/pages/privacy/Index';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -145,6 +148,9 @@ const AuthenticatedApp = () => {
         <Route path="/rent/council/agents" element={<WorkspaceGuard allow={['council_official', 'district_commissioner']}><CouncilAgents /></WorkspaceGuard>} />
         <Route path="/rent/lease/:leaseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><LeaseDetail /></WorkspaceGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/payouts" element={<WorkspaceGuard allow={['landlord']}><LandlordPayouts /></WorkspaceGuard>} />
+        <Route path="/rent/sim" element={<WorkspaceGuard adminOnly><MoneyEngine /></WorkspaceGuard>} />
+        <Route path="/privacy" element={<PrivacyCentre />} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
         <Route path="/rent/landlord/migrate" element={<WorkspaceGuard allow={['landlord']}><LandlordMigrate /></WorkspaceGuard>} />
         <Route path="/rent/certificate/:caseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><RegistrationCertificate /></WorkspaceGuard>} />

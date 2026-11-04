@@ -46,6 +46,7 @@ export const ROLE_NAV = {
         { to: '/rent/landlord/mandates', labelKey: 'nav.mandates', Icon: KeyRound },
         { to: '/rent/landlord/listings', labelKey: 'nav.listings', Icon: ClipboardList },
         { to: '/rent/landlord/tax', labelKey: 'nav.taxStatement', Icon: FileText },
+        { to: '/rent/landlord/payouts', labelKey: 'r7.payouts', Icon: Banknote },
         { to: '/rent/landlord/cases', labelKey: 'nav.cases', Icon: Scale },
       ],
     },
@@ -114,6 +115,7 @@ export const ROLE_NAV = {
         { to: '/rent/agent', labelKey: 'roles.agent', Icon: HardHat },
         { to: '/rent/ward', labelKey: 'roles.mtaa_officer', Icon: MapPin },
         { to: '/rent/council', labelKey: 'nav.oversight', Icon: Landmark },
+        { to: '/rent/sim', labelKey: 'r7.simulation', Icon: Gauge },
       ],
     },
   ],
@@ -158,6 +160,7 @@ export const SHARED_NAV = [
   { to: '/verify', labelKey: 'nav.verify', Icon: Search },
   { to: '/documents', labelKey: 'nav.documents', Icon: Download },
   { to: '/data-rights', labelKey: 'nav.dataRights', Icon: CircleHelp },
+  { to: '/privacy', labelKey: 'r7.privacy', Icon: Lock },
   { to: '/handover', labelKey: 'nav.handover', Icon: ClipboardList, adminOnly: true },
 ];
 

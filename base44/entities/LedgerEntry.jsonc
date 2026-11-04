@@ -1,0 +1,91 @@
+{
+  "name": "LedgerEntry",
+  "type": "object",
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "Posting group: one balanced set of lines shares a group id"
+    },
+    "posting": {
+      "type": "number",
+      "description": "Posting step inside the group, so the movement of money stays readable"
+    },
+    "account": {
+      "type": "string",
+      "description": "partner_clearing, tenant_funds, tax_payable, agent_payable, platform_income, landlord_payable, deposit_payable, refunds"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "debit",
+        "credit"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ]
+    },
+    "amount": {
+      "type": "number",
+      "description": "Whole shillings"
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Required on a reversing entry"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "actor_role": {
+      "type": "string"
+    },
+    "reversal_of": {
+      "type": "string",
+      "description": "Set on a correction: the original payment or group this entry reverses"
+    },
+    "simulation": {
+      "type": "boolean",
+      "default": true
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "payment_id",
+    "group_id",
+    "account",
+    "side",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

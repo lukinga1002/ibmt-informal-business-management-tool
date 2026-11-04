@@ -1,0 +1,75 @@
+{
+  "name": "OtpChallenge",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "User the challenge belongs to"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "e.g. payout_change, refund_approval"
+    },
+    "phone_masked": {
+      "type": "string",
+      "description": "Only the masked number is stored beside the challenge"
+    },
+    "code": {
+      "type": "string",
+      "description": "Simulation only: the code is shown so a demo can finish. A real provider sends it by SMS and stores a hash."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Five minutes after issue"
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0
+    },
+    "locked_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fifteen minutes after the fifth wrong code"
+    },
+    "consumed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subject_ref": {
+      "type": "string",
+      "description": "The record the challenge protects, e.g. a payout change id"
+    }
+  },
+  "required": [
+    "subject_id",
+    "purpose",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

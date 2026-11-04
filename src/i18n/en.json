@@ -520,5 +520,10 @@
     "policyVersion": "Policy values are shown from the backend and carry a version.",
     "noFunds": "IBMT never holds funds.",
     "staleRecord": "This record changed after you opened it."
+  },
+  "r7": {
+    "payouts": "Payout details",
+    "simulation": "Money engine (simulation)",
+    "privacy": "Privacy centre"
   }
 }

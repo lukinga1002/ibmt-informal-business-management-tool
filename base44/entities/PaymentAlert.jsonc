@@ -1,0 +1,87 @@
+{
+  "name": "PaymentAlert",
+  "type": "object",
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "provider_reference": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "signature_invalid",
+        "duplicate_callback",
+        "status_mismatch",
+        "amount_mismatch",
+        "state_violation",
+        "rate_limited"
+      ],
+      "enumColors": [
+        "red",
+        "yellow",
+        "red",
+        "red",
+        "red",
+        "gray"
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "description": "What did not match. Never contains a full phone number or ID."
+    },
+    "observed": {
+      "type": "object",
+      "description": "The values compared: callback claim versus status check"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "open",
+        "cleared"
+      ],
+      "enumColors": [
+        "red",
+        "green"
+      ],
+      "default": "open"
+    },
+    "cleared_by": {
+      "type": "string"
+    },
+    "cleared_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "detail"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
