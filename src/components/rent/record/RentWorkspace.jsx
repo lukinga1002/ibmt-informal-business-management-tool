@@ -26,10 +26,13 @@ export default function RentWorkspace({ role = 'landlord', footer = null }) {
   const load = useCallback(async () => {
     try {
       const me = await base44.auth.me().catch(() => null);
+      const empty = { items: [] };
       const [tenancyPage, recordPage, notificationPage] = await Promise.all([
-        base44.entities.Tenancy.filter({ status: { $in: ['active', 'pending'] } }, { sort: '-created_date', limit: 30 }),
-        base44.entities.RentPayment.filter({}, { sort: '-created_date', limit: 20 }),
-        base44.entities.Notification.filter({}, { sort: '-created_date', limit: 8 }),
+        base44.entities.Tenancy
+          .filter({ status: { $in: ['active', 'pending'] } }, { sort: '-created_date', limit: 30 })
+          .catch(() => empty),
+        base44.entities.RentPayment.filter({}, { sort: '-created_date', limit: 20 }).catch(() => empty),
+        base44.entities.Notification.filter({}, { sort: '-created_date', limit: 8 }).catch(() => empty),
       ]);
       let arrears = null;
       try {

@@ -341,6 +341,7 @@ function recordShape(record) {
     mobile_money_ref: record.mobile_money_ref || null,
     paid_on: record.paid_on || null,
     record_status: record.record_status || 'pending',
+    entered_by_id: record.entered_by_id || null,
     entered_by_role: record.entered_by_role || null,
     entered_by_name: record.entered_by_name || null,
     entered_at: record.entered_at || null,

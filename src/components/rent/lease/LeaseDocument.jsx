@@ -81,7 +81,7 @@ export default function LeaseDocument({ lease, showQr = false }) {
       </div>
 
       <Notice tone="caution" title="Stampu (stamp duty)">
-        {stamp.sw || stamp.en || 'Nafasi tu. Hakuna kiasi kinachokokotolewa au kudaiwa katika hatua hii.'}
+        {stamp.label?.sw || stamp.sw || 'Nafasi tu. Hakuna kiasi kinachokokotolewa au kudaiwa katika hatua hii.'}
       </Notice>
 
       {showQr && <LeaseQr code={lease.verify_code} />}

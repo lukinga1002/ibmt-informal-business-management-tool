@@ -62,6 +62,15 @@ export const STATUS = {
   not_connected: { Icon: CircleAlert, tone: 'muted' },
   human_review: { Icon: Eye, tone: 'warning' },
   not_effective: { Icon: Globe, tone: 'muted' },
+  signed: { Icon: FileText, tone: 'success' },
+  awaiting_signature: { Icon: Clock, tone: 'gold' },
+  awaiting_tenant: { Icon: Clock, tone: 'gold' },
+  terminated: { Icon: CircleX, tone: 'danger' },
+  amended: { Icon: FileText, tone: 'info' },
+  recorded: { Icon: Receipt, tone: 'navy' },
+  unconfirmed: { Icon: CircleDashed, tone: 'muted' },
+  not_due: { Icon: CalendarClock, tone: 'muted' },
+  pending_confirmation: { Icon: Clock, tone: 'gold' },
 };
 
 const TONE_CLASS = {

@@ -61,6 +61,11 @@ import ManagerDashboard from '@/pages/rent/manager/Dashboard';
 import WardDashboard from '@/pages/rent/ward/Dashboard';
 import RentCouncilDashboard from '@/pages/rent/council/Dashboard';
 import RentTraDashboard from '@/pages/rent/tra/Dashboard';
+import LandlordLeases from '@/pages/rent/landlord/Leases';
+import LandlordLeaseNew from '@/pages/rent/landlord/LeaseNew';
+import LandlordTaxStatement from '@/pages/rent/landlord/TaxStatement';
+import LeaseDetail from '@/pages/rent/lease/Detail';
+import PublicLease from '@/pages/lease/Public';
 import LandlordRegister from '@/pages/rent/landlord/Register';
 import LandlordMigrate from '@/pages/rent/landlord/Migrate';
 import AssistedRegister from '@/pages/rent/assisted/Register';
@@ -102,6 +107,7 @@ const AuthenticatedApp = () => {
       <Route path="/data-rights" element={<DataRights />} />
       <Route path="/rent" element={<RentHub />} />
       <Route path="/cert/:certificateNo" element={<PublicCertificate />} />
+      <Route path="/lease/:code" element={<PublicLease />} />
 
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
@@ -126,6 +132,10 @@ const AuthenticatedApp = () => {
         <Route path="/rent/landlord/portfolio" element={<WorkspaceGuard allow={['landlord']}><LandlordPortfolio /></WorkspaceGuard>} />
         <Route path="/rent/landlord/tenancies" element={<WorkspaceGuard allow={['landlord']}><LandlordTenancies /></WorkspaceGuard>} />
         <Route path="/rent/landlord/money" element={<WorkspaceGuard allow={['landlord']}><LandlordMoney /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/leases" element={<WorkspaceGuard allow={['landlord']}><LandlordLeases /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/lease/new" element={<WorkspaceGuard allow={['landlord']}><LandlordLeaseNew /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/tax" element={<WorkspaceGuard allow={['landlord']}><LandlordTaxStatement /></WorkspaceGuard>} />
+        <Route path="/rent/lease/:leaseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><LeaseDetail /></WorkspaceGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
         <Route path="/rent/landlord/migrate" element={<WorkspaceGuard allow={['landlord']}><LandlordMigrate /></WorkspaceGuard>} />

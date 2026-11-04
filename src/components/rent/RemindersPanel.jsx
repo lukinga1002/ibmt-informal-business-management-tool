@@ -8,7 +8,7 @@ import { formatDateTime } from '@/lib/format';
  * Until an SMS gateway is connected every copy stays inside the app.
  */
 export default function RemindersPanel({ notifications = [], smsAllowed = true, onToggleSms }) {
-  const { tt, lang, t } = useT();
+  const { tt, lang } = useT();
 
   return (
     <div className="space-y-4">
@@ -34,7 +34,7 @@ export default function RemindersPanel({ notifications = [], smsAllowed = true, 
                   <p className="text-[13px] font-medium">{tt(row.title)}</p>
                   <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{tt(row.body)}</p>
                   <p className="ibmt-num mt-1 text-[11px] text-muted-foreground">
-                    {formatDateTime(row.created_date, lang)} · {row.sent_via === 'sms' ? 'SMS' : t('common.status') === 'Status' ? 'in-app' : 'ndani ya app'}
+                    {formatDateTime(row.created_date, lang)} · {row.sent_via === 'sms' ? 'SMS' : 'Ndani ya app'}
                   </p>
                 </div>
               </div>
