@@ -86,8 +86,52 @@ export default async function (req) {
       }
     }
 
+    // Renewal reminders: 60 days and 30 days before the lease ends.
+    let renewals = 0;
+    for (const tenancy of tenancies) {
+      const lease = leaseByTenancy.get(tenancy.id) || null;
+      if (!lease || !lease.end_date) continue;
+      const daysLeft = Math.round(
+        (new Date(`${lease.end_date}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86400000,
+      );
+      if (daysLeft !== 60 && daysLeft !== 30) continue;
+
+      for (const subjectId of [tenancy.tenant_id, tenancy.landlord_id]) {
+        if (!subjectId) continue;
+        const role = subjectId === tenancy.tenant_id ? 'tenant' : 'landlord';
+        const dedupeKey = `renewal:${tenancy.id}:${daysLeft}:${role}`;
+        const existingRenewal = await base44.asServiceRole.entities.Notification
+          .filter({ dedupe_key: dedupeKey }, { limit: 1 });
+        if ((existingRenewal.items || []).length) continue;
+
+        if (dryRun) {
+          planned.push({ tenancy_id: tenancy.id, unit_ref: tenancy.unit_ref, role, days_left: daysLeft, kind: 'renewal', dedupe_key: dedupeKey });
+          continue;
+        }
+
+        await base44.asServiceRole.entities.Notification.create({
+          subject_id: subjectId,
+          kind: `renewal_reminder_${daysLeft}`,
+          channel: 'in_app',
+          title: {
+            sw: daysLeft === 30 ? 'Mkataba unaisha baada ya siku 30' : 'Mkataba unaisha baada ya siku 60',
+            en: daysLeft === 30 ? 'The lease ends in 30 days' : 'The lease ends in 60 days',
+          },
+          body: {
+            sw: `Mkataba ${lease.lease_ref || ''} wa nyumba ${tenancy.unit_ref} unaisha tarehe ${lease.end_date}. Amueni kuhusu kuendelea kabla ya tarehe hiyo.`,
+            en: `Lease ${lease.lease_ref || ''} for unit ${tenancy.unit_ref} ends on ${lease.end_date}. Decide about renewing before then.`,
+          },
+          data: { unit_ref: tenancy.unit_ref, lease_ref: lease.lease_ref || null, ends_on: lease.end_date, days_left: daysLeft },
+          dedupe_key: dedupeKey,
+          sent_via: 'in_app',
+        });
+        renewals += 1;
+      }
+    }
+
     return json({
       sent,
+      renewals,
       checked: tenancies.length,
       today,
       planned: dryRun ? planned : undefined,

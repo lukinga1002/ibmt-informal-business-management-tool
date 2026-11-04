@@ -43,6 +43,8 @@ export const ROLE_NAV = {
         { to: '/rent/landlord/tenancies', labelKey: 'nav.tenancies', Icon: FileText },
         { to: '/rent/landlord/leases', labelKey: 'nav.lease', Icon: Signature },
         { to: '/rent/landlord/money', labelKey: 'nav.money', Icon: Banknote },
+        { to: '/rent/landlord/mandates', labelKey: 'nav.mandates', Icon: KeyRound },
+        { to: '/rent/landlord/listings', labelKey: 'nav.listings', Icon: ClipboardList },
         { to: '/rent/landlord/tax', labelKey: 'nav.taxStatement', Icon: FileText },
         { to: '/rent/landlord/cases', labelKey: 'nav.cases', Icon: Scale },
       ],
@@ -86,6 +88,7 @@ export const ROLE_NAV = {
       section: 'nav.workspace',
       items: [
         { to: '/rent/council', labelKey: 'nav.dashboard', Icon: Landmark },
+        { to: '/rent/council/agents', labelKey: 'nav.agentLicences', Icon: KeyRound },
         { to: '/verify', labelKey: 'nav.verify', Icon: ShieldCheck },
       ],
     },

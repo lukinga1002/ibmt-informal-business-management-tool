@@ -1,162 +1,188 @@
-import { useEffect, useState } from 'react';
-import { useT } from '@/i18n/I18nContext';
-import { useIBMTQuery } from '@/api/hooks';
+import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
-import StatGrid from '@/components/ibmt/StatGrid';
-import DataState from '@/components/ibmt/DataState';
-import DataTable from '@/components/ibmt/DataTable';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDate } from '@/lib/format';
+import Field, { SelectControl, TextArea, TextInput } from '@/components/ibmt/Field';
+import TenantFeeNote from '@/components/rent/TenantFeeNote';
+import { Button } from '@/components/ui/button';
+import { callFn, fnError } from '@/lib/r4';
 
+const LICENCE_LABEL = {
+  pending: 'Inasubiri halmashauri',
+  approved: 'Imethibitishwa',
+  rejected: 'Imekataliwa',
+  suspended: 'Imesimamishwa',
+  revoked: 'Imefutwa',
+};
+
+const DISTRICTS = ['Kinondoni', 'Ubungo', 'Ilala', 'Temeke', 'Kigamboni', 'Bagamoyo', 'Kisarawe'];
+
+/** The agent's own workspace: licence, mandates and the commission owed to them. */
 export default function AgentDashboard() {
-  const { t, tt, lang } = useT();
-  const profile = useIBMTQuery('getAgentProfile');
-  const mandates = useIBMTQuery('listMandates', { limit: 8 });
-  const listings = useIBMTQuery('listListings', { limit: 8 });
-  const viewings = useIBMTQuery('listViewings', { limit: 8 });
-  const commissions = useIBMTQuery('listAgentCommissions', { limit: 8 });
-  const [tab, setTab] = useState('mandates');
+  const [licence, setLicence] = useState(null);
+  const [mandates, setMandates] = useState([]);
+  const [commission, setCommission] = useState(null);
+  const [form, setForm] = useState({ district: 'Kinondoni', ward: '', notes: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const [licenceData, mandateData, commissionData] = await Promise.all([
+        callFn('agentLicence', { action: 'mine' }),
+        callFn('agentMandate', { action: 'list' }),
+        callFn('agentCommission', { action: 'list' }),
+      ]);
+      setLicence(licenceData.current || null);
+      setMandates(mandateData.rows || []);
+      setCommission(commissionData);
+    } catch (err) {
+      setError(fnError(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requested = params.get('tab');
-    if (requested) setTab(requested);
-  }, []);
+    load();
+  }, [load]);
+
+  const apply = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await callFn('agentLicence', { action: 'apply', district: form.district, ward: form.ward, notes: form.notes });
+      await load();
+    } catch (err) {
+      setError(fnError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const totals = commission?.totals || { owed: 0, paid: 0, renewals: 0 };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t('brand.rent')}
-        title={t('roles.agent')}
-        lede={t('policy.licenceRule')}
-        meta={[
-          { label: profile.data?.licence_number || '—' },
-          { label: `${t('term.licence')}: ${t(`status.${profile.data?.licence_status || 'pending'}`)}` },
-          { label: `${t('rent.termsVersion')}: ${profile.data?.licence_expires_at ? formatDate(profile.data.licence_expires_at, lang) : '—'}` },
-        ]}
+        kicker="Wakala wa nyumba"
+        title="Wakala"
+        lede="Leseni yako, mandate zilizosainiwa na kamisheni inayodaiwa na mmiliki."
+        meta={[{ label: 'Kamisheni hulipwa na mmiliki' }]}
+        actions={<TenantFeeNote />}
       />
 
-      <DataState query={profile} skeleton="cards">
-        {(record) => (
-          <div className="space-y-4">
-            <StatGrid columns={4} items={(record.counters || []).map((counter) => ({ key: counter.key, label: tt(counter.label), value: counter.value }))} />
-            <div className="grid gap-3 lg:grid-cols-2">
-              <Notice tone="policy">{t(record.licence_note)}</Notice>
-              <Notice tone="caution">{t('policy.commissionRule')}</Notice>
+      {error && (
+        <p role="alert" className="text-[12px] font-medium text-destructive">
+          {error}
+        </p>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <SectionCard title="Leseni" description="Halmashauri inaamua; kila uamuzi una sababu na tarehe.">
+          {loading ? (
+            <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+          ) : licence ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={licence.status} label={LICENCE_LABEL[licence.status] || licence.status} />
+                {licence.licence_no && <span className="ibmt-num text-[12px] text-muted-foreground">{licence.licence_no}</span>}
+              </div>
+              <p className="text-[12px] text-muted-foreground">
+                {licence.district}
+                {licence.decision_reason ? ` · ${licence.decision_reason}` : ''}
+              </p>
+              {licence.status !== 'approved' && (
+                <Notice tone="caution" title="Hauwezi kupendekezwa bila leseni">
+                  Mmiliki hawezi kukutaja kwenye mandate hadi leseni yako ithibitishwe.
+                </Notice>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Notice tone="neutral" title="Hakuna leseni bado">
+                Wasilisha ombi. Halmashauri ya wilaya inaamua, na leseni inatolewa ikiwa imethibitishwa.
+              </Notice>
+              <Field label="Wilaya" required>
+                {(props) => (
+                  <SelectControl {...props} value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
+                    {DISTRICTS.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </SelectControl>
+                )}
+              </Field>
+              <Field label="Kata">
+                {(props) => <TextInput {...props} value={form.ward} onChange={(event) => setForm({ ...form, ward: event.target.value })} />}
+              </Field>
+              <Field label="Maelezo" hint="Uzoefu, eneo unaofanyia kazi">
+                {(props) => <TextArea {...props} rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />}
+              </Field>
+              <Button type="button" className="ibmt-tap w-full bg-navy font-semibold text-primary-foreground hover:bg-navy-deep" onClick={apply} disabled={busy}>
+                {busy ? 'Inawasilisha…' : 'Wasilisha ombi la leseni'}
+              </Button>
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Kamisheni" description="Inadaiwa na mmiliki. Mpangaji halipi kitu.">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
+              <p className="ibmt-kicker">Inadaiwa</p>
+              <Money amount={totals.owed} strong />
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
+              <p className="ibmt-kicker">Imelipwa</p>
+              <Money amount={totals.paid} strong />
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
+              <p className="ibmt-kicker">Marudio</p>
+              <p className="ibmt-num font-heading text-[17px] font-semibold">{totals.renewals}</p>
+              <p className="text-[11px] text-muted-foreground">Kamisheni: TZS 0</p>
             </div>
           </div>
+          <ul className="mt-4 space-y-2">
+            {(commission?.rows || []).slice(0, 6).map((row) => (
+              <li key={row.commission_id} className="flex items-center justify-between gap-3 border-b border-border pb-2 last:border-b-0">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium">{row.unit_ref || '—'}</p>
+                  <p className="text-[11px] text-muted-foreground">{row.kind === 'renewal' ? 'Marudio · hakuna kamisheni' : 'Tenancy mpya'}</p>
+                </div>
+                <Money amount={row.amount} />
+              </li>
+            ))}
+            {!(commission?.rows || []).length && <p className="text-[13px] text-muted-foreground">Hakuna kamisheni bado.</p>}
+          </ul>
+        </SectionCard>
+      </div>
+
+      <SectionCard title="Mandate zangu" description="Mandate inakuwa hai baada ya mmiliki kusaini kwa namba ya siri.">
+        {mandates.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground">Hakuna mandate bado.</p>
+        ) : (
+          <ul className="space-y-3">
+            {mandates.map((row) => (
+              <li key={row.mandate_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 last:border-b-0">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium">
+                    {row.unit_ref || row.unit_id} · {row.agent_name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Kamisheni {Number(row.fee_amount || 0).toLocaleString('en-TZ')} TZS (mmiliki) · mpangaji TZS 0
+                    {row.starts_on ? ` · kuanzia ${row.starts_on}` : ''}
+                  </p>
+                </div>
+                <StatusBadge status={row.status} label={row.status === 'active' ? 'Inafanya kazi' : row.status === 'offered' ? 'Inasubiri sahihi' : 'Imekwisha'} />
+              </li>
+            ))}
+          </ul>
         )}
-      </DataState>
-
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="ibmt-no-print h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
-          <TabsTrigger value="mandates" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('term.mandate')}
-          </TabsTrigger>
-          <TabsTrigger value="listings" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.listings')}
-          </TabsTrigger>
-          <TabsTrigger value="viewings" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('rent.viewing')}
-          </TabsTrigger>
-          <TabsTrigger value="commissions" className="ibmt-tap data-[state=active]:bg-navy data-[state=active]:text-primary-foreground">
-            {t('term.commission')}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mandates" className="mt-4">
-          <SectionCard title={t('term.mandate')} description={t('policy.licenceRule')}>
-            <DataState query={mandates} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <ul className="space-y-3">
-                  {mandates.items.map((mandate) => (
-                    <li key={mandate.id} className="rounded-md border border-border px-4 py-3">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-[13px] font-semibold text-navy">{mandate.agent_name}</p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusBadge status={mandate.status} />
-                          <span className="ibmt-num rounded-sm border border-border px-2 py-1 text-[11px] text-muted-foreground">
-                            {t('term.commission')} ≤ {mandate.commission_cap_percent}%
-                          </span>
-                        </div>
-                      </div>
-                      <ul className="mt-2 flex flex-wrap gap-2">
-                        {(mandate.scope || []).map((item) => (
-                          <li key={item.en} className="rounded-sm border border-border px-2 py-1 text-[11px] text-muted-foreground">
-                            {tt(item)}
-                          </li>
-                        ))}
-                      </ul>
-                      {mandate.rejected_reason && <Notice tone="caution" className="mt-3">{t(mandate.rejected_reason)}</Notice>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DataState>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="listings" className="mt-4">
-          <SectionCard title={t('rent.listings')} description={t('policy.addressesNeverPublic')}>
-            <DataState query={listings} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <DataTable
-                  columns={[
-                    { key: 'headline', header: t('common.details'), className: 'font-medium', render: (row) => tt(row.headline) },
-                    { key: 'mtaa', header: t('term.mtaa') },
-                    { key: 'monthly_rent', header: t('rent.rentAmount'), align: 'right', render: (row) => <Money amount={row.monthly_rent} /> },
-                    { key: 'verified', header: t('rent.ownershipEvidence'), render: (row) => <StatusBadge status={row.verified ? 'verified' : 'unverified'} /> },
-                    { key: 'viewings_open', header: t('rent.viewing'), render: (row) => <StatusBadge status={row.viewings_open ? 'active' : 'inactive'} /> },
-                  ]}
-                  rows={listings.items}
-                />
-              )}
-            </DataState>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="viewings" className="mt-4">
-          <SectionCard title={t('rent.viewing')} description={t('policy.noTenantFee')}>
-            <DataState query={viewings} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <DataTable
-                  columns={[
-                    { key: 'unit_ref', header: t('term.unit'), className: 'ibmt-num font-medium' },
-                    { key: 'starts_at', header: t('common.date'), className: 'ibmt-num', render: (row) => formatDate(row.starts_at, lang) },
-                    { key: 'status', header: t('common.status'), render: (row) => <StatusBadge status={row.status} /> },
-                    { key: 'fee_amount', header: t('common.amount'), align: 'right', render: (row) => <Money amount={row.fee_amount} note={t('rent.freeViewing')} /> },
-                  ]}
-                  rows={viewings.items}
-                />
-              )}
-            </DataState>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="commissions" className="mt-4">
-          <SectionCard title={t('term.commission')} description={t('policy.commissionRule')}>
-            <DataState query={commissions} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-              {() => (
-                <DataTable
-                  columns={[
-                    { key: 'unit_ref', header: t('term.unit'), className: 'ibmt-num font-medium' },
-                    { key: 'tenancy_kind', header: t('common.details'), render: (row) => (row.tenancy_kind === 'renewal' ? t('rent.renewal') : t('rent.newTenancy')) },
-                    { key: 'amount', header: t('term.commission'), align: 'right', render: (row) => <Money amount={row.amount} note={row.tenancy_kind === 'renewal' ? t('rent.commissionZero') : undefined} /> },
-                    { key: 'cap_percent', header: t('rent.scope'), className: 'ibmt-num', render: (row) => `${row.cap_percent}%` },
-                    { key: 'state', header: t('common.status'), render: (row) => <StatusBadge status={row.state} /> },
-                    { key: 'charged_at', header: t('common.date'), className: 'ibmt-num', render: (row) => (row.charged_at ? formatDate(row.charged_at, lang) : '—') },
-                  ]}
-                  rows={commissions.items}
-                />
-              )}
-            </DataState>
-          </SectionCard>
-        </TabsContent>
-      </Tabs>
+      </SectionCard>
     </div>
   );
 }

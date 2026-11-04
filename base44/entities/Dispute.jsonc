@@ -25,6 +25,13 @@
         "entry",
         "notice",
         "other"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "yellow",
+        "gray",
+        "gray"
       ]
     },
     "opened_by_role": {
@@ -33,6 +40,9 @@
         "landlord",
         "tenant"
       ]
+    },
+    "opened_by_id": {
+      "type": "string"
     },
     "body": {
       "type": "object",
@@ -51,9 +61,49 @@
         "open",
         "mediation",
         "resolved",
+        "escalated",
         "closed"
       ],
+      "enumColors": [
+        "yellow",
+        "blue",
+        "green",
+        "red",
+        "gray"
+      ],
       "default": "open"
+    },
+    "escalated_to": {
+      "type": "string",
+      "description": "Who the case was escalated to, e.g. district_commissioner"
+    },
+    "evidence_pack_id": {
+      "type": "string"
+    },
+    "timeline": {
+      "type": "array",
+      "description": "Every step with its own timestamp",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "by_role": {
+            "type": "string"
+          },
+          "by_name": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
     },
     "resolution_note": {
       "type": "object",
@@ -116,12 +166,27 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
         },
         {
           "$and": [
@@ -136,6 +201,11 @@
               }
             }
           ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },

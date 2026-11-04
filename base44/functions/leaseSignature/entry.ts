@@ -241,6 +241,7 @@ function viewShape(lease, myParty, isAdmin) {
   const signatures = lease.signatures || [];
   return {
     lease_id: lease.id,
+    tenancy_id: lease.tenancy_id || null,
     lease_ref: lease.lease_ref,
     unit_ref: lease.unit_ref,
     ward: lease.ward,

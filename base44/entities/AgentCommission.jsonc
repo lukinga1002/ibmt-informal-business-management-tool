@@ -11,21 +11,49 @@
     "landlord_id": {
       "type": "string"
     },
+    "tenancy_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
     "payment_id": {
       "type": "string"
     },
     "amount": {
       "type": "number",
-      "description": "Commission in TZS, paid by the landlord side only"
+      "description": "Commission in TZS, owed by the landlord side only. Always zero on a renewal."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "new_tenancy",
+        "renewal"
+      ],
+      "enumColors": [
+        "blue",
+        "gray"
+      ],
+      "description": "Stage 1: commission is earned on a new tenancy only."
     },
     "status": {
       "type": "string",
       "enum": [
         "accrued",
         "paid",
-        "reversed"
+        "reversed",
+        "zero_renewal"
+      ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "red",
+        "gray"
       ],
       "default": "accrued"
+    },
+    "note": {
+      "type": "string"
     },
     "policy_version": {
       "type": "string"
@@ -51,6 +79,11 @@
         {
           "user_condition": {
             "data.ibmt_role": "tra_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
           }
         }
       ]

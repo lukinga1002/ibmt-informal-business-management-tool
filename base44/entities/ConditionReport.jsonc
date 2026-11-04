@@ -17,6 +17,18 @@
     "tenant_id": {
       "type": "string"
     },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "move_in",
+        "move_out"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "move_in"
+    },
     "author_role": {
       "type": "string",
       "enum": [
@@ -45,6 +57,47 @@
           "condition"
         ]
       }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_signature",
+        "agreed"
+      ],
+      "enumColors": [
+        "yellow",
+        "green"
+      ],
+      "default": "awaiting_signature"
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "enum": [
+              "landlord",
+              "tenant"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "otp": {
+      "type": "object",
+      "description": "The one signing challenge outstanding for this report"
     },
     "agreed": {
       "type": "boolean",
@@ -84,10 +137,29 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {

@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
 import PolicyList from '@/components/ibmt/PolicyList';
+import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import AllocationBreakdown from '@/components/ibmt/AllocationBreakdown';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,6 +32,10 @@ export default function TenantDashboard() {
         lede={t('landing.forCitizensBody')}
         meta={[{ label: t('policy.tenantPaysExact') }, { label: t('policy.depositCustody') }]}
       />
+
+      <div>
+        <TenantFeeNote />
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
         <Notice tone="policy">{t('policy.ibmtHoldsNoFunds')}</Notice>

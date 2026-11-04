@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '@/components/ibmt/PageHeader';
 import Notice from '@/components/ibmt/Notice';
 import RentWorkspace from '@/components/rent/record/RentWorkspace';
+import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -17,9 +18,12 @@ export default function TenantPay() {
         lede="Wasilisha kodi uliyolipa, thibitisha rekodi ya mmiliki, na pata risiti yenye namba ya kuthibitisha."
         meta={[{ label: 'Hatua 1: kurekodi tu' }, { label: 'Hakuna ada ya mpangaji' }]}
         actions={
-          <Button asChild variant="outline" className="ibmt-tap">
-            <Link to="/rent/tenant/lease">Mkataba wangu</Link>
-          </Button>
+          <>
+            <TenantFeeNote />
+            <Button asChild variant="outline" className="ibmt-tap">
+              <Link to="/rent/tenant/lease">Mkataba wangu</Link>
+            </Button>
+          </>
         }
       />
 

@@ -1,134 +1,155 @@
-import { useState } from 'react';
-import { CalendarClock, ShieldCheck } from 'lucide-react';
-import { useT } from '@/i18n/I18nContext';
-import { useIBMTMutation, useIBMTQuery } from '@/api/hooks';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHeader from '@/components/ibmt/PageHeader';
-import DataState from '@/components/ibmt/DataState';
-import StatusBadge from '@/components/ibmt/StatusBadge';
-import Money from '@/components/ibmt/Money';
+import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
+import Money from '@/components/ibmt/Money';
+import Field, { TextInput } from '@/components/ibmt/Field';
+import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatDateTime } from '@/lib/format';
+import { callFn, fnError } from '@/lib/r4';
+import { formatDate } from '@/lib/format';
+import { useT } from '@/i18n/I18nContext';
 
+/**
+ * Find a home. The board shows the area only. Booking a viewing is free and is
+ * the only thing that reveals the exact address to the tenant.
+ */
 export default function TenantFind() {
-  const { t, tt, lang } = useT();
-  const [verifiedOnly, setVerifiedOnly] = useState(true);
-  const listings = useIBMTQuery('listListings', { verified_only: verifiedOnly, limit: 8 });
-  const [slotFor, setSlotFor] = useState(null);
-  const slots = useIBMTQuery('getViewingSlots', { id: slotFor?.id }, { enabled: Boolean(slotFor) });
-  const book = useIBMTMutation('bookViewing');
+  const { lang } = useT();
+  const [board, setBoard] = useState(null);
+  const [openId, setOpenId] = useState(null);
+  const [slot, setSlot] = useState('');
+  const [booked, setBooked] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const data = await callFn('listingBoard', { action: 'public' });
+      setBoard(data);
+    } catch (err) {
+      setError(fnError(err));
+      setBoard({ rows: [] });
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const book = async (row) => {
+    setBusy(true);
+    setError('');
+    try {
+      const data = await callFn('listingBoard', { action: 'book_viewing', listing_id: row.listing_id, slot });
+      setBooked((prev) => ({ ...prev, [row.listing_id]: data }));
+      setOpenId(null);
+      setSlot('');
+    } catch (err) {
+      setError(fnError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t('brand.rent')}
-        title={t('nav.find')}
-        lede={t('landing.forCitizensBody')}
-        meta={[{ label: t('rent.freeViewing') }, { label: t('policy.addressesNeverPublic') }]}
+        kicker="Tafuta nyumba"
+        title="Nyumba zilizothibitishwa"
+        lede="Nyumba zilizothibitishwa na afisa wa mtaa. Unaona kata na mtaa; anwani kamili inakuja baada ya kuweka miadi."
+        meta={[{ label: 'Hakuna ada ya kuona' }]}
+        actions={<TenantFeeNote />}
       />
 
-      <Notice tone="policy">{t('policy.noTenantFee')}</Notice>
+      {error && (
+        <p role="alert" className="text-[12px] font-medium text-destructive">
+          {error}
+        </p>
+      )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant={verifiedOnly ? 'default' : 'outline'} className="ibmt-tap" onClick={() => setVerifiedOnly(true)}>
-          <ShieldCheck className="mr-2 h-4 w-4" aria-hidden="true" />
-          {t('rent.eligible')}
-        </Button>
-        <Button type="button" variant={!verifiedOnly ? 'default' : 'outline'} className="ibmt-tap" onClick={() => setVerifiedOnly(false)}>
-          {t('common.all')}
-        </Button>
-      </div>
+      {board?.address_rule && <Notice tone="privacy">{board.address_rule.sw}</Notice>}
 
-      <DataState query={listings} skeleton="cards" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-        {() => (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {listings.items.map((listing) => (
-              <article key={listing.id} className="ibmt-panel flex flex-col p-5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h2 className="font-heading text-[15px] font-semibold text-navy">{tt(listing.headline)}</h2>
-                    <p className="ibmt-num mt-1 text-[11px] text-muted-foreground">
-                      {listing.mtaa}, {listing.ward_id} · {listing.unit_ref}
-                    </p>
+      <SectionCard title="Matangazo" description="Eneo pekee hadi miadi ya kuona iwekwe.">
+        {board === null ? (
+          <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+        ) : (board.rows || []).length === 0 ? (
+          <Notice tone="neutral">Hakuna nyumba inayotangazwa kwa sasa.</Notice>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {(board.rows || []).map((row) => {
+              const booking = booked[row.listing_id];
+              return (
+                <li key={row.listing_id} className="rounded-lg border border-border bg-card px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium">{row.headline?.sw || row.unit_ref}</p>
+                      <p className="mt-1 text-[12px] text-muted-foreground">
+                        {row.ward}
+                        {row.mtaa ? ` · ${row.mtaa}` : ''} · {row.district}
+                      </p>
+                      {row.unit_type && <p className="text-[11px] text-muted-foreground">{row.unit_type}</p>}
+                    </div>
+                    <Money amount={row.rent_amount} strong note="kwa mwezi" />
                   </div>
-                  <StatusBadge status={listing.verified ? 'verified' : 'unverified'} label={listing.verified ? t('rent.eligible') : t('rent.notEligible')} />
-                </div>
 
-                <ul className="mt-3 flex flex-wrap gap-2">
-                  {(listing.amenities || []).map((amenity) => (
-                    <li key={amenity.en} className="rounded-sm border border-border px-2 py-1 text-[11px] text-muted-foreground">
-                      {tt(amenity)}
-                    </li>
-                  ))}
-                </ul>
+                  {row.address_locked && !booking && (
+                    <p className="mt-2 text-[11px] text-gold-ink">
+                      Anwani imefichwa. Weka miadi ya kuona (bila malipo) kuipata.
+                    </p>
+                  )}
 
-                <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-                  <Money amount={listing.monthly_rent} note={t('rent.rentAmount')} strong />
-                  <Money amount={listing.deposit} note={t('rent.deposit')} muted />
-                </div>
+                  {booking && (
+                    <div className="mt-2 rounded-sm border border-dashed border-gold-ink/50 bg-gold-soft px-2 py-2 text-[12px] text-gold-ink">
+                      <p className="font-medium">Miadi: {formatDate(booking.slot, lang)}</p>
+                      <p className="ibmt-num mt-1">{booking.address || '—'}</p>
+                      {booking.tanesco_meter && <p className="ibmt-num">Mita: {booking.tanesco_meter}</p>}
+                    </div>
+                  )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="ibmt-tap mt-5 gap-2"
-                  disabled={!listing.viewings_open}
-                  onClick={() => setSlotFor(listing)}
-                >
-                  <CalendarClock className="h-4 w-4" aria-hidden="true" />
-                  {listing.viewings_open ? t('rent.bookViewing') : t('status.inactive')}
-                </Button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {!booking ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="ibmt-tap"
+                        onClick={() => setOpenId(openId === row.listing_id ? null : row.listing_id)}
+                      >
+                        Weka miadi ya kuona
+                      </Button>
+                    ) : (
+                      <Button asChild size="sm" variant="outline" className="ibmt-tap">
+                        <Link to="/rent/tenant/pay">Rekodi malipo</Link>
+                      </Button>
+                    )}
+                  </div>
 
-                {book.status === 'success' && book.result?.listing_id === listing.id && (
-                  <p className="mt-3 text-[12px] font-medium text-success">
-                    {t('states.successTitle')} · {formatDateTime(book.result.starts_at, lang)}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
+                  {openId === row.listing_id && (
+                    <div className="mt-3 space-y-3 border-t border-border pt-3">
+                      <Field label="Tarehe na saa" required>
+                        {(props) => (
+                          <TextInput {...props} type="datetime-local" value={slot} onChange={(event) => setSlot(event.target.value)} />
+                        )}
+                      </Field>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
+                        onClick={() => book(row)}
+                        disabled={busy || !slot}
+                      >
+                        {busy ? 'Inaweka…' : 'Thibitisha miadi (TZS 0)'}
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </DataState>
-
-      <Notice tone="privacy" title={t('verify.publicScope')}>
-        {t('policy.addressesNeverPublic')}
-      </Notice>
-
-      <Dialog open={Boolean(slotFor)} onOpenChange={(open) => !open && setSlotFor(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('rent.bookViewing')}</DialogTitle>
-            <DialogDescription>{t('rent.freeViewing')} — {t('policy.noTenantFee')}</DialogDescription>
-          </DialogHeader>
-          <DataState query={slots} skeleton="lines" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-            {() => (
-              <ul className="space-y-2">
-                {(slots.data?.items || []).map((slot) => (
-                  <li key={slot.id}>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="ibmt-tap w-full justify-between"
-                      disabled={book.saving}
-                      onClick={() => book.run({ listing_id: slotFor.id, unit_ref: slotFor.unit_ref, starts_at: slot.starts_at })}
-                    >
-                      <span className="ibmt-num">{formatDateTime(slot.starts_at, lang)}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        <Money amount={slot.fee_amount} note={t('rent.freeViewing')} />
-                      </span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </DataState>
-          {book.status === 'error' && (
-            <p role="alert" className="mt-3 text-[12px] font-medium text-destructive">
-              {book.error?.message || t('states.errorBody')}
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+      </SectionCard>
     </div>
   );
 }

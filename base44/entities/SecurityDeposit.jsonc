@@ -16,11 +16,43 @@
     },
     "amount": {
       "type": "number",
-      "description": "Held deposit as a whole number of shillings, capped by the active policy version"
+      "description": "Deposit as a whole number of shillings, capped by the active policy version"
     },
     "currency": {
       "type": "string",
       "default": "TZS"
+    },
+    "held_by": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "agent",
+        "tenant",
+        "other"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "green",
+        "gray"
+      ],
+      "description": "Who physically holds the money in Stage 1. IBMT never holds it."
+    },
+    "held_by_name": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "stage1_record_only",
+        "stage2_escrow"
+      ],
+      "enumColors": [
+        "gray",
+        "blue"
+      ],
+      "default": "stage1_record_only",
+      "description": "Stage 1 records the deposit only. Escrow exists from Stage 2."
     },
     "status": {
       "type": "string",
@@ -29,6 +61,12 @@
         "partially_released",
         "released",
         "claimed"
+      ],
+      "enumColors": [
+        "blue",
+        "yellow",
+        "green",
+        "purple"
       ],
       "default": "held"
     },
@@ -43,6 +81,16 @@
     },
     "ward": {
       "type": "string"
+    },
+    "recorded_by_id": {
+      "type": "string"
+    },
+    "recorded_by_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant"
+      ]
     },
     "policy_version": {
       "type": "string"
@@ -72,14 +120,29 @@
       ]
     },
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {

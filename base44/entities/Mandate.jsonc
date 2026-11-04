@@ -5,6 +5,9 @@
     "unit_id": {
       "type": "string"
     },
+    "unit_ref": {
+      "type": "string"
+    },
     "council_id": {
       "type": "string"
     },
@@ -23,21 +26,44 @@
     "agent_name": {
       "type": "string"
     },
+    "agent_email": {
+      "type": "string"
+    },
+    "licence_id": {
+      "type": "string",
+      "description": "The approved AgentLicence checked when the landlord named this agent"
+    },
+    "licence_no": {
+      "type": "string"
+    },
     "fee_basis": {
       "type": "string",
       "enum": [
         "monthly_flat",
         "share_of_rent"
       ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
       "default": "monthly_flat"
     },
     "fee_amount": {
       "type": "number",
-      "description": "Commission payable by the landlord only, as whole shillings, per the active policy version"
+      "description": "Commission payable by the landlord only, as whole shillings, never above the policy cap"
+    },
+    "commission_cap": {
+      "type": "number",
+      "description": "The cap in shillings that applied when this mandate was signed (cap share x monthly rent)"
     },
     "currency": {
       "type": "string",
       "default": "TZS"
+    },
+    "tenant_fee": {
+      "type": "number",
+      "default": 0,
+      "description": "Always zero. A tenant is never charged a fee, a viewing fee or a commission."
     },
     "starts_on": {
       "type": "string",
@@ -54,8 +80,50 @@
         "active",
         "ended"
       ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "gray"
+      ],
       "default": "offered",
       "description": "Only an active mandate gives the agent sight of the unit. Ending it clears the agent from the unit."
+    },
+    "otp": {
+      "type": "object",
+      "description": "The signing challenge the landlord requested: party, code and expiry"
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "enum": [
+              "landlord",
+              "agent"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_reason": {
+      "type": "string"
     },
     "policy_version": {
       "type": "string"

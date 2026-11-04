@@ -8,14 +8,24 @@
     "agent_name": {
       "type": "string"
     },
+    "agent_email": {
+      "type": "string"
+    },
     "council_id": {
+      "type": "string"
+    },
+    "region": {
       "type": "string"
     },
     "district": {
       "type": "string"
     },
-    "licence_no": {
+    "ward": {
       "type": "string"
+    },
+    "licence_no": {
+      "type": "string",
+      "description": "Serial licence number, e.g. IBMT-AGL-2026-0014. Issued only on approval."
     },
     "status": {
       "type": "string",
@@ -23,12 +33,32 @@
         "pending",
         "approved",
         "rejected",
-        "suspended"
+        "suspended",
+        "revoked"
+      ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "red",
+        "red",
+        "red"
       ],
       "default": "pending"
     },
+    "notes": {
+      "type": "string",
+      "description": "What the applicant wrote when applying"
+    },
     "decided_by": {
       "type": "string"
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision_reason": {
+      "type": "string",
+      "description": "Required for reject, suspend and revoke"
     },
     "decision_note": {
       "type": "object",
@@ -38,6 +68,28 @@
         },
         "sw": {
           "type": "string"
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "description": "Every decision in order, with its reason and time",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "type": "string"
+          }
         }
       }
     }
@@ -77,6 +129,9 @@
     },
     "create": {
       "$or": [
+        {
+          "data.agent_id": "{{user.id}}"
+        },
         {
           "$and": [
             {

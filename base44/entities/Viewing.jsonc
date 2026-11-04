@@ -5,6 +5,15 @@
     "listing_id": {
       "type": "string"
     },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string"
+    },
     "agent_id": {
       "type": "string"
     },
@@ -26,7 +35,19 @@
         "cancelled",
         "no_show"
       ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "gray",
+        "red"
+      ],
       "default": "booked"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
     }
   },
   "required": [
@@ -45,6 +66,14 @@
         },
         {
           "data.tenant_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
@@ -58,6 +87,9 @@
         },
         {
           "data.agent_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
         }
       ]
     },

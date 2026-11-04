@@ -5,6 +5,10 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import LeaseDocument from '@/components/rent/lease/LeaseDocument';
 import LeaseSignPanel from '@/components/rent/lease/LeaseSignPanel';
+import DepositPanel from '@/components/rent/lease/DepositPanel';
+import ConditionPanel from '@/components/rent/lease/ConditionPanel';
+import DisputePanel from '@/components/rent/lease/DisputePanel';
+import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
 import { callFn, fnError } from '@/lib/r4';
 
@@ -81,6 +85,22 @@ export default function LeaseDetail() {
           </Notice>
         </div>
       </div>
+
+      {lease.my_party === 'tenant' && (
+        <div>
+          <TenantFeeNote />
+        </div>
+      )}
+
+      {lease.tenancy_id && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DepositPanel tenancyId={lease.tenancy_id} role={lease.my_party} />
+          <ConditionPanel tenancyId={lease.tenancy_id} role={lease.my_party} />
+          <div className="lg:col-span-2">
+            <DisputePanel tenancyId={lease.tenancy_id} role={lease.my_party} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

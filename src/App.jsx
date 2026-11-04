@@ -38,6 +38,9 @@ import ConsumerContributions from '@/pages/consumer/Contributions';
 import ConsumerSettings from '@/pages/consumer/Settings';
 
 import CouncilDashboard from '@/pages/council/Dashboard';
+import CouncilAgents from '@/pages/rent/council/Agents';
+import LandlordMandates from '@/pages/rent/landlord/Mandates';
+import LandlordListings from '@/pages/rent/landlord/Listings';
 import CouncilPermits from '@/pages/council/Permits';
 import CouncilComplaints from '@/pages/council/Complaints';
 
@@ -135,6 +138,9 @@ const AuthenticatedApp = () => {
         <Route path="/rent/landlord/leases" element={<WorkspaceGuard allow={['landlord']}><LandlordLeases /></WorkspaceGuard>} />
         <Route path="/rent/landlord/lease/new" element={<WorkspaceGuard allow={['landlord']}><LandlordLeaseNew /></WorkspaceGuard>} />
         <Route path="/rent/landlord/tax" element={<WorkspaceGuard allow={['landlord']}><LandlordTaxStatement /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/mandates" element={<WorkspaceGuard allow={['landlord']}><LandlordMandates /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/listings" element={<WorkspaceGuard allow={['landlord', 'agent']}><LandlordListings /></WorkspaceGuard>} />
+        <Route path="/rent/council/agents" element={<WorkspaceGuard allow={['council_official', 'district_commissioner']}><CouncilAgents /></WorkspaceGuard>} />
         <Route path="/rent/lease/:leaseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><LeaseDetail /></WorkspaceGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
