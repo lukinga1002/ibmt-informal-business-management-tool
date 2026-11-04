@@ -8,7 +8,6 @@ import DataTable from '@/components/ibmt/DataTable';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
-import PolicyList from '@/components/ibmt/PolicyList';
 import AllocationBreakdown from '@/components/ibmt/AllocationBreakdown';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

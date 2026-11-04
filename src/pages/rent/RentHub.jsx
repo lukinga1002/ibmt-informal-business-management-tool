@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, HardHat, Landmark, MapPin, Table2, UserCheck, Users } from 'lucide-react';
+import { ArrowRight, Building2, HardHat, Landmark, MapPin, Users } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTQuery } from '@/api/hooks';
 import { useIBMT } from '@/api/IBMTContext';
@@ -9,7 +9,6 @@ import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
-import Notice from '@/components/ibmt/Notice';
 import PolicyList from '@/components/ibmt/PolicyList';
 
 const ENTRIES = [
