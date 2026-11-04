@@ -7,7 +7,21 @@
       "description": "User id the notification is for"
     },
     "kind": {
-      "type": "string"
+      "type": "string",
+      "description": "e.g. rent_reminder_7, rent_reminder_1, rent_record_confirmed"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "in_app",
+        "sms"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "in_app",
+      "description": "in_app always works. sms only when the person has not opted out and a gateway is connected."
     },
     "title": {
       "type": "object",
@@ -30,6 +44,18 @@
           "type": "string"
         }
       }
+    },
+    "data": {
+      "type": "object",
+      "description": "What the notification is about: unit_ref, period_month, amount, record_ref"
+    },
+    "dedupe_key": {
+      "type": "string",
+      "description": "One reminder per person, per period, per lead time: a re-run cannot send it twice"
+    },
+    "sent_via": {
+      "type": "string",
+      "description": "in_app (demo adapter) or sms once a gateway is connected"
     },
     "read": {
       "type": "boolean",

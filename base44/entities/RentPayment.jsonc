@@ -42,7 +42,7 @@
     },
     "period_month": {
       "type": "string",
-      "description": "Rent period the record covers, e.g. 2026-11. Drives area totals after confirmation."
+      "description": "Rent period the record covers, e.g. 2026-11"
     },
     "period_months": {
       "type": "number",
@@ -68,6 +68,31 @@
       "type": "string",
       "default": "TZS"
     },
+    "method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "mobile_money",
+        "bank_transfer",
+        "other"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "gray",
+        "gray"
+      ],
+      "description": "How the money moved. Stage 1 records it; IBMT never holds funds."
+    },
+    "mobile_money_ref": {
+      "type": "string",
+      "description": "Mobile-money or bank reference the payer quotes, kept exactly as entered"
+    },
+    "paid_on": {
+      "type": "string",
+      "format": "date",
+      "description": "The date the payer says the money moved"
+    },
     "withholding_amount": {
       "type": "number",
       "description": "Dormant in Stage 1. Set only under a confirmed TaxRule."
@@ -86,6 +111,7 @@
     "record_status": {
       "type": "string",
       "enum": [
+        "pending",
         "recorded",
         "confirmed",
         "disputed",
@@ -93,12 +119,16 @@
       ],
       "enumColors": [
         "yellow",
+        "gray",
         "green",
         "red",
         "gray"
       ],
-      "default": "recorded",
-      "description": "Stage 1 lifecycle of the record. The other party confirms it; only a confirmed record produces a receipt reference."
+      "default": "pending",
+      "description": "Stage 1 lifecycle. One party enters the record, the other confirms or disputes it; only a confirmed record produces a receipt reference."
+    },
+    "entered_by_id": {
+      "type": "string"
     },
     "entered_by_role": {
       "type": "string",
@@ -107,6 +137,9 @@
         "tenant"
       ],
       "description": "Who entered the record. The other party is the one who confirms it."
+    },
+    "entered_by_name": {
+      "type": "string"
     },
     "entered_at": {
       "type": "string",
@@ -117,6 +150,9 @@
       "format": "date-time"
     },
     "confirmed_by_id": {
+      "type": "string"
+    },
+    "confirmed_by_name": {
       "type": "string"
     },
     "disputed_at": {
@@ -142,12 +178,20 @@
         "red",
         "purple"
       ],
-      "default": "quoted",
+      "default": "pending",
       "description": "Dormant in Stage 1: the movement of money returns in Stage 2. Do not read this for Stage 1 state; read record_status."
     },
     "receipt_reference": {
       "type": "string",
       "description": "Issued at the moment of confirmation, including a late confirmation, and never earlier."
+    },
+    "receipt_issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sms_state": {
+      "type": "string",
+      "description": "not_sent | queued_gateway_off. Says plainly whether the SMS left the system."
     },
     "paid_at": {
       "type": "string",

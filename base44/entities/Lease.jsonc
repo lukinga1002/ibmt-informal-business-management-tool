@@ -11,7 +11,7 @@
     },
     "unit_id": {
       "type": "string",
-      "description": "One tenancy = one unit = one active lease. The backend refuses a second active lease on a unit."
+      "description": "One tenancy = one unit = one active lease. The backend refuses a second open lease on a unit."
     },
     "unit_ref": {
       "type": "string"
@@ -20,7 +20,8 @@
       "type": "string"
     },
     "tenant_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Bound when the tenant claims the lease from their own account, or at creation when the account is already known."
     },
     "agent_id": {
       "type": "string",
@@ -38,6 +39,9 @@
     "ward": {
       "type": "string"
     },
+    "mtaa": {
+      "type": "string"
+    },
     "start_date": {
       "type": "string",
       "format": "date"
@@ -48,15 +52,64 @@
     },
     "rent_amount": {
       "type": "number",
-      "description": "Agreed monthly rent as a whole number of shillings"
+      "description": "Agreed rent per period as a whole number of shillings"
     },
     "currency": {
       "type": "string",
       "default": "TZS"
     },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "quarterly"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "monthly"
+    },
     "terms": {
       "type": "object",
-      "description": "Lease terms: rent, interval, deposit, notice period, obligations, bilingual clauses"
+      "description": "The bilingual clauses the lease was created from, plus the figures they carry"
+    },
+    "template_version": {
+      "type": "string",
+      "description": "Standard template version this lease was built from, e.g. lease-2026.1-draft. Stored on the lease so a later template change never rewrites a signed lease."
+    },
+    "template_state": {
+      "type": "string",
+      "enum": [
+        "draft_pending_legal_review",
+        "reviewed"
+      ],
+      "enumColors": [
+        "yellow",
+        "green"
+      ],
+      "default": "draft_pending_legal_review",
+      "description": "draft_pending_legal_review = the standard template has not been through legal review yet."
+    },
+    "template_label": {
+      "type": "object",
+      "description": "The wording shown on the lease itself, e.g. DRAFT \u2014 pending legal review"
+    },
+    "stamp_duty": {
+      "type": "object",
+      "description": "Placeholder only. No amount is ever calculated or claimed in Stage 1."
+    },
+    "verify_code": {
+      "type": "string",
+      "description": "Long random code behind the QR on the lease, used by the public check page"
+    },
+    "claim_code": {
+      "type": "string",
+      "description": "Code the landlord hands the tenant so the tenant's own account is bound to the lease before signing. Cleared once claimed."
+    },
+    "otp": {
+      "type": "object",
+      "description": "One signing challenge at a time: the party, the code and its expiry"
     },
     "lease_version": {
       "type": "number",
@@ -66,6 +119,7 @@
       "type": "string",
       "enum": [
         "draft",
+        "awaiting_tenant",
         "awaiting_signature",
         "signed",
         "amended",
@@ -73,6 +127,7 @@
       ],
       "enumColors": [
         "gray",
+        "yellow",
         "yellow",
         "green",
         "blue",
@@ -102,30 +157,22 @@
         }
       }
     },
-    "stamp_duty_assessment": {
-      "type": "object",
-      "description": "Stamp duty computed by the backend from the active policy version",
-      "properties": {
-        "amount": {
-          "type": "number"
-        },
-        "basis": {
-          "type": "string"
-        },
-        "policy_version": {
-          "type": "string"
-        }
-      }
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client action key: a retried submit returns the lease that already exists"
     },
     "policy_version": {
       "type": "string"
     }
   },
   "required": [
-    "tenancy_id",
+    "lease_ref",
     "unit_id",
-    "landlord_id",
-    "tenant_id"
+    "landlord_id"
   ],
   "rls": {
     "read": {
@@ -147,14 +194,7 @@
       ]
     },
     "create": {
-      "$or": [
-        {
-          "data.landlord_id": "{{user.id}}"
-        },
-        {
-          "data.tenant_id": "{{user.id}}"
-        }
-      ]
+      "data.landlord_id": "{{user.id}}"
     },
     "update": {
       "$or": [
