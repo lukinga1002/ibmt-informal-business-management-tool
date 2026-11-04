@@ -8,6 +8,9 @@
     "tenancy_id": {
       "type": "string"
     },
+    "lease_id": {
+      "type": "string"
+    },
     "landlord_id": {
       "type": "string"
     },
@@ -47,6 +50,9 @@
       "type": "boolean",
       "default": false
     },
+    "council_id": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
@@ -71,16 +77,9 @@
           "data.tenant_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },

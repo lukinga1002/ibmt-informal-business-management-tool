@@ -5,6 +5,9 @@
     "tenancy_id": {
       "type": "string"
     },
+    "lease_id": {
+      "type": "string"
+    },
     "deposit_id": {
       "type": "string"
     },
@@ -63,6 +66,9 @@
         }
       }
     },
+    "council_id": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
@@ -92,18 +98,6 @@
           "$and": [
             {
               "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
                 "data.ibmt_role": "mtaa_officer"
               }
             },
@@ -116,7 +110,7 @@
         },
         {
           "user_condition": {
-            "data.ibmt_role": "tra_admin"
+            "role": "admin"
           }
         }
       ]
@@ -128,18 +122,6 @@
       "$or": [
         {
           "created_by_id": "{{user.id}}"
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
         },
         {
           "$and": [

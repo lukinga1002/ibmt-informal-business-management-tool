@@ -17,6 +17,13 @@
     "agent_name": {
       "type": "string"
     },
+    "landlord_id": {
+      "type": "string"
+    },
+    "consent_id": {
+      "type": "string",
+      "description": "The listings consent row that permits this listing. Withdrawing it hides the listing."
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -46,11 +53,25 @@
     "rent_amount": {
       "type": "number"
     },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
     "ward": {
       "type": "string"
+    },
+    "mtaa": {
+      "type": "string",
+      "description": "Area shown to the public. Never a street, house number, plot number or pin."
     }
   },
   "required": [
@@ -72,16 +93,7 @@
           "data.agent_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
+          "data.landlord_id": "{{user.id}}"
         },
         {
           "$and": [
@@ -96,11 +108,35 @@
               }
             }
           ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
       "$or": [
@@ -109,6 +145,9 @@
         },
         {
           "data.agent_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
         }
       ]
     },

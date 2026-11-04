@@ -8,6 +8,9 @@
     "agent_name": {
       "type": "string"
     },
+    "council_id": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
@@ -57,42 +60,60 @@
           "$and": [
             {
               "user_condition": {
-                "data.ibmt_role": "district_official"
+                "data.ibmt_role": "council_official"
               }
             },
             {
-              "data.district": "{{user.data.district}}"
+              "data.council_id": "{{user.data.council_id}}"
             }
           ]
         },
         {
           "user_condition": {
-            "data.ibmt_role": "tra_admin"
+            "role": "admin"
           }
         }
       ]
     },
     "create": {
-      "$and": [
+      "$or": [
         {
-          "user_condition": {
-            "data.ibmt_role": "district_official"
-          }
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
         },
         {
-          "data.district": "{{user.data.district}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "update": {
-      "$and": [
+      "$or": [
         {
-          "user_condition": {
-            "data.ibmt_role": "district_official"
-          }
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
         },
         {
-          "data.district": "{{user.data.district}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },

@@ -54,6 +54,13 @@
     "exported_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "shared_with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User ids the tenant has shared this pack with. A shared pack is the only way another person sees rent evidence."
     }
   },
   "required": [
@@ -69,21 +76,28 @@
           "data.tenant_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
+          "data.shared_with": {
+            "$in": [
+              "{{user.id}}"
+            ]
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
       "$or": [

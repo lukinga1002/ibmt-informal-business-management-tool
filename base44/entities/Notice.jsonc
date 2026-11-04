@@ -5,6 +5,9 @@
     "tenancy_id": {
       "type": "string"
     },
+    "lease_id": {
+      "type": "string"
+    },
     "landlord_id": {
       "type": "string"
     },
@@ -42,6 +45,9 @@
         "tenant"
       ]
     },
+    "council_id": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
@@ -70,18 +76,6 @@
           "$and": [
             {
               "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
                 "data.ibmt_role": "mtaa_officer"
               }
             },
@@ -91,11 +85,23 @@
               }
             }
           ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
       "created_by_id": "{{user.id}}"

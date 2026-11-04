@@ -8,12 +8,15 @@
     "unit_ref": {
       "type": "string"
     },
+    "landlord_id": {
+      "type": "string"
+    },
     "submitted_by_name": {
       "type": "string"
     },
     "evidence_uri": {
       "type": "string",
-      "description": "Private uploaded evidence file URI"
+      "description": "Private uploaded evidence file URI (stored privately)"
     },
     "evidence_kind": {
       "type": "string",
@@ -53,6 +56,9 @@
         }
       }
     },
+    "council_id": {
+      "type": "string"
+    },
     "district": {
       "type": "string"
     },
@@ -60,8 +66,7 @@
       "type": "string"
     },
     "idempotency_key": {
-      "type": "string",
-      "description": "Client action key: a retried submit can never file the same evidence twice"
+      "type": "string"
     }
   },
   "required": [
@@ -73,6 +78,9 @@
       "$or": [
         {
           "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
         },
         {
           "$and": [
@@ -92,13 +100,18 @@
           "$and": [
             {
               "user_condition": {
-                "data.ibmt_role": "district_official"
+                "data.ibmt_role": "council_official"
               }
             },
             {
-              "data.district": "{{user.data.district}}"
+              "data.council_id": "{{user.data.council_id}}"
             }
           ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
@@ -118,6 +131,18 @@
               "data.ward": {
                 "$in": "{{user.data.ward_ids}}"
               }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
             }
           ]
         },
