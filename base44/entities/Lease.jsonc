@@ -2,7 +2,18 @@
   "name": "Lease",
   "type": "object",
   "properties": {
+    "lease_ref": {
+      "type": "string",
+      "description": "Serial reference, e.g. IBMT-LSE-2026-000214"
+    },
     "tenancy_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string",
+      "description": "One tenancy = one unit = one active lease. The backend refuses a second active lease on a unit."
+    },
+    "unit_ref": {
       "type": "string"
     },
     "landlord_id": {
@@ -10,6 +21,38 @@
     },
     "tenant_id": {
       "type": "string"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent under an active mandate when the lease was signed. Agents never read rent history."
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Agreed monthly rent as a whole number of shillings"
+    },
+    "currency": {
+      "type": "string",
+      "default": "TZS"
     },
     "terms": {
       "type": "object",
@@ -27,6 +70,13 @@
         "signed",
         "amended",
         "terminated"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "blue",
+        "red"
       ],
       "default": "draft"
     },
@@ -73,6 +123,7 @@
   },
   "required": [
     "tenancy_id",
+    "unit_id",
     "landlord_id",
     "tenant_id"
   ],
@@ -80,8 +131,33 @@
     "read": {
       "$or": [
         {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        },
+        {
           "created_by_id": "{{user.id}}"
         },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.tenant_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
         {
           "data.landlord_id": "{{user.id}}"
         },
@@ -89,29 +165,11 @@
           "data.tenant_id": "{{user.id}}"
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "district_official"
-              }
-            },
-            {
-              "data.district": "{{user.data.district}}"
-            }
-          ]
-        },
-        {
           "user_condition": {
-            "data.ibmt_role": "tra_admin"
+            "role": "admin"
           }
         }
       ]
-    },
-    "create": {
-      "created_by_id": "{{user.id}}"
-    },
-    "update": {
-      "created_by_id": "{{user.id}}"
     },
     "delete": {
       "user_condition": {
