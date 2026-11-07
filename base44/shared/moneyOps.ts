@@ -49,11 +49,41 @@ export function monthRange(from = null, to = null) {
   return { from: cleanText(from) || `${today.slice(0, 7)}-01`, to: cleanText(to) || today };
 }
 
-/** The active policy version. Every rate and window is read from it, never hard-coded. */
+/**
+ * DORMANT. PolicyVersion is no longer read by any rent money path: PolicyRule is
+ * the single source for every rent rate. Kept only for the parked operator
+ * module, which still reads permit fees and presumptive bands from it.
+ */
 export async function getActivePolicy(base44) {
   const page = await base44.entities.PolicyVersion.filter({ status: 'active' }, { sort: '-effective_from', limit: 1 });
   const items = page.items || page;
   return Array.isArray(items) && items.length ? items[0] : null;
+}
+
+/**
+ * The rent policy rule in force: the latest row that has not been closed with
+ * an effective_to date. PolicyRule is the single source for rent rates.
+ */
+export async function getPolicyRules(base44) {
+  const page = await base44.entities.PolicyRule.filter({}, { sort: '-effective_from', limit: 5 });
+  const items = page.items || page;
+  const open = Array.isArray(items) ? items.filter((row) => !row.effective_to) : [];
+  return open[0] || null;
+}
+
+/**
+ * Rent rates exactly as the money functions read them, with the Stage 1 ruling:
+ * the agent commission is one month's rent on a new tenancy, never 8% and never
+ * capped in shillings. Tax is absent because Stage 1 runs no withholding.
+ */
+export function rentRates(rule) {
+  const row = rule || {};
+  const num = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
+  return {
+    landlord_service_fee_rate: num(row.landlord_service_fee_rate, 0),
+    commission_months: num(row.commission_cap, 1),
+    deposit_cap_months: num(row.deposit_cap_months, 1),
+  };
 }
 
 /**

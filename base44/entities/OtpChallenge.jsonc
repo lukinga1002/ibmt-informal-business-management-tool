@@ -4,11 +4,11 @@
   "properties": {
     "subject_id": {
       "type": "string",
-      "description": "User the challenge belongs to"
+      "description": "Who the challenge belongs to: a user id, or a namespaced reference such as registration:<landlord id>. Never a phone number."
     },
     "purpose": {
       "type": "string",
-      "description": "e.g. payout_change, refund_approval"
+      "description": "e.g. payout_change, registration_otp, migration_otp"
     },
     "phone_masked": {
       "type": "string",
@@ -16,7 +16,19 @@
     },
     "code": {
       "type": "string",
-      "description": "Simulation only: the code is shown so a demo can finish. A real provider sends it by SMS and stores a hash."
+      "description": "Simulation only, and only for the R7 payout demo: the code is shown so a demo can finish. Registration challenges never store a code, only code_hash."
+    },
+    "code_hash": {
+      "type": "string",
+      "description": "SHA-256 of salt and code. The code itself is never stored and never returned to anyone but the party whose number it was sent to."
+    },
+    "salt": {
+      "type": "string",
+      "description": "Random salt generated per code, so one leaked hash cannot be reused against another challenge."
+    },
+    "channel": {
+      "type": "string",
+      "description": "How the code left the system: not_sent | in_app_demo | sms. Says plainly whether an SMS went out."
     },
     "issued_at": {
       "type": "string",
@@ -42,7 +54,7 @@
     },
     "subject_ref": {
       "type": "string",
-      "description": "The record the challenge protects, e.g. a payout change id"
+      "description": "The record the challenge protects, e.g. a payout change id or a registration case reference"
     }
   },
   "required": [
