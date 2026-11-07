@@ -9,11 +9,11 @@ Built 4 November 2026. Stages 2 and 3 are **simulation only**. No payment provid
 | Piece | State | What makes it real |
 | --- | --- | --- |
 | Split engine (tax → agent commission → service fee → landlord) | **Real logic**, server only, whole TZS, rounding to the landlord | Nothing. This is arithmetic and it is finished. |
-| Rates used by the split | Read from the active policy version (`2026.1`, tax 0%, fee 1%, commission 8% capped at 150,000) | Set the real rates on the policy row when stage 3 is agreed. Today `rent_withholding_rate` is deliberately 0. |
+| Rates used by the split | Read from the active **PolicyRule** row (`2026.1-stage1`): agent commission **one month's rent** per new tenancy, landlord service fee 1%, deposit cap 1 month, **no withholding at all**. `PolicyVersion` is dormant and no rent path reads it. | Confirm the rates. There is no percentage commission and no shilling cap anywhere in the code. |
 | Payment states and transitions | **Real**, one table in `shared/r7.ts`, every move validated there | Nothing. |
 | Double-entry ledger | **Real logic**, append-only by design, one balanced group per settled payment | It is append-only because only the functions write it and RLS denies everyone else. There is no database-level immutability — see §3. |
 | Partner callbacks (signature, separate status check, duplicate reference, alert queue) | **Mock partner.** The demo can sign its own callbacks with a key held in the code | A real provider account, its webhook signing secret in app secrets, its status endpoint, and a public webhook URL. The rules are already the ones a real provider would have to follow. |
-| OTP for payout-number change | **Real rules** (5 minutes, 5 attempts, 15-minute lockout, rate limits per phone and per person), but the code is shown on screen | An SMS gateway. The code must go to the old number and never be returned to the browser. |
+| OTP — payout change, registration and migration | **Real rules** (5 minutes, 5 attempts, 15-minute lockout, 3 codes per phone and 3 per person per hour), codes from the CSPRNG, a random 16-byte salt per code, and only `salt` + `code_hash` stored on the admin-only `OtpChallenge` row. Registration cases carry no code data at all. | An SMS gateway. The payout demo still stores the plain code because it is played on screen; the code must go to the old number only and never be returned to the browser. |
 | Cooling-off on a payout change | **Real** (24 hours, configurable in `shared/r7.ts`) | Nothing, but for a meeting you cannot wait 24 hours — show the state and say so. |
 | Two-person approval for money actions | **Real rule**, but only one admin account exists today, so a second person must be invited before a refund can actually be approved | Invite a second admin (App Users). |
 | Ledger alerts | **Real**, four open items from today's tests are visible in the queue | A person still has to work the queue; nothing auto-corrects. |
@@ -26,8 +26,8 @@ Built 4 November 2026. Stages 2 and 3 are **simulation only**. No payment provid
 ## 2. Every remaining mock and placeholder
 
 1. **Mock partner** — `provider: mock_partner`. A callback is signed with a key in `shared/r7.ts`, and the demo may play the partner. Real: provider secret in app secrets, signature verified against that secret, provider status endpoint called, real provider reference.
-2. **Placeholder rates in the worked examples** — 10% tax, 1% service fee, one period of commission. These are test inputs, chosen to reproduce the brief exactly. They are never used for a normal run: a normal run reads the policy.
-3. **Simulation OTP code on screen** — because no SMS is sent. Real: SMS gateway, code hashed at rest, never returned.
+2. **Placeholder rates in the worked examples** — a stage-3 test set (10% tax, 1% service fee, one month of commission), used by the demo switch and the arithmetic tests only. A normal run reads the active `PolicyRule` row: one month's rent commission, 1% service fee, no withholding.
+3. **Codes shown on screen** — because no SMS is sent. Registration and migration codes are already hashed with a per-code salt and stored on the admin-only challenge row; only the payout demo still stores its plain code so the simulation can be played. Real: SMS gateway, nothing returned to the browser.
 4. **Payout numbers are recorded, never used** — no rails.
 5. **Retention periods** — 730 / 365 / 180 days, marked `placeholder: true`, and the purge refuses to run unless an admin ticks "this is a test run".
 6. **Anonymisation** — replaces names it is allowed to write (`RentalUnit.landlord_name`, `Viewing.tenant_name`) and withdraws consents. It does not close the login: that is the platform's, not this screen's.
@@ -142,3 +142,23 @@ Full bilingual script: `DEMO_SCRIPT.md`.
 | 6:15 | Stages 2 and 3, as simulation | `/rent/sim` |
 
 What to say aloud at the end: *"The arithmetic, the ledger and the controls are ready. What is not ready is the part a bank insists on: Base44 cannot yet run transactions across records or enforce uniqueness, so no real money is taken on this app until that is fixed and independently tested. Everything you have just seen in stages 2 and 3 is a simulation."*
+
+---
+
+## 6. Review round F1 — 7 November 2026
+
+Nine fixes from the independent review of commit `9c3d01c`, each verified on the server.
+
+| # | Fix | How it was tested |
+| --- | --- | --- |
+| 1 | Public tax-compliance document withdrawn: the `/documents` tab holds only the lease and the rent receipt, nothing calls `getTaxCompliance`, and the specimen and endpoint stay dormant | grep: no caller, no screen, no text suggesting TRA has certified anyone |
+| 2 | "Mandatory withholding processing" and "confirmed legal mandate" replaced in both languages and in the demo consent rows; the registration consent reads "Inahitajika kwa huduma:" | grep for the old phrases returns only the honest "designed but switched off" policy line |
+| 3 | Agent cap is one month's rent; `PolicyRule` is the single source; `rentPayment` and `simPayment` no longer read `PolicyVersion`; no 8%, no TZS 150,000 | quote of 500,000 for one month returns commission 500,000, tax 0, `policy_version 2026.1-stage1` |
+| 4 | Registration OTP: 5 minutes, 5 attempts, 15-minute lockout, hourly limits, random salt per code, hash only, on the admin-only `OtpChallenge`; every write on the service role | wrong code refused; five wrong codes locked it; the correct code was then refused as locked; an expired challenge was refused; the correct code confirmed the case **with no session at all** |
+| 5 | `rentPayment` refuses while the council is in Stage 1 and has no `tenancies[0]` fallback | 409 `STAGE1_RECORD_ONLY` with nothing written; 404 for a caller with no tenancy on the unit |
+| 6 | `decideOwnership` retired behind `shared/verification.ts`; approval refused without evidence; audit entry either way | approval issued a certificate carrying both disclaimers; a no-evidence approval returned 409 `NO_EVIDENCE` plus an `AuditLog` row with outcome `refused` |
+| 7 | `Listing` public database read removed; public browsing goes through `listingBoard` only | the public row carries area and listing detail, never `landlord_id`, `agent_id`, `consent_id` or `unit_id` |
+| 8 | `User` reads restricted to self and admin — before, there was no read rule and any signed-in user could read every other user's name, email, role, jurisdiction and ward list | rule in `User.jsonc`; the backend functions that legitimately need another user's row already run on the service role |
+| 9 | Ward verification lint error, the Inter and Space Grotesk font links, and the old orange palette comment | ESLint clean on every touched file; production build passes |
+
+Test fixtures created by these checks (safe to delete): units `IBMT-UNIT-2026-00955635`, `IBMT-UNIT-2026-02409032`, `IBMT-UNIT-2026-02418542`, their registration cases and OTP challenges, and certificate `IBMT-CERT-2026-01002`.

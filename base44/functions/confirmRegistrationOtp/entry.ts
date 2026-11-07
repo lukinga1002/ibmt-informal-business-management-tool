@@ -66,7 +66,6 @@ export default async function (req) {
     const updated = await base44.asServiceRole.entities.VerificationCase.update(found.id, {
       otp_confirmed_at: now,
       status: 'submitted',
-      otp_code_hash: '',
     });
 
     if (found.channel === 'migrated' && found.migration && found.migration.tenancy_id) {

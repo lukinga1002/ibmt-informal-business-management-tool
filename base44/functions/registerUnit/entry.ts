@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { bilingual, cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
+import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import {
   DISCLAIMER,
   EVIDENCE_KINDS,

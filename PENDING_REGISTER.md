@@ -1,135 +1,152 @@
 # PENDING REGISTER — IBMT Rent
-Consolidated 4 November 2026. Every open item across R2–R7 and Amendment A1, in one list.
-Tags: **BLOCKER** real use impossible · **RULING** your decision needed · **QUESTION** needs an answer ·
-**OFF** deliberately switched off · **PLACEHOLDER** needs a real value · **MOCK** needs a real provider ·
-**LIMIT** platform ceiling · **DEBT** model tidy-up · **UNTESTED** not yet exercised.
+
+Consolidated 4 November 2026. Rulings applied and review round **F1 closed 7 November 2026**.
+Tags: **BLOCKER** real use impossible · **BUILD** decided, not yet built · **OFF** deliberately switched off ·
+**PLACEHOLDER** needs a real value · **MOCK** needs a real provider · **LIMIT** platform ceiling ·
+**DEBT** model tidy-up · **UNTESTED** not yet exercised · **HOLD** your ruling outstanding.
+
+---
+
+## Rulings received 7 November 2026 — now in force
+
+9. Both disclaimers appear on a certificate: "registration does not prove ownership" **and** the ownership-transfer notice.
+10. Sales are anchored on a **Property**. Units registered one by one are grouped into a Property by the owner's confirmation; units under different owners are separate Properties. The agent cap is one month's rent per new tenancy.
+11. One licence per broker **per council**.
+12. The seller's OTP goes to the number on the **registration record**. If it differs from the account number, the seller attends the Mtaa office in person.
+13. A new certificate number at each level; an issued document is never rewritten.
+14. Public broker check shows **council name and status only**.
+15. Audit log stays **admin-only**.
+16. Commission accrued before a sale stays the seller's liability; an unpaid commission never blocks a sale.
+17. First review is the **mtaa_officer**, final approval the **council_official**. A DC never decides.
+18. Pre-date rent records are never re-attributed to the buyer.
+19. Deposit holder stays "landlord" plus the party's name.
+20. The entity reuse map is approved.
+21. The old consent field is retired.
+22. Rent receipts keep `receipt_reference`; no new receipt entity.
+23. `property_type` retires later; `PolicyVersion` is dormant now (see F1 item 3).
+24. On a suspected duplicate the landlord sees **"sent for review"** only.
+25. `pending-otp:<phone>` as tenant id is accepted **for the demo only**; revisit before real use.
+26. Tenant-initiated registration stays **OFF**.
+27. Amnesty notice stays **OFF**.
+28. One reason rule: 10 characters for approve, query and reject alike.
+29. "Verified" means the documents were checked. Label it **"Nyaraka zimekaguliwa" / "Documents checked"**.
+30. A code visible only in the owner's own session is accepted **for the demo only**.
+31. Buyers reuse the four consent purposes; no fifth purpose.
+32. No partial sale in A1.
+34. Objections: owner of record, a tenant of the property, or a person filing a claim with evidence. No anonymous objections.
+35. Objection window: 14 days from both signatures.
+36. Effective date is the council approval time.
+37. A deposit stays flagged until **both** parties confirm. No automatic outcome.
+38. Compulsory broker registration reuses the council's enforcement mode and by-law.
+39. **Build the broker register first.**
+40. Transfer reminders are in-app only until SMS exists.
+41. `asset_type` plus a `plots_register` flag off; no plot screens; legacy plot rows excluded.
+69. Registration cases (`VerificationCase`) and ownership changes stay separate records.
+
+**On hold:** item 33 (co-owners) and section K (NIDA). Nothing is built for either, and no NIDA number is stored anywhere.
+
+---
 
 ## A. Hard blockers before real use (8)
 
 1. **BLOCKER** No transactions across records — a multi-record write that fails halfway leaves the earlier writes in place.
-2. **BLOCKER** No unique index — "one payment per provider reference" cannot be enforced by the database, only by an explicit check.
-3. **BLOCKER** No row locks — substituted by a conditional single-record claim (`updateMany` on `{id, state}`); narrows the window, does not close it.
-4. **BLOCKER** Only one admin account exists — the two-person rule for money actions cannot actually be satisfied until a second admin is invited.
-5. **BLOCKER** The lease template is `draft_pending_legal_review` — it must not be used for really signing leases until reviewed.
-6. **BLOCKER** App is unpublished — the certificate QR and public check links point at a local origin, not a permanent public address.
-7. **BLOCKER** The nine demo accounts are not invited — no role view (landlord, tenant, agent, mtaa, council, DC, RC, TRA) has been tested as itself.
-8. **BLOCKER** No SMS gateway — every OTP (registration, lease, mandate, payout change, and A1 sale signatures) is displayed on screen instead.
+2. **BLOCKER** No unique index — "one payment per provider reference" is checked, not enforced by the database.
+3. **BLOCKER** No row locks — narrowed to a conditional single-record claim, never eliminated.
+4. **BLOCKER** Only one admin account exists, so two-person approval for money cannot actually be satisfied.
+5. **BLOCKER** The lease template is `draft_pending_legal_review`.
+6. **BLOCKER** App is unpublished, so certificate QR and public check links are not permanent.
+7. **BLOCKER** The nine demo accounts are not invited.
+8. **BLOCKER** No SMS gateway — every code is shown on screen. Registration codes are now hashed and salted, but they still cannot leave the system.
 
-## B. Conflicts needing your ruling (11)
+## B. Decided and still to build (4)
 
-9. **RULING** Certificate wording: A1's ownership-transfer disclaimer sits *beside* the existing "usajili si uthibitisho wa umiliki", or replaces it? I assume both appear.
-10. **RULING** Ownership anchor: sales at building (`Property`) level, or per unit? A building registered unit-by-unit has no property row, and one building may hold units under different owners.
-11. **RULING** `AgentLicence.apply` currently permits exactly **one** open licence per broker — multi-council broker registration is impossible until that becomes one per council. This changes R5.
-12. **RULING** Which number is "the phone already verified on the record" for a seller's OTP: the registration record's number, or the account profile's number (which R7 payout changes use)? They can differ.
-13. **RULING** At `sale_recorded`: a **new** certificate number with the old one superseded and another on `transfer_confirmed`, or one certificate whose level changes? I prefer new numbers — an issued document is never rewritten.
-14. **RULING** The public broker check returns district today; it must answer "registered in *this* council". Council name replaces district, status only.
-15. **RULING** `AuditLog` rows are readable only by their actor or an admin — so a council official cannot see the document-view log. Open it per council, or leave admin-only?
-16. **RULING** Agent mandate ends at `sale_recorded`. Confirm the seller stays liable for commission accrued before that date, and that an unpaid commission never blocks a sale.
-17. **RULING** "Two different people": the Mtaa review and the final approval must differ. Confirm both must be `council_official`, or whether a DC may give the second approval.
-18. **RULING** Rent split: each rent record stores its own landlord, so pre-date records stay with the seller with no rewriting. Confirm those receipts are never re-attributed to the buyer afterwards.
-19. **RULING** `SecurityDeposit.held_by` is landlord / agent / tenant / other. It cannot say "seller" or "buyer" — add values, or keep "landlord" and record the party name?
+9. **BUILD** The Property anchor for sales (ruling 10), including the owner's grouping confirmation.
+10. **BUILD** One licence per broker per council (ruling 11) — `AgentLicence.apply` still permits one open licence per broker.
+11. **BUILD** Seller OTP to the registration-record number, with the in-person fallback when it differs from the account number (ruling 12).
+12. **BUILD** "Sent for review" instead of the other unit's reference on a suspected duplicate (ruling 24), and the "Documents checked" label (ruling 29).
 
-## C. Questions carried forward from R2 and R3 (12)
+## C. Amendment A1 — sequence
 
-20. **QUESTION** Approve the entity reuse map before more code rests on it: Unit = `RentalUnit`, AgentMandate = `Mandate`, RentRecord = `RentPayment`, DepositRecord = `SecurityDeposit`, Property = `Property`.
-21. **QUESTION** Consent shape changed to one row per purpose — confirm the old four-boolean field is retired.
-22. **QUESTION** Rent receipts use `RentPayment.receipt_reference`. The `Receipt` entity is still the parked operator receipt. Do you want a separate rent receipt entity?
-23. **QUESTION** Two dormant duplicates: `property_type` (superseded by `unit_type`) and `PolicyVersion` (superseded by `TaxRule` + `PolicyRule`). Retire or keep?
-24. **QUESTION** On a suspected duplicate, the landlord currently sees the other unit's reference. Show "sent for review" only instead?
-25. **QUESTION** A migrated tenancy with no tenant account stores `pending-otp:<phone>` as the tenant id. Accept, or require an account first?
-26. **OFF** Tenant-initiated registration is off in config and refused on the server for non-landlords. Confirm it stays off until a council moves to compulsory mode.
-27. **OFF** Amnesty notice exists but is never mounted. Only TRA can grant an amnesty — written approval needed before it is ever shown.
-28. **QUESTION** Reason minimum is 10 characters for approve, query and reject alike. Keep one rule, or relax it for approval?
-29. **QUESTION** "Verified" means the Mtaa officer checked the documents, not that ownership is proven. Confirm the wording wherever the status is shown.
-30. **QUESTION** Acceptable for the pilot that an OTP is visible only in the landlord's own session and never to a helper?
-31. **QUESTION** Do A1 buyer consents reuse the four existing purposes, or does a sale need a fifth?
+1. Broker register (ruling 39) → then stop for your nine-role test.
+2. A1.1 identity and Property anchor → A1.2 sale record → A1.3 signatures and objections → A1.4 certificates → A1.5 rent and deposits after a sale → A1.6 oversight.
+3. Reminders ride a scheduled workflow, in-app only until SMS exists (ruling 40).
 
-## D. Amendment A1 — the answers I need before writing it (10)
+## D. Deliberately not built (5)
 
-32. **QUESTION** Partial sale: none in A1, and a later split transfers unit records rather than splitting a title. Confirm.
-33. **QUESTION** Co-owners: A1 assumes a single owner of record — or must joint owners (spouses, estates, companies) each sign? This changes the data model.
-34. **QUESTION** Who may object: only the owner of record, or also a tenant of the property and anyone filing a claim with evidence? I propose all three.
-35. **QUESTION** Objection window of 14 calendar days starting when **both** signatures are complete — confirmed?
-36. **QUESTION** Effective date is the council approval time, not a date the parties type — confirm.
-37. **QUESTION** Deposit holder: if only one of seller and buyer confirms, does the tenancy stay flagged, or become "unconfirmed" after a period?
-38. **QUESTION** Compulsory broker registration reuses the council's existing enforcement mode and by-law rather than a new switch — correct?
-39. **QUESTION** Sequence: A1.1 data model → A1.6 oversight as listed, or the broker register first because it is small and unblocks the R5 council test?
-40. **QUESTION** The 30 and 90 day transfer reminders need a scheduled workflow (no scheduler in the app), in-app only until SMS exists. Acceptable?
-41. **QUESTION** Plots: `asset_type` and a `plots_register` flag off, no screens — and existing legacy rows with `property_type: "plot"` excluded from all screens while the flag is off. Confirm.
+1. **OFF** No sale price field anywhere.
+2. **OFF** No capital gains tax and no stamp duty calculation; stamp duty stays a placeholder object on the lease.
+3. **OFF** No connection to e-Ardhi and no claim of one; the adapter is a labelled mock with no network call.
+4. **OFF** No plot screens. Data model only, once item 41's flag exists.
+5. **OFF** Eleven parked modules (operator, expenses, consumer, events, permits, TRA, ward reports, ratings, contributions, property manager, tax estimates).
+6. **OFF** The public tax-compliance document: the `/documents` tab is gone, nothing calls `getTaxCompliance`, and no text suggests TRA has certified anyone.
 
-## E. Deliberately not built (5)
+## E. Values now in force (from `PolicyRule`, version `2026.1-stage1`)
 
-42. **OFF** No sale price field anywhere, by decision.
-43. **OFF** No capital gains tax and no stamp duty calculation, by decision — stamp duty stays a placeholder object on the lease.
-44. **OFF** No connection to e-Ardhi and no claim of one — title number and reference are manual fields, adapter is a labelled mock with no network call.
-45. **OFF** No plot screens at all; data model only.
-46. **OFF** Eleven parked modules (operator, expenses, consumer, events, permits, TRA, ward reports, ratings, contributions, property manager, tax estimates) — all flags false, routes and backend both gated.
+`PolicyRule` is the single source for every rent rate. `PolicyVersion` is dormant for rent money.
 
-## F. Placeholders needing real values (8)
+| Rate | Value | State |
+| --- | --- | --- |
+| Agent commission | **1 month's rent** per new tenancy, landlord side, zero on renewal | placeholder, ruling 10 |
+| Landlord service fee | 1% of rent | placeholder |
+| Deposit cap | 1 month | placeholder |
+| Rent withholding | **none** — no tax line exists in Stage 1 | dormant until Stage 3 |
+| Display rounding | TZS 100,000 | placeholder |
+| Suppression | 5 units, 3 landlords, 50% single share | placeholder |
+| Advance-rent limit | stated, not enforced | placeholder |
 
-47. **PLACEHOLDER** Policy rates: tax 0% (deliberate until stage 3), service fee 1%, agent commission 8% capped at 150,000.
-48. **PLACEHOLDER** Objection window 14 days (A1).
-49. **PLACEHOLDER** Ownership change fee 0 (fixed by decision) and broker registration fee 0 — ask before charging any amount.
-50. **PLACEHOLDER** Retention periods 730 / 365 / 180 days, marked placeholder; purge refuses without an admin's test-run tick.
-51. **PLACEHOLDER** Advance rent limit, deposit cap, commission cap, suppression thresholds (5 units, 3 landlords, 50% single share), display rounding 100,000.
-52. **PLACEHOLDER** Council ward lists are marked unverified, and stock estimates are only allowed to show with a named source.
-53. **PLACEHOLDER** Lease template version label and its legal review.
-54. **PLACEHOLDER** Every landlord, tenant, unit, lease, payment and dispute is synthesised demo data.
+Still needing real values: objection window 14 days (A1), ownership-change fee 0, broker registration fee 0 (ask before charging),
+retention 730 / 365 / 180 days, unverified ward lists, stock estimates without a named source, the lease template review, and every figure in the demo data.
 
-## G. Mocks to become real providers (6)
+## F. Mocks to become real providers (6)
 
-55. **MOCK** Payment partner: `mock_partner`, signature key in code. Real needs a provider account, a signing secret in app secrets, a status endpoint and a public webhook URL.
-56. **MOCK** SMS: no gateway, so codes are shown on screen and not hashed at rest.
-57. **MOCK** Notifications are in-app only.
-58. **MOCK** Payout numbers are recorded but never used — no rails.
-59. **MOCK** Data export is a JSON file, not a signed PDF.
-60. **MOCK** e-Ardhi adapter.
+1. **MOCK** Payment partner `mock_partner` with a key in code. Real: provider account, signing secret in app secrets, status endpoint, public webhook URL.
+2. **MOCK** SMS gateway — no code leaves the system.
+3. **MOCK** Notifications are in-app only.
+4. **MOCK** Payout numbers are recorded but never used; no rails.
+5. **MOCK** Data export is a JSON file, not a signed PDF.
+6. **MOCK** e-Ardhi adapter.
 
-## H. Platform limits the design works around (6)
+## G. Platform limits the design works around (6)
 
-61. **LIMIT** No scheduler inside the app — the retention purge is an admin button; reminders need workflows.
-62. **LIMIT** MFA is one app-wide switch, not per role, so council, DC, RC and admin cannot be protected separately from tenants.
-63. **LIMIT** A list call returns at most 5,000 records with no sign it was cut — every export and register must page.
-64. **LIMIT** Rate limits are per caller, and a service-role function is one caller for everyone.
-65. **LIMIT** Audit immutability rests on an access rule naming a non-existent role — it blocks API edits, it is not cryptographic.
-66. **LIMIT** The access log is written on exports and official record openings, not on every read.
+1. **LIMIT** No scheduler — the retention purge is an admin button; reminders need workflows.
+2. **LIMIT** MFA is one app-wide switch, not per role.
+3. **LIMIT** A list call returns at most 5,000 records with no sign it was cut.
+4. **LIMIT** Rate limits are per caller; a service-role function is one caller for everyone.
+5. **LIMIT** Audit immutability rests on an access rule, not on cryptography.
+6. **LIMIT** The access log is written on exports and official openings, not on every read.
 
-## I. Model debt and housekeeping (4)
+## H. Model debt (3)
 
-67. **DEBT** Buildings whose units were registered individually have no `Property` row to anchor a sale.
-68. **DEBT** Ward assignments for Kinondoni and Ubungo (Sinza) still need correcting.
-69. **DEBT** Keep `VerificationCase` (registration) and the new `OwnershipChange` (sale, inheritance, gift, court order) as separate cases — approve, so registration history is never overwritten.
-70. **DEBT** The nine demo accounts need their addresses and roles from you before they can be invited.
+1. **DEBT** Buildings whose units were registered individually have no `Property` row — the A1.1 grouping confirmation fixes this.
+2. **DEBT** Ward assignments for Kinondoni and Ubungo (Sinza) still need correcting.
+3. **DEBT** The nine demo accounts need their addresses and roles before they can be invited.
 
-## J. Tests not yet run (7)
+## I. Tests not yet run (6)
 
-71. **UNTESTED** Every role viewing its own workspace with its own login.
-72. **UNTESTED** Cross-council isolation with two councils signed in.
-73. **UNTESTED** Two different admins approving the same money action.
-74. **UNTESTED** A real SMS code reaching a real phone.
-75. **UNTESTED** A cooling-off period allowed to elapse in real time.
-76. **UNTESTED** A1's nine tests: free at every step, seller OTP never to a new number, objection freezes, one person cannot do both reviews, old rent stays with the seller and the lease continues, ownership history preserved, a broker registered only in Ubungo cannot take a Kinondoni mandate, the public check reveals nothing, no plot screen reachable.
-77. **UNTESTED** The plot route being unreachable (it does not exist yet — this becomes a test only once the data model lands).
+1. **UNTESTED** Every role viewing its own workspace with its own login.
+2. **UNTESTED** Cross-council isolation with two councils signed in.
+3. **UNTESTED** Two different admins approving the same money action.
+4. **UNTESTED** A real SMS code reaching a real phone.
+5. **UNTESTED** A cooling-off period allowed to elapse in real time.
+6. **UNTESTED** A1's nine tests, and the broker route once it is built.
+
+## J. Review round F1 — what changed and how it was checked (7 November 2026)
+
+1. **Tax compliance document removed from public view.** The `/documents` tab list now holds only the lease and the rent receipt; `getTaxCompliance` has no caller; the specimen and the endpoint stay dormant; the delivery inventory and the API contract mark it dormant. *Checked:* grep shows the only remaining mention is the comment that explains why it is gone.
+2. **Withholding and mandate wording replaced** in English and Swahili (`policy.consentSeparate`, `privacy.purposeMandatory`), in the demo consent rows and in the demo withdrawal error. The registration consent now reads "Inahitajika kwa huduma:". The four consents are described as they work: one required to run the service, three optional. *Checked:* grep for "withholding", "legal mandate" and "Lazima" returns only the honest "designed but switched off" policy line.
+3. **Agent cap is one month's rent.** `PolicyRule.commission_cap = 1` (months of rent); `rentPayment` and `simPayment` read `PolicyRule` only, and `PolicyVersion` is no longer read by any rent path. No 8% and no TZS 150,000 remain anywhere in the code or the live rows. *Checked:* a quote of TZS 500,000 for one month returns `commission 500000`, `tax 0`, `policy_version 2026.1-stage1`.
+4. **Registration OTP hardened.** Five minutes, five attempts, fifteen-minute lockout, three codes per phone per hour and three per person per hour, all from the R7 rules. Codes are six CSPRNG digits with a 16-byte random salt per code; only `salt` and `code_hash` are stored, on the admin-only `OtpChallenge` row; `VerificationCase` no longer has the field at all. Every write now runs on the service role. *Checked:* wrong code refused, five wrong codes set a 15-minute lockout, the correct code was then refused as locked, an expired challenge was refused, the correct code confirmed and the case moved to `submitted` — and that confirmation was run with **no session at all**, proving the no-account write path.
+5. **`rentPayment` refuses while a council is in Stage 1** and no longer falls back to another tenant's tenancy. *Checked:* a payment for a unit whose council is `record` returned 409 `STAGE1_RECORD_ONLY` with no record written; a payment attempt as a tenant with no tenancy on the unit returned 404 instead of attaching to `tenancies[0]`.
+6. **`decideOwnership` retired.** One decision engine in `shared/verification.ts`; `decideRegistration` is the path; the old endpoint resolves the unit's registration case, refuses an approval with no ownership evidence and writes an audit entry either way. *Checked:* approval on a real case issued a certificate with both disclaimers; approval on a unit with no evidence returned 409 `NO_EVIDENCE` and an `AuditLog` row with outcome `refused`.
+7. **`Listing` public read removed.** Only owner, agent, landlord, ward, council and admin can read the table; public browsing goes through `listingBoard`, which returns area and listing detail only. *Checked:* the public row builder carries `listing_id`, `unit_ref`, headline, rent, type, bedrooms, ward, mtaa, district and `verified` — never `landlord_id`, `agent_id`, `consent_id` or `unit_id`.
+8. **`User` reads restricted to self and admin.** Before this change there was **no read rule at all**, so any signed-in user could read every other user's record: `full_name`, `email`, `role`, `ibmt_role`, `district`, `region`, `council_id` and `ward_ids`. Now a user sees only their own row; admins see all. Backend functions that legitimately need another user's row already run on the service role, so nothing else breaks.
+9. **Housekeeping.** The lint error in the ward verification screen (an unused import plus a dead eslint directive) is fixed and ESLint is clean on every file touched. The Inter and Space Grotesk font links are gone from `index.html`, and the old orange palette comment is gone from `index.css`. The production build passes.
+
+**Test fixtures created by F1** (safe to delete, they are demo noise): units `IBMT-UNIT-2026-00955635`, `IBMT-UNIT-2026-02409032`, `IBMT-UNIT-2026-02418542`, with their registration cases and challenges, and certificate `IBMT-CERT-2026-01002` issued to the first of them.
 
 ---
 
-## K. NIDA identity number — raised 4 November 2026 (9)
+## K. ON HOLD — no build
 
-Capture the NIDA number for landowners, agents, tenants and buyers, to make the register easier. Nothing is built. No NIDA field exists anywhere today; masking helpers for phones and ID numbers are already in place.
-
-78. **QUESTION** Who must give a number: owners and brokers only, or every adult (tenants, buyers, sellers too)?
-79. **QUESTION** Mandatory or optional per role? A missing number either blocks registration or marks the record "identity not confirmed". I propose mandatory for owners and brokers, optional for tenants in Stage 1.
-80. **QUESTION** Is there a NIDA verification agreement, or do you intend to obtain one? There is no API here and no way for this app to verify a number itself, so until an agreement exists the number is typed by hand and marked **"not verified by NIDA"**, with a mock adapter and no claim of any link — the same rule already applied to e-Ardhi.
-81. **RULING** Storage shape: the full number is never shown again after entry. Keep a hash for matching, the last four digits for the human, and a masked display. Who may ever see the full value, and under what circumstance?
-82. **RULING** Legal basis: a statutory function under the council's by-law, or consent for a stated purpose? A national ID number is sensitive personal data under the Personal Data Protection Act, so before the first number is stored the data controller must be named and the retention and breach duties written down.
-83. **QUESTION** Duplicates: the same NIDA number on two accounts is flagged for review and never merged automatically — a merge would rewrite ownership history. Confirm.
-84. **QUESTION** Where it must never appear: certificates, the public check, aggregates, council exports and the DC/RC dashboards. Confirm, so those show masked counts only.
-85. **DEBT** Estates and companies have no NIDA number of their own, so the sale and inheritance routes need a second identifier (registration or estate number) — this ties into the co-owner question at 33.
-86. **DEBT** Every view of a NIDA number goes to the `AuditLog`, and the number is stripped from all logs, exports and error messages — the masking rule exists and must be applied to this field the day it is added.
-
----
-
-### The five that gate the next build
-
-9 (certificate wording), 10 (ownership anchor), 11 (broker multi-council rule), 12 (verified phone source), 40 (reminder schedule).
-Answer those five and A1.1 and A1.2 can be written without further assumptions.
+- **33** Co-owners and joint signatories (spouses, estates, companies). Blocks the sale data model.
+- **NIDA** section K of the previous register: who gives a number, mandatory or optional, storage shape, legal basis, duplicates, where it must never appear, estates and companies, audit. **No NIDA number is stored anywhere in this app, and none will be until you rule.**
