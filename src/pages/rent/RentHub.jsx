@@ -10,6 +10,12 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
 import PolicyList from '@/components/ibmt/PolicyList';
+// Moved here from the old landing page (L1): the rent product keeps its own
+// hero, role entry points, steps and principles.
+import LandingHero from '@/components/public/LandingHero';
+import LandingEntryPoints from '@/components/public/LandingEntryPoints';
+import LandingSteps from '@/components/public/LandingSteps';
+import LandingPrinciples from '@/components/public/LandingPrinciples';
 
 const ENTRIES = [
   { to: '/rent/landlord', role: 'landlord', labelKey: 'roles.landlord', Icon: Building2 },
@@ -27,6 +33,7 @@ export default function RentHub() {
   return (
     <div className="min-h-screen bg-background">
       <PublicTopBar />
+      <LandingHero />
       <main className="ibmt-page">
         <PageHeader
           kicker={`${t('brand.rent')} · ${t('brand.rentLocal')}`}
@@ -93,6 +100,9 @@ export default function RentHub() {
           </div>
         </div>
       </main>
+      <LandingEntryPoints />
+      <LandingSteps />
+      <LandingPrinciples />
       <PublicFooter />
     </div>
   );
