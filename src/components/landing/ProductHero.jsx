@@ -21,9 +21,9 @@ export default function ProductHero({ product, lang }) {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="relative w-full max-w-[300px] sm:max-w-[340px]">
+      <div className="relative w-full max-w-[290px] sm:max-w-[320px]">
         <div aria-hidden="true" className="l1-halo" />
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[18px] shadow-[0_26px_60px_-26px_rgba(0,0,0,0.8)] ring-1 ring-primary-foreground/15">
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[18px] shadow-[0_26px_60px_-26px_rgba(0,0,0,0.8)] ring-1 ring-primary-foreground/15">
           {layers.map((layer) => {
             const LayerIcon = layer.product.icon;
             return (
@@ -56,7 +56,7 @@ export default function ProductHero({ product, lang }) {
         </div>
       </div>
 
-      <h2 className="mt-3 font-display text-[clamp(32px,5vw,54px)] font-bold leading-[0.9] tracking-[0.03em] text-primary-foreground">
+      <h2 className="mt-3 font-display text-[clamp(28px,4.2vw,46px)] font-bold leading-[0.9] tracking-[0.04em] text-primary-foreground">
         {product.name}
       </h2>
     </div>

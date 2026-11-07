@@ -10,7 +10,7 @@ export default function ActionCard({ product, lang }) {
   const open = product.status === 'live' && product.route;
 
   return (
-    <div className="w-full max-w-[340px] rounded-2xl bg-cream p-3.5 text-navy shadow-[0_22px_50px_-26px_rgba(0,0,0,0.8)]">
+    <div className="w-full max-w-[320px] rounded-2xl bg-cream p-3.5 text-navy shadow-[0_22px_50px_-26px_rgba(0,0,0,0.8)]">
       <p className="px-0.5 text-[12px] leading-snug text-navy/70">{pick(product.tagline, lang)}</p>
       <div className="mt-3">
         {open ? (

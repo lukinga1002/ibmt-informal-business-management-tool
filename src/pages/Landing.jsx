@@ -34,14 +34,34 @@ export default function Landing() {
   if (!selected) return null;
 
   return (
-    <div className="flex min-h-[calc(100dvh-2.25rem)] flex-col bg-background px-2 pb-1 pt-2 sm:px-4 sm:pt-3">
-      <section className="relative flex flex-1 flex-col overflow-hidden rounded-[26px] bg-navy px-3 pb-3 pt-3 text-primary-foreground sm:px-6 sm:pb-4 sm:pt-4">
+    <div className="flex min-h-[calc(100dvh-2.25rem)] flex-col bg-background p-2 sm:p-3">
+      <section className="relative flex flex-1 flex-col overflow-hidden rounded-[26px] bg-navy text-primary-foreground shadow-[0_30px_80px_-45px_rgba(27,42,74,0.9)]">
         <div aria-hidden="true" className="l1-light" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"
+        />
 
-        <LandingTopBar lang={lang} setLang={setLang} onShowProducts={() => focusCard(selected.id)} />
+        <div className="relative z-20 px-3 pt-3 sm:px-6 sm:pt-4">
+          <LandingTopBar lang={lang} setLang={setLang} onShowProducts={() => focusCard(selected.id)} />
+        </div>
         <p aria-live="polite" className="sr-only">
           {`${selected.name} — ${statusLabel(selected.status, lang)}`}
         </p>
+
+        <header className="relative z-20 mt-5 px-5 text-center sm:mt-7">
+          <p className="flex items-center justify-center gap-2.5 text-[9.5px] font-semibold uppercase tracking-[0.24em] text-gold/90">
+            <span aria-hidden="true" className="h-px w-6 bg-gold/45" />
+            {pick(LANDING_COPY.products, lang)}
+            <span aria-hidden="true" className="h-px w-6 bg-gold/45" />
+          </p>
+          <h1 className="mx-auto mt-2.5 max-w-[20ch] font-display text-[clamp(32px,4.4vw,58px)] font-bold leading-[0.98] tracking-[-0.005em]">
+            {pick(LANDING_COPY.headline, lang)}
+          </h1>
+          <p className="mx-auto mt-2 max-w-[30rem] text-[11.5px] leading-relaxed text-primary-foreground/55 sm:text-[12px]">
+            {pick(LANDING_COPY.headlineNote, lang)}
+          </p>
+        </header>
 
         <HeroStage
           products={orderedProducts}
@@ -51,24 +71,20 @@ export default function Landing() {
           onMove={move}
         />
 
-        <div className="relative z-10 mt-3 text-center">
-          <h1 className="font-display text-[clamp(30px,4.4vw,56px)] font-bold leading-[1] tracking-[-0.01em]">
-            {pick(LANDING_COPY.headline, lang)}
-          </h1>
-          <p className="mx-auto mt-1 max-w-xl text-[11px] leading-snug text-primary-foreground/55 sm:text-[12px]">
-            {pick(LANDING_COPY.headlineNote, lang)}
-          </p>
+        <div className="relative z-20 mt-auto px-4 pb-3 sm:px-6">
+          <div className="flex flex-col items-center gap-1 border-t border-primary-foreground/10 pt-2.5 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/40 sm:flex-row sm:justify-between">
+            <span>IBMT · Tanzania</span>
+            <span className="flex items-center gap-4">
+              <Link to="/privacy" className="inline-flex min-h-[40px] items-center hover:text-gold">
+                {pick(LANDING_COPY.privacy, lang)}
+              </Link>
+              <Link to="/verify" className="inline-flex min-h-[40px] items-center hover:text-gold">
+                {pick(LANDING_COPY.verify, lang)}
+              </Link>
+            </span>
+          </div>
         </div>
       </section>
-
-      <footer className="flex items-center justify-center gap-4 px-4 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        <Link to="/privacy" className="inline-flex min-h-[44px] items-center px-2 hover:text-navy-ink">
-          {pick(LANDING_COPY.privacy, lang)}
-        </Link>
-        <Link to="/verify" className="inline-flex min-h-[44px] items-center px-2 hover:text-navy-ink">
-          {pick(LANDING_COPY.verify, lang)}
-        </Link>
-      </footer>
     </div>
   );
 }
