@@ -22,6 +22,8 @@ const LABEL = {
   unit: 'usajili wa nyumba',
 };
 
+const SCOPE_TEXT = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Kupangisha na mauzo' };
+
 const STATUS_TEXT = {
   signed: 'Imesainiwa na pande zote',
   awaiting_signature: 'Inasubiri sahihi',
@@ -147,7 +149,8 @@ export default function Verify() {
                 >
                   <p className="font-medium">{STATUS_TEXT[result.status] || result.status}</p>
                   {result.kind === 'receipt' && result.period_month && <p className="ibmt-num">Kipindi: {result.period_month}</p>}
-                  {result.kind === 'agent' && result.district && <p>Wilaya: {result.district}</p>}
+                  {result.kind === 'agent' && result.council && <p>Halmashauri: {result.council}</p>}
+                  {result.kind === 'agent' && result.scope && <p>Usajili: {SCOPE_TEXT[result.scope] || SCOPE_TEXT.rental}</p>}
                   {result.kind === 'lease' && result.template_label && <p>{result.template_label.sw || result.template_label.en}</p>}
                   <p className="mt-2 text-[12px] text-muted-foreground">{result.disclaimer?.sw}</p>
                 </Notice>

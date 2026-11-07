@@ -14,6 +14,10 @@
     "council_id": {
       "type": "string"
     },
+    "council_name": {
+      "type": "string",
+      "description": "Denormalized council name, so a public check can answer with the council and nothing else."
+    },
     "region": {
       "type": "string"
     },
@@ -23,9 +27,24 @@
     "ward": {
       "type": "string"
     },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "rental",
+        "sale",
+        "both"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "green"
+      ],
+      "default": "rental",
+      "description": "What this broker is registered to handle in this council. A rental-scope broker cannot be named on a rental mandate; sale records arrive with A1."
+    },
     "licence_no": {
       "type": "string",
-      "description": "Serial licence number, e.g. IBMT-AGL-2026-0014. Issued only on approval."
+      "description": "Serial licence number, e.g. IBMT-AGL-2026-0014. Issued only on approval, and one per broker per council."
     },
     "status": {
       "type": "string",

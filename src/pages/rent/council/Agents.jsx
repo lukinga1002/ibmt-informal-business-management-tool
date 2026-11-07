@@ -22,9 +22,19 @@ const LICENCE_LABEL = {
   revoked: 'Imefutwa',
 };
 
+const SCOPE_LABEL = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Zote mbili' };
+
+const SCOPE_FILTERS = [
+  { value: '', label: 'Zote' },
+  { value: 'rental', label: 'Kupangisha' },
+  { value: 'sale', label: 'Mauzo' },
+  { value: 'both', label: 'Zote mbili' },
+];
+
 /** Council desk: approve, reject, suspend or revoke a licence with a reason. */
 export default function CouncilAgents() {
   const [rows, setRows] = useState(null);
+  const [scopeFilter, setScopeFilter] = useState('');
   const [openId, setOpenId] = useState(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,13 +42,13 @@ export default function CouncilAgents() {
 
   const load = useCallback(async () => {
     try {
-      const data = await callFn('agentLicence', { action: 'queue' });
+      const data = await callFn('agentLicence', { action: 'queue', scope: scopeFilter || undefined });
       setRows(data.rows || []);
     } catch (err) {
       setError(fnError(err));
       setRows([]);
     }
-  }, []);
+  }, [scopeFilter]);
 
   useEffect(() => {
     load();
@@ -64,7 +74,7 @@ export default function CouncilAgents() {
       <PageHeader
         kicker="Halmashauri"
         title="Leseni za mawakala"
-        lede="Kila uamuzi unahitaji sababu isipokuwa kuidhinisha, na unabaki kwenye historia ya leseni."
+        lede="Broker mmoja ana leseni moja kwa kila halmashauri. Kila uamuzi unahitaji sababu isipokuwa kuidhinisha, na unabaki kwenye historia ya usajili."
         meta={[{ label: 'Kusimamisha au kufuta kunamaliza mandate hai' }]}
       />
 
@@ -74,7 +84,22 @@ export default function CouncilAgents() {
         </p>
       )}
 
-      <SectionCard title="Maombi na leseni" description="Zilizowasilishwa katika halmashauri yako.">
+      <SectionCard
+        title="Maombi na usajili"
+        description="Zilizowasilishwa katika halmashauri yako."
+        actions={SCOPE_FILTERS.map((item) => (
+          <Button
+            key={item.value || 'all'}
+            type="button"
+            size="sm"
+            variant={scopeFilter === item.value ? 'default' : 'outline'}
+            className={scopeFilter === item.value ? 'ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep' : 'ibmt-tap'}
+            onClick={() => setScopeFilter(item.value)}
+          >
+            {item.label}
+          </Button>
+        ))}
+      >
         {rows === null ? (
           <p className="text-[13px] text-muted-foreground">Inapakia…</p>
         ) : rows.length === 0 ? (
@@ -86,10 +111,13 @@ export default function CouncilAgents() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium">
-                      {row.agent_name} · {row.district}
+                      {row.agent_name} · {row.council_name || row.district}
                     </p>
-                    <p className="ibmt-num mt-1 text-[11px] text-muted-foreground">
-                      {row.licence_no || 'Hakuna namba bado'}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {SCOPE_LABEL[row.scope] || SCOPE_LABEL.rental}
+                      <span className="ibmt-num">
+                        {row.licence_no ? ` · ${row.licence_no}` : ' · Hakuna namba bado'}
+                      </span>
                       {row.decision_reason ? ` · ${row.decision_reason}` : ''}
                     </p>
                   </div>

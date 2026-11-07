@@ -4,10 +4,11 @@ import { hasAnyRole, isAdmin, notify, rateLimit, requesterKey } from '../../shar
 
 const DECISIONS = ['approve', 'reject', 'suspend', 'revoke'];
 const NEEDS_REASON = ['reject', 'suspend', 'revoke'];
+const SCOPES = ['rental', 'sale', 'both'];
 
 const DISCLAIMER = {
-  sw: 'Ukurasa huu unaonyesha hali ya leseni pekee. Hakuna jina, anwani wala namba ya simu.',
-  en: 'This page shows licence status only. No name, address or phone number.',
+  sw: 'Ukurasa huu unaonyesha hali ya usajili na halmashauri pekee. Hakuna jina, anwani wala namba ya simu.',
+  en: 'This page shows the registration status and the council only. No name, address or phone number.',
 };
 
 /**
@@ -30,10 +31,12 @@ export default async function (req) {
       const found = await base44.asServiceRole.entities.AgentLicence.filter({ licence_no: licenceNo }, { limit: 1 });
       const row = (found.items || [])[0];
       if (!row) return fail(404, 'NOT_FOUND', 'No licence matches that number');
+      // Ruling 14: the council and the status only. No name, no district chain,
+      // nothing that identifies the broker.
       return json({
         licence_no: row.licence_no,
         status: row.status,
-        district: row.district,
+        council: row.council_name || null,
         valid: row.status === 'approved',
         checked_at: isoNow(),
         disclaimer: DISCLAIMER,
@@ -45,7 +48,7 @@ export default async function (req) {
 
     if (action === 'apply') return await apply(base44, user, payload);
     if (action === 'decide') return await decide(base44, user, payload);
-    if (action === 'queue') return await queue(base44, user);
+    if (action === 'queue') return await queue(base44, user, payload);
     if (action === 'mine') return await mine(base44, user);
 
     return fail(422, 'VALIDATION', 'Unknown licence action');
@@ -67,14 +70,21 @@ async function apply(base44, user, payload) {
   const district = cleanText(payload.district);
   if (!district) return fail(422, 'VALIDATION', 'The district is required', { district: 'Choose the district.' });
 
+  const council = await resolveCouncil(base44, district, cleanText(payload.council_id));
+  if (!council) return fail(422, 'VALIDATION', 'No council is configured for that district', { district: 'Try another district.' });
+
+  // Ruling 11: one licence per broker per council. A broker may register in
+  // several councils, but never twice in the same one.
   const existing = await base44.asServiceRole.entities.AgentLicence
-    .filter({ agent_id: user.id }, { sort: '-created_date', limit: 5 });
+    .filter({ agent_id: user.id, council_id: council.id }, { sort: '-created_date', limit: 5 });
   const rows = existing.items || [];
   const open = rows.find((row) => ['pending', 'approved', 'suspended'].includes(row.status));
   if (open) return json({ ...licenceShape(open), duplicate: true });
 
-  const council = await resolveCouncil(base44, district, cleanText(payload.council_id));
-  if (!council) return fail(422, 'VALIDATION', 'No council is configured for that district', { district: 'Try another district.' });
+  const scope = cleanText(payload.scope) || 'rental';
+  if (!SCOPES.includes(scope)) {
+    return fail(422, 'VALIDATION', 'Choose what the brokerage covers', { scope: 'Rental, sale or both.' });
+  }
 
   const row = await base44.entities.AgentLicence.create({
     agent_id: user.id,
@@ -83,6 +93,8 @@ async function apply(base44, user, payload) {
     district: council.district,
     region: council.region || null,
     council_id: council.id,
+    council_name: council.name || null,
+    scope,
     ward: cleanText(payload.ward) || null,
     status: 'pending',
     notes: cleanText(payload.notes) || null,
@@ -176,13 +188,15 @@ async function decide(base44, user, payload) {
   return json({ ...licenceShape(updated), duplicate: false });
 }
 
-async function queue(base44, user) {
+async function queue(base44, user, payload) {
   if (!isAdmin(user) && !hasAnyRole(user, ['council_official'])) {
     return fail(403, 'FORBIDDEN', 'Only a council official can read the licence queue');
   }
   const filter = !isAdmin(user) && user.data && user.data.council_id ? { council_id: user.data.council_id } : {};
+  const scope = cleanText(payload.scope);
+  if (SCOPES.includes(scope)) filter.scope = scope;
   const page = await base44.asServiceRole.entities.AgentLicence.filter(filter, { sort: '-created_date', limit: 100 });
-  return json({ rows: (page.items || []).map(licenceShape) });
+  return json({ rows: (page.items || []).map(licenceShape), scope: SCOPES.includes(scope) ? scope : null });
 }
 
 async function mine(base44, user) {
@@ -200,6 +214,10 @@ function licenceShape(row) {
     district: row.district,
     region: row.region || null,
     council_id: row.council_id,
+    council_name: row.council_name || null,
+    scope: row.scope || 'rental',
+    allows_rental: (row.scope || 'rental') !== 'sale',
+    allows_sale: ['sale', 'both'].includes(row.scope || 'rental'),
     status: row.status,
     notes: row.notes || null,
     decided_by: row.decided_by || null,

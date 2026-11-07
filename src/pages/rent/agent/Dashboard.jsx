@@ -8,6 +8,7 @@ import Field, { SelectControl, TextArea, TextInput } from '@/components/ibmt/Fie
 import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
 import { callFn, fnError } from '@/lib/r4';
+import { base44 } from '@/api/base44Client';
 
 const LICENCE_LABEL = {
   pending: 'Inasubiri halmashauri',
@@ -19,26 +20,37 @@ const LICENCE_LABEL = {
 
 const DISTRICTS = ['Kinondoni', 'Ubungo', 'Ilala', 'Temeke', 'Kigamboni', 'Bagamoyo', 'Kisarawe'];
 
+const SCOPE_LABEL = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Kupangisha na mauzo' };
+const SCOPES = [
+  { value: 'rental', label: 'Kupangisha' },
+  { value: 'sale', label: 'Mauzo' },
+  { value: 'both', label: 'Zote mbili' },
+];
+const OPEN_STATUS = ['pending', 'approved', 'suspended'];
+
 /** The agent's own workspace: licence, mandates and the commission owed to them. */
 export default function AgentDashboard() {
-  const [licence, setLicence] = useState(null);
+  const [licences, setLicences] = useState([]);
+  const [councils, setCouncils] = useState([]);
   const [mandates, setMandates] = useState([]);
   const [commission, setCommission] = useState(null);
-  const [form, setForm] = useState({ district: 'Kinondoni', ward: '', notes: '' });
+  const [form, setForm] = useState({ district: 'Kinondoni', scope: 'rental', ward: '', notes: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [licenceData, mandateData, commissionData] = await Promise.all([
+      const [licenceData, mandateData, commissionData, councilData] = await Promise.all([
         callFn('agentLicence', { action: 'mine' }),
         callFn('agentMandate', { action: 'list' }),
         callFn('agentCommission', { action: 'list' }),
+        base44.entities.Council.list({ sort: 'district', limit: 50 }).catch(() => ({ items: [] })),
       ]);
-      setLicence(licenceData.current || null);
+      setLicences(licenceData.rows || []);
       setMandates(mandateData.rows || []);
       setCommission(commissionData);
+      setCouncils(councilData.items || []);
     } catch (err) {
       setError(fnError(err));
     } finally {
@@ -54,7 +66,7 @@ export default function AgentDashboard() {
     setBusy(true);
     setError('');
     try {
-      await callFn('agentLicence', { action: 'apply', district: form.district, ward: form.ward, notes: form.notes });
+      await callFn('agentLicence', { action: 'apply', district: form.district, scope: form.scope, ward: form.ward, notes: form.notes });
       await load();
     } catch (err) {
       setError(fnError(err));
@@ -64,6 +76,9 @@ export default function AgentDashboard() {
   };
 
   const totals = commission?.totals || { owed: 0, paid: 0, renewals: 0 };
+  const openInDistrict = licences.find((row) => row.district === form.district && OPEN_STATUS.includes(row.status)) || null;
+  const enforcedCouncil =
+    councils.find((row) => row.district === form.district && row.enforcement_mode && row.enforcement_mode !== 'voluntary') || null;
 
   return (
     <div className="space-y-6">
@@ -85,47 +100,78 @@ export default function AgentDashboard() {
         <SectionCard title="Leseni" description="Halmashauri inaamua; kila uamuzi una sababu na tarehe.">
           {loading ? (
             <p className="text-[13px] text-muted-foreground">Inapakia…</p>
-          ) : licence ? (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={licence.status} label={LICENCE_LABEL[licence.status] || licence.status} />
-                {licence.licence_no && <span className="ibmt-num text-[12px] text-muted-foreground">{licence.licence_no}</span>}
-              </div>
-              <p className="text-[12px] text-muted-foreground">
-                {licence.district}
-                {licence.decision_reason ? ` · ${licence.decision_reason}` : ''}
-              </p>
-              {licence.status !== 'approved' && (
-                <Notice tone="caution" title="Hauwezi kupendekezwa bila leseni">
-                  Mmiliki hawezi kukutaja kwenye mandate hadi leseni yako ithibitishwe.
-                </Notice>
-              )}
-            </div>
           ) : (
             <div className="space-y-4">
-              <Notice tone="neutral" title="Hakuna leseni bado">
-                Wasilisha ombi. Halmashauri ya wilaya inaamua, na leseni inatolewa ikiwa imethibitishwa.
-              </Notice>
-              <Field label="Wilaya" required>
-                {(props) => (
-                  <SelectControl {...props} value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
-                    {DISTRICTS.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </SelectControl>
-                )}
-              </Field>
-              <Field label="Kata">
-                {(props) => <TextInput {...props} value={form.ward} onChange={(event) => setForm({ ...form, ward: event.target.value })} />}
-              </Field>
-              <Field label="Maelezo" hint="Uzoefu, eneo unaofanyia kazi">
-                {(props) => <TextArea {...props} rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />}
-              </Field>
-              <Button type="button" className="ibmt-tap w-full bg-navy font-semibold text-primary-foreground hover:bg-navy-deep" onClick={apply} disabled={busy}>
-                {busy ? 'Inawasilisha…' : 'Wasilisha ombi la leseni'}
-              </Button>
+              {licences.length > 0 && (
+                <ul className="space-y-3">
+                  {licences.map((row) => (
+                    <li key={row.licence_id} className="border-b border-border pb-3 last:border-b-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={row.status} label={LICENCE_LABEL[row.status] || row.status} />
+                        <span className="text-[12px] font-medium">{row.council_name || row.district}</span>
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {SCOPE_LABEL[row.scope] || row.scope}
+                        {row.licence_no ? ` · ${row.licence_no}` : ''}
+                        {row.decision_reason ? ` · ${row.decision_reason}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {licences.some((row) => row.status !== 'approved') && (
+                <Notice tone="caution" title="Hauwezi kupendekezwa bila leseni">
+                  Mmiliki hawezi kukutaja kwenye mandate hadi leseni yako katika halmashauri hiyo ithibitishwe.
+                </Notice>
+              )}
+
+              {openInDistrict ? (
+                <Notice tone="neutral" title="Una ombi au leseni katika wilaya hii">
+                  Kila broker ana leseni moja kwa kila halmashauri. Chagua wilaya nyingine kama unataka kusajiliwa huko.
+                </Notice>
+              ) : (
+                <>
+                  <Field label="Wilaya" required>
+                    {(props) => (
+                      <SelectControl {...props} value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
+                        {DISTRICTS.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </SelectControl>
+                    )}
+                  </Field>
+                  <Field label="Aina ya usajili" required hint="Usajili wa mauzo pekee haukupi mandate ya upangishaji">
+                    {(props) => (
+                      <SelectControl {...props} value={form.scope} onChange={(event) => setForm({ ...form, scope: event.target.value })}>
+                        {SCOPES.map((item) => (
+                          <option key={item.value} value={item.value}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </SelectControl>
+                    )}
+                  </Field>
+                  {enforcedCouncil && (
+                    <Notice tone="policy" title="Usajili wa mawakala ni wa lazima katika halmashauri hii">
+                      {enforcedCouncil.bylaw_reference
+                        ? `Halmashauri inatumia sheria ndogo ${enforcedCouncil.bylaw_reference}.`
+                        : 'Halmashauri imeamua kuwa kila broker asajiliwe kabla ya kufanya kazi.'}
+                    </Notice>
+                  )}
+                  <Field label="Kata">
+                    {(props) => <TextInput {...props} value={form.ward} onChange={(event) => setForm({ ...form, ward: event.target.value })} />}
+                  </Field>
+                  <Field label="Maelezo" hint="Uzoefu, eneo unaofanyia kazi">
+                    {(props) => <TextArea {...props} rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />}
+                  </Field>
+                  <Button type="button" className="ibmt-tap w-full bg-navy font-semibold text-primary-foreground hover:bg-navy-deep" onClick={apply} disabled={busy}>
+                    {busy ? 'Inawasilisha…' : 'Wasilisha ombi la usajili'}
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </SectionCard>

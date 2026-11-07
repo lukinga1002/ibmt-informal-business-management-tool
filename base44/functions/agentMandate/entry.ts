@@ -94,6 +94,12 @@ async function offer(base44, user, payload) {
       agent_email: 'The agent must be licensed by the council first.',
     });
   }
+  // A sale-only registration never covers a rental mandate, whoever is asking.
+  if ((licence.scope || 'rental') === 'sale') {
+    return fail(403, 'AGENT_SCOPE_SALE_ONLY', 'That broker is registered for sales only, not rentals', {
+      agent_email: 'The council registered this broker for sales only.',
+    });
+  }
   if (agent.id === user.id) return fail(422, 'VALIDATION', 'You cannot name yourself as the agent');
   if (licence.council_id && unit.council_id && licence.council_id !== unit.council_id) {
     return fail(422, 'OUTSIDE_COUNCIL', 'That agent is licensed in a different council');
@@ -187,6 +193,9 @@ async function sign(base44, user, payload) {
     .filter({ agent_id: row.agent_id, status: 'approved' }, { limit: 1 });
   if (!(licence.items || []).length) {
     return fail(403, 'AGENT_NOT_LICENSED', 'The agent licence is no longer valid, so this mandate cannot be signed');
+  }
+  if (((licence.items || [])[0].scope || 'rental') === 'sale') {
+    return fail(403, 'AGENT_SCOPE_SALE_ONLY', 'That broker is registered for sales only, so this rental mandate cannot be signed');
   }
 
   const updated = await base44.asServiceRole.entities.Mandate.update(row.id, {

@@ -79,7 +79,14 @@ async function lookup(base44, kind, reference) {
     const page = await base44.asServiceRole.entities.AgentLicence.filter({ licence_no: reference }, { limit: 1 }).catch(() => ({ items: [] }));
     const row = (page.items || [])[0];
     if (!row) return { found: false };
-    return { found: true, status: row.status, valid: row.status === 'approved', district: row.district || null };
+    // Ruling 14: council name and status only.
+    return {
+      found: true,
+      status: row.status,
+      valid: row.status === 'approved',
+      council: row.council_name || null,
+      scope: row.scope || 'rental',
+    };
   }
 
   const page = await base44.asServiceRole.entities.RentalUnit.filter({ unit_ref: reference }, { limit: 1 }).catch(() => ({ items: [] }));

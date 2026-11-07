@@ -1,6 +1,6 @@
 # PENDING REGISTER — IBMT Rent
 
-Consolidated 4 November 2026. Rulings applied and review round **F1 closed 7 November 2026**.
+Consolidated 4 November 2026. Review round **F1 closed 7 November 2026**. **Ruling R-33 (joint owners) recorded and the broker register built, 7 November 2026.**
 Tags: **BLOCKER** real use impossible · **BUILD** decided, not yet built · **OFF** deliberately switched off ·
 **PLACEHOLDER** needs a real value · **MOCK** needs a real provider · **LIMIT** platform ceiling ·
 **DEBT** model tidy-up · **UNTESTED** not yet exercised · **HOLD** your ruling outstanding.
@@ -43,7 +43,18 @@ Tags: **BLOCKER** real use impossible · **BUILD** decided, not yet built · **O
 41. `asset_type` plus a `plots_register` flag off; no plot screens; legacy plot rows excluded.
 69. Registration cases (`VerificationCase`) and ownership changes stay separate records.
 
-**On hold:** item 33 (co-owners) and section K (NIDA). Nothing is built for either, and no NIDA number is stored anywhere.
+### Ruling R-33 — joint owners (7 November 2026), now in force
+
+1. A Property may hold one or more owners of record, and **every owner must sign a sale by OTP on their own verified number**. One owner can never sell alone.
+2. Joint buyers: every buyer signs too.
+3. Any joint owner may object during the objection window.
+4. Lost phone: that owner attends the Mtaa office in person. A dead joint owner, or a signature that cannot be obtained, moves the case to the council office route. **A signature is never skipped.**
+5. Adding or removing an owner is itself an ownership change: every existing owner's OTP, Mtaa review and council approval. It is refused while a sale is pending, so nobody removes a spouse and then sells alone.
+6. All owners appear on the certificate and in the ownership history. The public check stays status-only, with **no names**.
+7. One owner is marked **primary** for day-to-day leases, rent records and notices. That grants **no** power to sell alone.
+8. Companies and estates **cannot** use the self-service sale route until further ruling; they go to the council office.
+
+**On hold:** section K (NIDA) only. Nothing is built for it, and no NIDA number is stored anywhere, real or sample.
 
 ---
 
@@ -58,16 +69,20 @@ Tags: **BLOCKER** real use impossible · **BUILD** decided, not yet built · **O
 7. **BLOCKER** The nine demo accounts are not invited.
 8. **BLOCKER** No SMS gateway — every code is shown on screen. Registration codes are now hashed and salted, but they still cannot leave the system.
 
-## B. Decided and still to build (4)
+## B. Decided and still to build (6)
 
-9. **BUILD** The Property anchor for sales (ruling 10), including the owner's grouping confirmation.
-10. **BUILD** One licence per broker per council (ruling 11) — `AgentLicence.apply` still permits one open licence per broker.
-11. **BUILD** Seller OTP to the registration-record number, with the in-person fallback when it differs from the account number (ruling 12).
-12. **BUILD** "Sent for review" instead of the other unit's reference on a suspected duplicate (ruling 24), and the "Documents checked" label (ruling 29).
+9. **BUILD** The Property anchor for sales (ruling 10), including the owner's grouping confirmation, and **joint owners on that anchor** (R-33: one or more owners of record, one marked primary).
+10. **BUILD** Every-owner signing (R-33): an owners table per Property, an OTP challenge per owner, the sale refused until all of them have signed, and the Mtaa-in-person / council-office routes for a lost phone, a death or an unobtainable signature.
+11. **BUILD** Owner changes as an ownership change (R-33.5): add or remove an owner needs every existing owner's OTP, Mtaa review and council approval, and is refused while a sale is pending.
+12. **BUILD** Companies and estates routed to the council office for sales, never self-service (R-33.8).
+13. **BUILD** Seller OTP to the registration-record number, with the in-person fallback when it differs from the account number (ruling 12).
+14. **BUILD** "Sent for review" instead of the other unit's reference on a suspected duplicate (ruling 24), and the "Documents checked" label (ruling 29).
+
+**Built:** one licence per broker per council, with a declared scope (rulings 11, 14, 38) — see J2.
 
 ## C. Amendment A1 — sequence
 
-1. Broker register (ruling 39) → then stop for your nine-role test.
+1. ~~Broker register (ruling 39)~~ **built 7 November 2026**, see J2. **Stop here for your nine-role test.**
 2. A1.1 identity and Property anchor → A1.2 sale record → A1.3 signatures and objections → A1.4 certificates → A1.5 rent and deposits after a sale → A1.6 oversight.
 3. Reminders ride a scheduled workflow, in-app only until SMS exists (ruling 40).
 
@@ -128,7 +143,7 @@ retention 730 / 365 / 180 days, unverified ward lists, stock estimates without a
 3. **UNTESTED** Two different admins approving the same money action.
 4. **UNTESTED** A real SMS code reaching a real phone.
 5. **UNTESTED** A cooling-off period allowed to elapse in real time.
-6. **UNTESTED** A1's nine tests, and the broker route once it is built.
+6. **UNTESTED** A1's tests (nine carried from the brief plus the three added by R-33 in section M), and the broker **positive** path: naming a rental-scope broker on a mandate needs a second account, and only one admin account exists.
 
 ## J. Review round F1 — what changed and how it was checked (7 November 2026)
 
@@ -146,7 +161,38 @@ retention 730 / 365 / 180 days, unverified ward lists, stock estimates without a
 
 ---
 
-## K. ON HOLD — no build
+## J2. Broker register — built 7 November 2026
 
-- **33** Co-owners and joint signatories (spouses, estates, companies). Blocks the sale data model.
-- **NIDA** section K of the previous register: who gives a number, mandatory or optional, storage shape, legal basis, duplicates, where it must never appear, estates and companies, audit. **No NIDA number is stored anywhere in this app, and none will be until you rule.**
+Ruling 39 said brokers first, then stop. Built and tested on the server:
+
+1. **One licence per broker per council (ruling 11).** `AgentLicence` now carries `council_id`, `council_name` and `scope`. The application resolves the council first and refuses a second open licence in the *same* council, while allowing a registration in another one.
+   *Tested:* applied in Kinondoni (created); applied again in Kinondoni → returned the existing licence with `duplicate: true` and did **not** alter its scope; applied in Ubungo → a separate licence created.
+2. **A declared scope: rental, sale or both.** A sale-only broker can never be named on a rental mandate, at creation or at signing.
+   *Tested:* an approved sale-only licence named on a rental mandate → 403 `AGENT_SCOPE_SALE_ONLY`. The same licence switched to rental scope then passed the guard and the flow moved to the next check (422 "You cannot name yourself as the agent", because only one account exists).
+3. **The public check answers with the council and the status only (ruling 14).**
+   *Tested:* `IBMT-AGL-2026-0014` returned `status: approved` and `council: "Kinondoni Municipal Council"` — no name, no district, no ward, no phone number, and a disclaimer saying so.
+4. **Both screens follow.** The council desk shows each broker's council and scope and filters by scope; the broker workspace lists every licence held, one per council, with its scope, and stops a second application in the same district before the server has to.
+5. **Compulsory registration reuses the council's own setting (ruling 38).** Where a council's enforcement mode is not voluntary, the application screen says registration is required and cites the by-law when one is recorded. No new switch was added.
+6. **Legacy rows repaired.** The two licences already in the table had no council; each was bound to the council of its district (Kinondoni, Ilala) with scope rental, so they display correctly and reach the right queue.
+
+**Fixtures created and removed:** two test licences for the admin account (Kinondoni sale, Ubungo rental) and the number `IBMT-AGL-2026-000015`; both rows deleted, and no mandate was created.
+
+---
+
+## M. A1 tests added by R-33 (7 November 2026)
+
+These three join the nine tests already agreed for A1:
+
+10. A sale with one of two owners signed **cannot** move forward.
+11. A joint owner's objection **freezes** the case.
+12. An owner **cannot be removed** while a sale is pending.
+
+From R-33.6 and R-33.7, the same round also checks: the certificate names every owner, the public check names none, and the primary owner still cannot sell alone.
+
+---
+
+## K. ON HOLD BY OWNER, 7 NOVEMBER 2026 — no build
+
+Item 33 (joint owners) is **no longer on hold**: it is ruled as R-33 above and sequenced in section B and C.
+
+**NIDA — ON HOLD BY OWNER, 7 November 2026.** No NIDA field, no screen, no number, real or sample, is built or stored anywhere in this app. The open questions from the previous register stay recorded so nothing is lost: who gives a number, mandatory or optional, storage shape, legal basis, duplicates, where it must never appear, estates and companies, audit. **This will not be raised again until the owner does.**
