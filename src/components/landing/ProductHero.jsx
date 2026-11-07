@@ -3,9 +3,8 @@ import { pick } from '@/config/products';
 import { useEffect, useState } from 'react';
 
 /**
- * The framed scene: one photo in a rounded frame on the navy window,
- * cross-fading and rising when the selection changes. Only the selected
- * product's image is ever requested.
+ * The frame: one photo in a compact rounded frame, cross-fading and rising when
+ * the selection changes. Only the selected product's image is ever requested.
  */
 export default function ProductHero({ product, lang }) {
   const [layers, setLayers] = useState([{ key: product.id, product, state: 'in' }]);
@@ -21,41 +20,45 @@ export default function ProductHero({ product, lang }) {
   }, [product]);
 
   return (
-    <div className="w-full">
-      <div className="relative h-[clamp(150px,27vh,250px)] w-full sm:h-[clamp(190px,32vh,300px)]">
+    <div className="flex w-full flex-col items-center">
+      <div className="relative w-full max-w-[300px] sm:max-w-[340px]">
         <div aria-hidden="true" className="l1-halo" />
-        {layers.map((layer) => {
-          const LayerIcon = layer.product.icon;
-          return (
-            <div
-              key={layer.key}
-              aria-hidden={layer.state === 'out' || undefined}
-              className={`absolute inset-0 z-10 ${layer.state === 'in' ? 'l1-in' : 'l1-out'}`}
-            >
-              {failed[layer.key] ? (
-                <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-gold/50">
-                  <LayerIcon className="h-16 w-16 text-gold" aria-hidden="true" />
-                </div>
-              ) : (
-                <Image
-                  src={layer.product.hero}
-                  alt={`${layer.product.name} — ${pick(layer.product.tagline, lang)}`}
-                  fittingType="fill"
-                  loading="lazy"
-                  onError={() => setFailed((current) => ({ ...current, [layer.key]: true }))}
-                  className="h-full w-full rounded-2xl object-cover shadow-2xl ring-1 ring-primary-foreground/15"
-                />
-              )}
-            </div>
-          );
-        })}
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[18px] shadow-[0_26px_60px_-26px_rgba(0,0,0,0.8)] ring-1 ring-primary-foreground/15">
+          {layers.map((layer) => {
+            const LayerIcon = layer.product.icon;
+            return (
+              <div
+                key={layer.key}
+                aria-hidden={layer.state === 'out' || undefined}
+                className={`absolute inset-0 ${layer.state === 'in' ? 'l1-in' : 'l1-out'}`}
+              >
+                {failed[layer.key] ? (
+                  <div className="flex h-full w-full items-center justify-center border border-dashed border-gold/40">
+                    <LayerIcon className="h-12 w-12 text-gold" aria-hidden="true" />
+                  </div>
+                ) : (
+                  <Image
+                    src={layer.product.hero}
+                    alt={`${layer.product.name} — ${pick(layer.product.tagline, lang)}`}
+                    fittingType="fill"
+                    loading="lazy"
+                    onError={() => setFailed((current) => ({ ...current, [layer.key]: true }))}
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+            );
+          })}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-[18px] ring-1 ring-inset ring-primary-foreground/10"
+          />
+        </div>
       </div>
 
-      <div className="relative z-10 mt-2 text-center">
-        <h2 className="font-display text-[clamp(36px,6.5vw,72px)] font-bold leading-[0.92] tracking-[0.02em] text-primary-foreground">
-          {product.name}
-        </h2>
-      </div>
+      <h2 className="mt-3 font-display text-[clamp(32px,5vw,54px)] font-bold leading-[0.9] tracking-[0.03em] text-primary-foreground">
+        {product.name}
+      </h2>
     </div>
   );
 }
