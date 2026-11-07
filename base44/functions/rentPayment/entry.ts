@@ -4,18 +4,24 @@ import {
   cleanText,
   fail,
   findExistingByKey,
-  getActivePolicy,
+  getPolicyRules,
   json,
   nextSerial,
+  rentRates,
 } from '../../shared/moneyOps.ts';
 
 /**
- * Rent payment flow. The allocation is computed here from the active policy
- * version: TRA withholding at source, agent commission (landlord side only,
- * capped, only for a new tenancy) and the landlord settlement. A deposit is
- * capped at the policy maximum. IBMT never holds funds and never charges the
- * tenant more than rent plus deposit. A retried action key can never record
- * the payment twice.
+ * Rent payment flow.
+ *
+ * Every rate comes from the active PolicyRule row — PolicyRule is the single
+ * source, and PolicyVersion is never read here. Under the Stage 1 ruling the
+ * agent commission is one month's rent on a new tenancy, there is no percentage
+ * share and no shilling cap, and no tax is withheld at all: TaxRule stays
+ * dormant until Stage 3 is agreed. IBMT never holds funds, and a retried action
+ * key can never record the payment twice.
+ *
+ * While a council is in Stage 1 (record only) this endpoint refuses to create a
+ * payment: rent is recorded through the rent record, not collected here.
  */
 export default async function (req) {
   try {
@@ -26,13 +32,11 @@ export default async function (req) {
     const payload = await req.json().catch(() => ({}));
     const mode = cleanText(payload.mode) || 'quote';
 
-    const policy = await getActivePolicy(base44);
-    const values = (policy && policy.values) || {};
-    const withholdingRate = Number(values.rent_withholding_rate) || 0;
-    const commissionShare = Number(values.agent_commission_share) || 0;
-    const commissionCap = Number(values.agent_commission_cap) || 0;
-    const depositMaxMonths = Number(values.deposit_max_months) || 3;
-    const platformFeeRate = Number(values.platform_fee) || 0;
+    const rule = await getPolicyRules(base44);
+    const rates = rentRates(rule);
+    const commissionMonths = rates.commission_months;
+    const depositMaxMonths = rates.deposit_cap_months;
+    const platformFeeRate = rates.landlord_service_fee_rate;
 
     const months = Math.max(1, Math.round(Number(payload.period_months) || 1));
     const newTenancy = payload.new_tenancy !== false;
@@ -44,8 +48,10 @@ export default async function (req) {
     }
     const monthlyRent = mode === 'pay' ? submittedRent / months : submittedRent;
     const rentTotal = mode === 'pay' ? Math.round(submittedRent) : Math.round(monthlyRent * months);
-    const tax = Math.round(rentTotal * withholdingRate);
-    const commission = newTenancy ? Math.min(Math.round(monthlyRent * commissionShare), commissionCap) : 0;
+
+    // Stage 1: no withholding anywhere, so this is not read from any rate.
+    const tax = 0;
+    const commission = newTenancy ? Math.round(monthlyRent * commissionMonths) : 0;
     const settlement = rentTotal - tax - commission;
     const depositRequested = Number(payload.deposit_amount);
     const deposit = newTenancy
@@ -72,7 +78,7 @@ export default async function (req) {
         tenant_total: tenantTotal,
         allocation,
         allocation_note: 'policy.allocationTitle',
-        policy_version: policy ? policy.version : null,
+        policy_version: rule ? rule.version : null,
       });
     }
 
@@ -102,11 +108,26 @@ export default async function (req) {
     const unit = unitRows[0];
     if (!unit) return fail(404, 'NOT_FOUND', 'No unit with that reference is visible to you');
 
+    // A payment attaches only to the caller's own tenancy. There is no fallback
+    // to another tenant's tenancy on the same unit.
     const tenancyQuery = await base44.entities.Tenancy.filter({ unit_id: unit.id, status: 'active' }, { sort: '-created_date', limit: 5 });
     const tenancies = tenancyQuery.items || tenancyQuery;
-    const tenancy = tenancies.find((row) => row.tenant_id === user.id) || tenancies[0];
+    const tenancy = tenancies.find((row) => row.tenant_id === user.id);
     if (!tenancy) {
-      return fail(404, 'NOT_FOUND', 'There is no active tenancy for this unit yet. A tenancy is opened before paying rent.');
+      return fail(404, 'NOT_FOUND', 'You have no active tenancy for this unit. A tenancy is opened before paying rent.');
+    }
+
+    // Stage 1 has no money movement: refuse before anything is written.
+    const council = unit.council_id
+      ? await base44.asServiceRole.entities.Council.get(unit.council_id).catch(() => null)
+      : null;
+    const rentStage = (council && council.rent_stage) || 'record';
+    if (rentStage === 'record') {
+      return fail(
+        409,
+        'STAGE1_RECORD_ONLY',
+        'This council is in Stage 1 (record only): IBMT records rent and takes no payment. Nothing was created.',
+      );
     }
 
     const reference = await nextSerial(base44, 'RentPayment', `IBMT-RPT-${new Date().getFullYear()}-`);
@@ -118,6 +139,9 @@ export default async function (req) {
       unit_ref: unit.unit_ref,
       landlord_id: tenancy.landlord_id,
       tenant_id: tenancy.tenant_id || user.id,
+      council_id: unit.council_id || null,
+      district: unit.district || null,
+      ward: unit.ward || null,
       period_months: months,
       amount: rentTotal,
       deposit_amount: deposit,
@@ -130,7 +154,7 @@ export default async function (req) {
       status: 'pending',
       paid_at: null,
       idempotency_key: idempotencyKey || null,
-      policy_version: policy ? policy.version : null,
+      policy_version: rule ? rule.version : null,
     });
 
     return json(paymentShape(created, allocation));

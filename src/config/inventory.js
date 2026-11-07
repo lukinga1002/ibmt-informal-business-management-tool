@@ -6,7 +6,7 @@ export const SCREEN_INVENTORY = [
   { path: '/', scope: 'public', purpose: 'Product value, module overview, entry to verification', apis: [] },
   { path: '/verify', scope: 'public', purpose: 'Public verification of a receipt, business, lease, agent licence or unit', apis: ['verifyRecord'] },
   { path: '/ussd', scope: 'public', purpose: 'Rent USSD simulator: pay rent, balance due, verify receipt, verify agent licence', apis: ['ussdSession'] },
-  { path: '/documents', scope: 'public', purpose: 'Bilingual lease, rent receipt and landlord tax compliance specimens', apis: ['getDocument', 'listDocuments'] },
+  { path: '/documents', scope: 'public', purpose: 'Bilingual lease and rent receipt specimens. The tax compliance specimen is dormant and never shown.', apis: ['getDocument', 'listDocuments'] },
   { path: '/data-rights', scope: 'public', purpose: 'Privacy, consent purposes, access history, retention and export requests', apis: ['getConsents', 'setConsent', 'listAccessHistory', 'requestExport', 'getPolicyValues'] },
   { path: '/handover', scope: 'public', purpose: 'Delivery package for the backend team: inventory, matrix, contract, assumptions', apis: [] },
 
@@ -33,7 +33,7 @@ export const SCREEN_INVENTORY = [
   { path: '/rent/landlord', scope: 'landlord', purpose: 'Units, occupancy, rent due, collected, tax withheld, arrears', apis: ['getLandlordOverview'] },
   { path: '/rent/landlord/portfolio', scope: 'landlord', purpose: 'Unit registration, ownership upload, verification status, listings, agent mandates', apis: ['listUnits', 'createUnit', 'submitOwnershipEvidence', 'getUnitOwnership', 'listListings', 'createListing', 'listMandates', 'createMandate', 'uploadEvidence'] },
   { path: '/rent/landlord/tenancies', scope: 'landlord', purpose: 'Lease builder, tenants, renewals and notices', apis: ['listTenancies', 'getLease', 'buildLease', 'updateLease', 'listNotices', 'issueNotice'] },
-  { path: '/rent/landlord/money', scope: 'landlord', purpose: 'Payments, receipts, deposits, tax compliance document, amnesty notice', apis: ['listRentPayments', 'listDeposits', 'getTaxCompliance', 'getAmnestyNotice'] },
+  { path: '/rent/landlord/money', scope: 'landlord', purpose: 'Payments, receipts, deposits and the amnesty notice', apis: ['listRentPayments', 'listDeposits', 'getAmnestyNotice'] },
   { path: '/rent/landlord/cases', scope: 'landlord', purpose: 'Disputes and condition reports', apis: ['listDisputes', 'listDeposits', 'createConditionReport'] },
 
   { path: '/rent/tenant', scope: 'tenant', purpose: 'Tenancy summary, paid-through position, deposit status', apis: ['listTenancies', 'listRentPayments', 'listDeposits', 'listNotices'] },

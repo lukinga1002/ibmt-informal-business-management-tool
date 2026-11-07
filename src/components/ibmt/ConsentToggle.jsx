@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 /**
  * One consent, one control.
  *
- * Mandatory processing is shown as mandatory and cannot be withdrawn here;
- * optional listing marketing, credit use and lender sharing are separate and
+ * The core consent is required to run the service and cannot be withdrawn here;
+ * listing marketing, rent-history credit use and lender sharing are separate and
  * withdrawable independently.
  */
 export default function ConsentToggle({ consentKey, consent, onToggle, busy, className }) {

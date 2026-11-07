@@ -2,7 +2,7 @@
  * R7 — money engine, ledger and controls (SIMULATION).
  *
  * Every figure here is computed on the server from rates that are passed in
- * from the active policy version. Nothing in this module touches a real payment
+ * from the active PolicyRule row. Nothing in this module touches a real payment
  * provider: the partner is a mock, and every screen says so.
  *
  * Rules encoded here:
@@ -457,6 +457,11 @@ export const RETENTION_DEFAULTS = [
 
 /* -------------------------------------------------------------- worked tests */
 
+/**
+ * Stage 3 TEST inputs only, used by the worked examples and the admin demo
+ * switch. A live run never sees them: it reads the active PolicyRule row.
+ * Commission here is one month's rent, the Stage 1 cap.
+ */
 export const PLACEHOLDER_RATES = { tax_rate: 0.1, service_fee_rate: 0.01, commission_share: 1, commission_cap: 0 };
 
 function splitOf(overrides) {
@@ -510,7 +515,7 @@ export function runWorkedExamples() {
     months: 3,
     new_tenancy: true,
     stage: STAGE.stage3,
-    rates: { tax_rate: 0.1, service_fee_rate: 0.01, commission_share: 0.5, commission_cap: 15000 },
+    rates: { tax_rate: 0.1, service_fee_rate: 0.01, commission_share: 0.5, commission_cap: 100000 },
   });
   cases.push({
     name: 'Rounding remainder goes to the landlord',

@@ -18,8 +18,8 @@ export const POLICY_VALUES = {
     'Viwango vya sera vinatolewa na backend na vina toleo. Hakuna kilichoandikwa moja kwa moja kwenye kiolesura.',
   ),
   values: [
-    { key: 'withholding_rate', label: B('Rental withholding rate', 'Kiwango cha kodi inayozuiliwa'), display: '10%', rule: B('Applied once at the point of payment.', 'Inatumika mara moja wakati wa malipo.') },
-    { key: 'commission_cap', label: B('Agent commission cap', 'Kikomo cha kamisheni ya wakala'), display: '10%', rule: B('Capped, landlord funded, charged once per new tenancy.', 'Ina kikomo, inalipwa na mwenye nyumba, inatozwa mara moja kwa upangaji mpya.') },
+    { key: 'withholding_rate', label: B('Rental withholding rate', 'Kiwango cha kodi inayozuiliwa'), display: '0%', rule: B('No tax is deducted in this stage. Withholding is built for stage 3 and stays switched off.', 'Hakuna kodi inayozuiwa katika hatua hii. Uzuiaji umeundwa kwa hatua ya 3 na unabaki umezimwa.') },
+    { key: 'commission_cap', label: B('Agent commission cap', 'Kikomo cha kamisheni ya wakala'), display: B("One month's rent", 'Mwezi mmoja wa kodi'), rule: B('One month of rent per new tenancy, paid by the landlord side, zero on a renewal.', 'Mwezi mmoja wa kodi kwa upangaji mpya, inalipwa na upande wa mwenye nyumba, sifuri kwa upyaisho.') },
     { key: 'stamp_duty', label: B('Stamp duty', 'Ushuru wa stempu'), display: '0.5%', rule: B('Assessed by the backend when a lease is signed.', 'Inakadiriwa na backend wakati mkataba unatiwa saini.') },
     { key: 'low_rent_exemption', label: B('Low-rent exemption threshold', 'Kiwango cha kutotozwa kodi'), display: 'TZS 100,000 / month', rule: B('Defined by TRA.', 'Kinaainishwa na TRA.') },
     { key: 'advance_rent_limit', label: B('Advance rent limit', 'Kikomo cha kodi ya mapema'), display: '6 months', rule: B('Enforced by the backend at checkout.', 'Inatekelezwa na backend wakati wa malipo.') },
@@ -60,7 +60,7 @@ export const ACCESS_HISTORY = [
 ];
 
 export const CONSENTS = {
-  registration_processing: { granted: true, mandatory: true, label: B('Registration and withholding processing', 'Usajili na uchakataji wa kodi inayozuiliwa'), note: B('Mandatory under the confirmed legal mandate. It cannot be withdrawn while a tenancy is active.', 'Ni lazima chini ya mamlaka ya kisheria yaliyothibitishwa. Haiwezi kuondolewa wakati upangaji unaendelea.') },
+  registration_processing: { granted: true, mandatory: true, label: B('Registration and rent records', 'Usajili na kumbukumbu za kodi'), note: B('Required to run the service. It covers the unit, the lease and the rent records, shared with the council and its ward officer. No tax is deducted in this stage, and it cannot be withdrawn while a tenancy is active.', 'Inahitajika kuendesha huduma. Inahusisha kitengo, mkataba na kumbukumbu za kodi, zinashirikiwa na halmashauri na afisa wa mtaa wake. Hakuna kodi inayozuiwa katika hatua hii, na haiwezi kuondolewa wakati upangaji unaendelea.') },
   listing_marketing: { granted: true, mandatory: false, label: B('Publishing a listing for marketing', 'Kuchapisha tangazo kwa matangazo'), note: B('Optional. Withdrawing it removes the public listing, never the registration.', 'Ni hiari. Kuondoa huondoa tangazo la umma, si usajili.') },
   rent_history_credit: { granted: false, mandatory: false, label: B('Using rent history to support credit', 'Kutumia historia ya kodi kusaidia mkopo'), note: B('Optional and separate from lender sharing.', 'Ni hiari na ni tofauti na kushiriki na mkopeshaji.') },
   lender_sharing: { granted: false, mandatory: false, label: B('Sharing with a lender you name', 'Kushiriki na mkopeshaji unaemtaja'), note: B('Optional. You choose the lender each time.', 'Ni hiari. Unachagua mkopeshaji kila mara.') },

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Flag, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ibmt/PageHeader';
-import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import DataState from '@/components/ibmt/DataState';
 import StatusBadge from '@/components/ibmt/StatusBadge';
@@ -46,7 +45,6 @@ export default function WardVerification() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const pending = useMemo(() => rows.items.filter((row) => row.status !== 'approved'), [rows.items]);

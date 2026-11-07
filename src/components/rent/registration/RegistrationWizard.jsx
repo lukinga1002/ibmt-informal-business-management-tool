@@ -287,7 +287,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               className="mt-1"
             />
             <span className="text-[13px] leading-relaxed">
-              <strong>Lazima:</strong> nakubali taarifa za nyumba hii zihifadhiwe na IBMT kwa ajili ya usajili.
+              <strong>Inahitajika kwa huduma:</strong> nakubali taarifa za nyumba hii zihifadhiwe na IBMT kwa ajili ya usajili.
             </span>
           </label>
           <label className="flex items-start gap-3 rounded-md border border-border px-4 py-3">

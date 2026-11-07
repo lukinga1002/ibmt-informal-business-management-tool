@@ -86,5 +86,19 @@
   },
   "required": [
     "role"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

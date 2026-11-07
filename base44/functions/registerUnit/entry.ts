@@ -4,11 +4,11 @@ import {
   DISCLAIMER,
   EVIDENCE_KINDS,
   UNIT_TYPES,
-  newOtp,
+  issuanceAllowed,
+  issueChallenge,
   normaliseAddress,
   normaliseMeter,
   reference,
-  sha256,
 } from '../../shared/registration.ts';
 
 /**
@@ -17,6 +17,11 @@ import {
  * Always creates a claim, never an approval: the unit stays unverified until a
  * mtaa officer for that ward decides. A duplicate address or meter is flagged
  * for review and never blocks or rejects the claim.
+ *
+ * The landlord's confirmation code is issued through shared/registration.ts:
+ * five-minute expiry, five attempts, fifteen-minute lockout, hourly send limits,
+ * a random salt per code, and nothing but the salted hash stored — on the
+ * admin-only OtpChallenge row, never on the registration case.
  */
 export default async function (req) {
   try {
@@ -66,6 +71,15 @@ export default async function (req) {
       }
     }
 
+    // Hourly send limits are checked before anything is written, so a refused
+    // request never leaves a half-registered unit behind.
+    if (channel !== 'self') {
+      const gate = await issuanceAllowed(base44, { subjectId: `registration:${landlordId}`, phone: landlordPhone });
+      if (!gate.allowed) {
+        return fail(429, 'RATE_LIMITED', 'Too many codes requested. Try again in an hour.');
+      }
+    }
+
     // Duplicate check across every landlord: a service-role read, so only the
     // comparison result leaves this function — never another landlord's record.
     const wardUnits = await base44.asServiceRole.entities.RentalUnit
@@ -112,10 +126,10 @@ export default async function (req) {
       policy_version: '2026.1-stage1',
     });
 
-    const otp = channel === 'self' ? null : newOtp();
+    const caseRef = reference('REG');
 
     const verificationCase = await base44.entities.VerificationCase.create({
-      case_ref: reference('REG'),
+      case_ref: caseRef,
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
       landlord_id: landlordId,
@@ -127,16 +141,13 @@ export default async function (req) {
       helper_licence: cleanText(payload.helper_licence),
       helper_relation: cleanText(payload.helper_relation),
       evidence: evidence.map((item) => ({ kind: item.kind, uri: cleanText(item.uri), label: cleanText(item.label) })),
-      status: otp ? 'awaiting_otp' : 'submitted',
+      status: channel === 'self' ? 'submitted' : 'awaiting_otp',
       duplicate_flag: Boolean(duplicateKind),
       duplicate_kind: duplicateKind || undefined,
       duplicate_of_unit_ref: duplicateOf || undefined,
       duplicate_note: duplicateKind
         ? 'Another unit in this ward already carries this address or meter. Review the two records; this is not a rejection.'
         : '',
-      otp_code_hash: otp ? await sha256(`${verificationCase_salt()}${otp}`) : undefined,
-      otp_sent_at: otp ? isoNow() : undefined,
-      otp_channel: otp ? 'in-app (demo)' : undefined,
       consent: {
         core: true,
         council_sharing: consent.council_sharing === true,
@@ -153,6 +164,22 @@ export default async function (req) {
       policy_version: '2026.1-stage1',
     });
 
+    let issued = null;
+    if (channel !== 'self') {
+      issued = await issueChallenge(base44, {
+        subjectId: `registration:${landlordId}`,
+        subjectRef: caseRef,
+        purpose: 'registration_otp',
+        phone: landlordPhone,
+      });
+      await base44.asServiceRole.entities.VerificationCase.update(verificationCase.id, {
+        otp_sent_at: issued.challenge.issued_at,
+        otp_channel: 'in-app (demo)',
+      });
+    }
+
+    const viewer = landlordId === user.id || user.role === 'admin';
+
     return json({
       case_id: verificationCase.id,
       case_ref: verificationCase.case_ref,
@@ -162,14 +189,18 @@ export default async function (req) {
       duplicate: duplicateKind
         ? { flagged: true, kind: duplicateKind, note: verificationCase.duplicate_note }
         : { flagged: false },
-      otp: otp
+      otp: issued
         ? {
             required: true,
-            sent_at: verificationCase.otp_sent_at,
-            channel: verificationCase.otp_channel,
+            sent_at: issued.challenge.issued_at,
+            expires_at: issued.expires_at,
+            ttl_minutes: issued.ttl_minutes,
+            max_attempts: issued.max_attempts,
+            channel: 'in-app (demo)',
             // A helper never receives the landlord's code. The landlord sees it
-            // in their own session; in this demo build nobody else can.
-            code: landlordId === user.id || user.role === 'admin' ? otp : undefined,
+            // in their own session; in this demo build nobody else can, and no
+            // other screen can read the challenge row at all.
+            code: viewer ? issued.code : undefined,
           }
         : { required: false },
       certificate: null,
@@ -177,8 +208,4 @@ export default async function (req) {
   } catch (error) {
     return fail(500, 'SERVER', error && error.message ? error.message : 'Unexpected error');
   }
-}
-
-function verificationCase_salt() {
-  return 'ibmt-otp-v1';
 }

@@ -440,8 +440,8 @@ export const OPERATIONS = {
   },
   getTaxCompliance: {
     method: 'GET', path: '/rent/tax-compliance', auth: true, scope: ['landlord'],
-    purpose: 'Landlord tax compliance document and eligibility. Issued by the backend.',
-    fields: ['eligible', 'certificate_id', 'issued_at', 'valid_until', 'statement', 'note'], screens: ['Landlord money'],
+    purpose: 'DORMANT. No screen calls this and no record claims TRA has certified anyone. Kept for a future stage with a written mandate.',
+    fields: ['eligible', 'certificate_id', 'issued_at', 'valid_until', 'statement', 'note'], screens: [],
   },
   getAmnestyNotice: {
     method: 'GET', path: '/rent/amnesty', auth: true, scope: ['*'],

@@ -140,8 +140,8 @@ const HANDLERS = {
     const record = db().CONSENTS[key];
     if (!record) fail('NOT_FOUND', `No consent ${key}`);
     if (record.mandatory && params.granted === false) {
-      fail('VALIDATION', 'Mandatory processing cannot be withdrawn while a tenancy is active', {
-        fieldErrors: { consent: 'Mandatory processing cannot be withdrawn while a tenancy is active.' },
+      fail('VALIDATION', 'The core consent cannot be withdrawn while a tenancy is active', {
+        fieldErrors: { consent: 'The core consent cannot be withdrawn while a tenancy is active.' },
       });
     }
     record.granted = Boolean(params.granted);

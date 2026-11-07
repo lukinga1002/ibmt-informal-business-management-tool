@@ -1,13 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
-import { sha256 } from '../../shared/registration.ts';
-
-const SALT = 'ibmt-otp-v1';
+import { fail, isoNow, json } from '../../shared/moneyOps.ts';
+import { cleanText } from '../../shared/moneyOps.ts';
+import { checkHashedOtp } from '../../shared/registration.ts';
 
 /**
  * The landlord (assisted or proxy registration) or the tenant (migrated
  * tenancy) confirms with the code sent to their own phone. The code is the
- * only check: this endpoint is reachable before that person has an account.
+ * only check: this endpoint is reachable before that person has an account, so
+ * every write here runs on the service role — a caller with no session cannot
+ * write a case record under their own token.
+ *
+ * The code and its salted hash live only on the admin-only OtpChallenge row.
+ * Five minutes, five attempts, fifteen-minute lockout, all applied server-side.
  */
 export default async function (req) {
   try {
@@ -28,21 +32,45 @@ export default async function (req) {
 
     if (!found) return fail(404, 'NOT_FOUND', 'That registration was not found');
     if (found.otp_confirmed_at) return json({ confirmed: true, status: found.status, already: true });
-    if (!found.otp_code_hash) return fail(409, 'NOT_REQUIRED', 'This registration does not need a code');
+    if (found.channel === 'self') return fail(409, 'NOT_REQUIRED', 'This registration does not need a code');
 
-    const matches = (await sha256(`${SALT}${code}`)) === found.otp_code_hash;
-    if (!matches) return fail(422, 'CODE_MISMATCH', 'That code does not match', { code: 'Check the code and try again.' });
+    const challengePage = await base44.asServiceRole.entities.OtpChallenge
+      .filter({ subject_ref: found.case_ref }, { sort: '-created_date', limit: 1 });
+    const challenge = (challengePage.items || challengePage)[0];
+    if (!challenge) {
+      return fail(409, 'CODE_EXPIRED', 'The code for this registration has expired. Request a new one.');
+    }
 
     const now = isoNow();
-    const update = {
+    const result = await checkHashedOtp({ challenge, code, now });
+
+    await base44.asServiceRole.entities.OtpChallenge.update(challenge.id, {
+      attempts: result.attempts,
+      locked_until: result.locked_until,
+      consumed_at: result.ok ? now : challenge.consumed_at || null,
+    });
+
+    if (!result.ok) {
+      const detail = String(result.reason).replace(/_/g, ' ');
+      const message =
+        result.reason === 'locked'
+          ? 'Too many wrong codes. Try again after the lockout.'
+          : result.reason === 'expired'
+            ? 'That code has expired. Request a new one.'
+            : `The code was refused: ${detail}`;
+      return fail(401, 'OTP_REFUSED', message, { code: message });
+    }
+
+    // Service role: the confirming party may have no account at all, so a
+    // user-token write would be refused by the access rules.
+    const updated = await base44.asServiceRole.entities.VerificationCase.update(found.id, {
       otp_confirmed_at: now,
-      status: found.channel === 'migrated' ? 'submitted' : 'submitted',
+      status: 'submitted',
       otp_code_hash: '',
-    };
-    const updated = await base44.entities.VerificationCase.update(found.id, update);
+    });
 
     if (found.channel === 'migrated' && found.migration && found.migration.tenancy_id) {
-      await base44.entities.Tenancy.update(found.migration.tenancy_id, {
+      await base44.asServiceRole.entities.Tenancy.update(found.migration.tenancy_id, {
         status: 'active',
         start_date: found.migration.started_on,
       });

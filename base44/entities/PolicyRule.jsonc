@@ -41,7 +41,7 @@
     },
     "commission_cap": {
       "type": "number",
-      "description": "Maximum agent commission, as a share of one month's rent"
+      "description": "Agent commission cap, expressed in months of rent. Ruling: 1, meaning one month's rent per new tenancy, paid by the landlord side and zero on a renewal. There is no percentage share and no shilling cap."
     },
     "advance_rent_limit": {
       "type": "number",

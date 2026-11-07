@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { cleanText, fail, getActivePolicy, json, nextSerial } from '../../shared/moneyOps.ts';
+import { cleanText, fail, getPolicyRules, json, nextSerial, rentRates } from '../../shared/moneyOps.ts';
 import {
   MOCK_PARTNER,
   STAGE,
@@ -28,12 +28,18 @@ import {
 
 const STAGES = [STAGE.stage1, STAGE.stage2, STAGE.stage3];
 
-function ratesFromPolicy(values = {}) {
+/**
+ * Rates from the active PolicyRule row, the single source. No tax: Stage 1 runs
+ * no withholding and TaxRule stays dormant. Commission is one month's rent,
+ * expressed as a share of one month so the cap is the figure itself.
+ */
+function ratesFromRule(rule) {
+  const rates = rentRates(rule);
   return {
-    tax_rate: Number(values.rent_withholding_rate) || 0,
-    service_fee_rate: Number(values.platform_fee) || 0,
-    commission_share: Number(values.agent_commission_share) || 0,
-    commission_cap: Number(values.agent_commission_cap) || 0,
+    tax_rate: 0,
+    service_fee_rate: rates.landlord_service_fee_rate,
+    commission_share: rates.commission_months,
+    commission_cap: 0,
   };
 }
 
@@ -114,9 +120,8 @@ export default async function (req) {
       });
     }
 
-    const policy = await getActivePolicy(base44);
-    const values = (policy && policy.values) || {};
-    const policyRates = ratesFromPolicy(values);
+    const rule = await getPolicyRules(base44);
+    const policyRates = ratesFromRule(rule);
 
     if (action === 'quote') {
       const stage = STAGES.includes(cleanText(payload.stage)) ? cleanText(payload.stage) : STAGE.stage2;
@@ -134,8 +139,8 @@ export default async function (req) {
         simulation: true,
         split,
         rates_used: rates,
-        rates_source: isAdmin && payload.demo_rates ? 'explicit test rates' : 'active policy version',
-        policy_version: policy ? policy.version : null,
+        rates_source: isAdmin && payload.demo_rates ? 'explicit test rates' : 'active PolicyRule',
+        policy_version: rule ? rule.version : null,
       });
     }
 
@@ -197,7 +202,7 @@ export default async function (req) {
         provider: MOCK_PARTNER.provider,
         refunded_amount: 0,
         simulation: true,
-        policy_version: policy ? policy.version : null,
+        policy_version: rule ? rule.version : null,
         idempotency_key: idempotencyKey || null,
       });
 

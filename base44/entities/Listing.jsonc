@@ -84,9 +84,6 @@
     "read": {
       "$or": [
         {
-          "data.status": "listed"
-        },
-        {
           "created_by_id": "{{user.id}}"
         },
         {

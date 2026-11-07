@@ -46,6 +46,11 @@ export const ALERT_LABEL = {
   rate_limited: { en: 'Rate limited', sw: 'Maombi mengi mno' },
 };
 
+/*
+ * Stage 3 TEST inputs used by the admin demo switch on the money engine. A live
+ * run never sends them: it reads the active PolicyRule row, where the agent
+ * commission is one month's rent and the tax rate is absent in Stage 1.
+ */
 export const PLACEHOLDER_RATES = { tax_rate: 0.1, service_fee_rate: 0.01, commission_share: 1, commission_cap: 0 };
 
 /** A file the browser writes from exactly what the server returned. */

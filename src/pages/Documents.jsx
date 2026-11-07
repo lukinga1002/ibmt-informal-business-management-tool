@@ -8,10 +8,14 @@ import DataState from '@/components/ibmt/DataState';
 import DocumentSheet from '@/components/ibmt/DocumentSheet';
 import Notice from '@/components/ibmt/Notice';
 
+/*
+ * The tax compliance specimen is dormant. No screen shows it and nothing calls
+ * getTaxCompliance: it implied TRA had certified a landlord, which is not true
+ * of any record in this register. Only the lease and the rent receipt remain.
+ */
 const TABS = [
   { key: 'lease', labelKey: 'docs.tabLease' },
   { key: 'receipt', labelKey: 'docs.tabReceipt' },
-  { key: 'tax', labelKey: 'docs.tabTax' },
 ];
 
 export default function Documents() {

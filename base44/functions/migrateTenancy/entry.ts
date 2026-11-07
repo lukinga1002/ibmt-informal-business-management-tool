@@ -1,8 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
-import { DISCLAIMER, newOtp, reference, sha256 } from '../../shared/registration.ts';
-
-const SALT = 'ibmt-otp-v1';
+import { DISCLAIMER, issuanceAllowed, issueChallenge, reference } from '../../shared/registration.ts';
 
 /**
  * An existing tenancy is brought onto the register as it already stands.
@@ -10,6 +8,10 @@ const SALT = 'ibmt-otp-v1';
  * The landlord reports the current tenant and rent, the tenant confirms with a
  * code, and nothing is renegotiated: no new lease is created here at all. The
  * standard lease applies only when this tenancy is renewed.
+ *
+ * The tenant's code follows the R7 rules: five minutes, five attempts,
+ * fifteen-minute lockout, hourly send limits, a random salt per code, and only
+ * the salted hash stored — on the admin-only OtpChallenge row, never on the case.
  */
 export default async function (req) {
   try {
@@ -44,6 +46,9 @@ export default async function (req) {
       return fail(409, 'ALREADY_OPEN', 'This tenancy is already waiting for the tenant to confirm');
     }
 
+    const gate = await issuanceAllowed(base44, { subjectId: `migration:${unit.id}`, phone: tenantPhone });
+    if (!gate.allowed) return fail(429, 'RATE_LIMITED', 'Too many codes requested. Try again in an hour.');
+
     const tenancy = await base44.entities.Tenancy.create({
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
@@ -56,9 +61,9 @@ export default async function (req) {
       ward: unit.ward,
     });
 
-    const code = newOtp();
+    const caseRef = reference('REG');
     const record = await base44.entities.VerificationCase.create({
-      case_ref: reference('REG'),
+      case_ref: caseRef,
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
       landlord_id: unit.landlord_id,
@@ -79,9 +84,6 @@ export default async function (req) {
         terms_unchanged: true,
         tenancy_id: tenancy.id,
       },
-      otp_code_hash: await sha256(`${SALT}${code}`),
-      otp_sent_at: isoNow(),
-      otp_channel: 'in-app (demo)',
       consent: { core: true, council_sharing: payload.council_sharing === true, granted_at: isoNow(), policy_version: '2026.1-stage1' },
       council_id: unit.council_id,
       region: unit.region,
@@ -93,6 +95,17 @@ export default async function (req) {
       policy_version: '2026.1-stage1',
     });
 
+    const issued = await issueChallenge(base44, {
+      subjectId: `migration:${unit.id}`,
+      subjectRef: caseRef,
+      purpose: 'migration_otp',
+      phone: tenantPhone,
+    });
+    await base44.asServiceRole.entities.VerificationCase.update(record.id, {
+      otp_sent_at: issued.challenge.issued_at,
+      otp_channel: 'in-app (demo)',
+    });
+
     return json({
       case_id: record.id,
       case_ref: record.case_ref,
@@ -102,10 +115,14 @@ export default async function (req) {
       lease_created: false,
       otp: {
         required: true,
-        channel: record.otp_channel,
+        channel: 'in-app (demo)',
+        expires_at: issued.expires_at,
+        ttl_minutes: issued.ttl_minutes,
+        max_attempts: issued.max_attempts,
         // The landlord entered this tenancy: the code is shown to them in this
-        // demo build. A tenant confirming from their own link gets it by SMS.
-        code: user.role === 'admin' || unit.landlord_id === user.id ? code : undefined,
+        // demo build. A tenant confirming from their own link gets it by SMS,
+        // and no other screen can read the challenge row at all.
+        code: user.role === 'admin' || unit.landlord_id === user.id ? issued.code : undefined,
       },
     });
   } catch (error) {

@@ -6,9 +6,8 @@
 
 /*
   IBMT design tokens.
-  Feel: high-contrast digital-agency systems, near-black ink surfaces,
-  one vivid signal-orange accent, warm-white pages, bold grotesque display type.
-  Ink #161618 · Signal Orange #FF4A1F · Warm White #F7F6F3
+  Feel: navy ink, champagne gold and cream. Government oversight desks may run
+  dark; landlord and tenant workspaces stay on the cream theme.
   Accessible darker accent variants are provided for text on light surfaces.
 */
 @layer base {
@@ -240,7 +239,7 @@
     scrollbar-width: thin;
   }
 
-  /* Soft signal-orange glow washes behind heroes and feature surfaces */
+  /* Soft gold glow washes behind heroes and feature surfaces */
   .ibmt-glow {
     position: absolute;
     inset: 0;

@@ -153,12 +153,10 @@
       "type": "string",
       "format": "date-time"
     },
-    "otp_code_hash": {
-      "type": "string"
-    },
     "otp_sent_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "When the code was issued. The code and its hash live only on the admin-only OtpChallenge row, never here."
     },
     "otp_confirmed_at": {
       "type": "string",
