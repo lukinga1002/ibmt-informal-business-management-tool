@@ -17,7 +17,7 @@ export const PRODUCTS = [
     name: 'MAKAZI',
     status: 'live',
     route: '/rent',
-    hero: 'https://media.base44.com/images/public/6addd095d984bcd6f356be2b/bd73dddde_generated_image.png',
+    hero: 'https://base44.app/api/apps/6addd095d984bcd6f356be2b/files/mp/public/6addd095d984bcd6f356be2b/3c3dfe2e3_makazi-hero.jpg',
     icon: House,
     tagline: {
       sw: 'Nyumba za kupanga, mikataba na kodi yenye risiti.',
@@ -30,7 +30,7 @@ export const PRODUCTS = [
     name: 'SHEREHE',
     status: 'coming_soon',
     route: null,
-    hero: 'https://media.base44.com/images/public/6addd095d984bcd6f356be2b/bccdd0617_generated_image.png',
+    hero: 'https://base44.app/api/apps/6addd095d984bcd6f356be2b/files/mp/public/6addd095d984bcd6f356be2b/6a74765a5_sherehe-hero.jpg',
     icon: CalendarHeart,
     tagline: {
       sw: 'Sherehe na hafla zilizosajiliwa. Bado tunajenga.',
