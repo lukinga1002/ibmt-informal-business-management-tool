@@ -18,6 +18,7 @@ export default function Landing() {
     const preload = document.createElement('link');
     preload.rel = 'preload';
     preload.as = 'image';
+    preload.fetchPriority = 'high';
     preload.href = hero;
     preload.setAttribute('imagesrcset', sources);
     preload.setAttribute('imagesizes', '100vw');
@@ -33,7 +34,7 @@ export default function Landing() {
     <LandingTopBar />
     <main>
       <section aria-labelledby="landing-title" className="l3-hero">
-        {!imageFailed && <img src={hero} srcSet={sources} sizes="100vw" fetchpriority="high"
+        {!imageFailed && <img src={hero} srcSet={sources} sizes="100vw" loading="eager"
           alt={tt(copy.scene)} onError={() => setImageFailed(true)} />}
         <div className="l3-wrap l3-hero-copy">
           <h1 id="landing-title">{tt(copy.headline)}</h1>
