@@ -1,28 +1,21 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, HardHat, Landmark, MapPin, Users } from 'lucide-react';
+import { ArrowRight, HardHat, MapPin } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTQuery } from '@/api/hooks';
 import { useIBMT } from '@/api/IBMTContext';
 import PublicTopBar from '@/components/public/PublicTopBar';
 import PublicFooter from '@/components/public/PublicFooter';
-import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
 import DataState from '@/components/ibmt/DataState';
 import DataTable from '@/components/ibmt/DataTable';
 import PolicyList from '@/components/ibmt/PolicyList';
-// Moved here from the old landing page (L1): the rent product keeps its own
-// hero, role entry points, steps and principles.
-import LandingHero from '@/components/public/LandingHero';
-import LandingEntryPoints from '@/components/public/LandingEntryPoints';
-import LandingSteps from '@/components/public/LandingSteps';
-import LandingPrinciples from '@/components/public/LandingPrinciples';
+import RentIntro from '@/components/public/RentIntro';
 
+// The four main ways in (landlord, tenant, council, verify) live in the intro.
+// These are the remaining workspaces: licensed agents and mtaa officers.
 const ENTRIES = [
-  { to: '/rent/landlord', role: 'landlord', labelKey: 'roles.landlord', Icon: Building2 },
-  { to: '/rent/tenant', role: 'tenant', labelKey: 'roles.tenant', Icon: Users },
   { to: '/rent/agent', role: 'agent', labelKey: 'roles.agent', Icon: HardHat },
   { to: '/rent/ward', role: 'mtaa_officer', labelKey: 'roles.mtaa_officer', Icon: MapPin },
-  { to: '/rent/council', role: 'council_official', labelKey: 'roles.council_official', Icon: Landmark },
 ];
 
 export default function RentHub() {
@@ -33,38 +26,27 @@ export default function RentHub() {
   return (
     <div className="min-h-screen bg-background">
       <PublicTopBar />
-      <LandingHero />
+
+      <RentIntro />
+
       <main className="ibmt-page">
-        <PageHeader
-          kicker={`${t('brand.rent')} · ${t('brand.rentLocal')}`}
-          title={t('landing.rentBody')}
-          lede={t('landing.rentPilot')}
-          meta={[
-            { label: `Policy ${policy.data?.version || '—'}` },
-            { label: t('policy.registrationVoluntary') },
-          ]}
-        />
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="space-y-6">
-            <SectionCard title={t('rent.policyValues')} description={t('policy.policyVersioned')}>
-              <DataState query={policy} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
-                {(record) => (
-                  <DataTable
-                    columns={[
-                      { key: 'label', header: t('common.details'), className: 'font-medium', render: (row) => tt(row.label) },
-                      { key: 'display', header: t('common.amount'), className: 'ibmt-num', align: 'right' },
-                      { key: 'rule', header: t('common.reason'), render: (row) => tt(row.rule) },
-                    ]}
-                    rows={record.values || []}
-                    rowKey="key"
-                  />
-                )}
-              </DataState>
-              <p className="ibmt-hint mt-3">{tt(policy.data?.note)}</p>
-            </SectionCard>
-
-          </div>
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <SectionCard title={t('rent.policyValues')} description={t('policy.policyVersioned')}>
+            <DataState query={policy} skeleton="table" emptyTitle={t('states.emptyTitle')} emptyBody={t('states.emptyBody')}>
+              {(record) => (
+                <DataTable
+                  columns={[
+                    { key: 'label', header: t('common.details'), className: 'font-medium', render: (row) => tt(row.label) },
+                    { key: 'display', header: t('common.amount'), className: 'ibmt-num', align: 'right' },
+                    { key: 'rule', header: t('common.reason'), render: (row) => tt(row.rule) },
+                  ]}
+                  rows={record.values || []}
+                  rowKey="key"
+                />
+              )}
+            </DataState>
+            <p className="ibmt-hint mt-3">{tt(policy.data?.note)}</p>
+          </SectionCard>
 
           <div className="space-y-6">
             <SectionCard title={t('nav.workspace')} description={t('roles.external')}>
@@ -100,9 +82,6 @@ export default function RentHub() {
           </div>
         </div>
       </main>
-      <LandingEntryPoints />
-      <LandingSteps />
-      <LandingPrinciples />
       <PublicFooter />
     </div>
   );
