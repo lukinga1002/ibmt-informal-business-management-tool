@@ -61,6 +61,11 @@
       "default": false,
       "description": "Presumptive tax estimates. Parked; stage 1 shows landlords an indicative statement only."
     },
+    "tenant_module": {
+      "type": "boolean",
+      "default": false,
+      "description": "Tenant workspace. Parked: the tenant side is not opened in this pilot. The tenant is recorded by the landlord or agent through Pangisha instead."
+    },
     "notes": {
       "type": "string",
       "description": "Why a module is on or off. Never used for access decisions."

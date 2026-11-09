@@ -159,12 +159,13 @@ const AuthenticatedApp = () => {
         <Route path="/rent/landlord/migrate" element={<WorkspaceGuard allow={['landlord']}><LandlordMigrate /></WorkspaceGuard>} />
         <Route path="/rent/certificate/:caseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><RegistrationCertificate /></WorkspaceGuard>} />
 
-        <Route path="/rent/tenant" element={<WorkspaceGuard allow={['tenant']}><TenantDashboard /></WorkspaceGuard>} />
-        <Route path="/rent/tenant/find" element={<WorkspaceGuard allow={['tenant']}><TenantFind /></WorkspaceGuard>} />
-        <Route path="/rent/tenant/lease" element={<WorkspaceGuard allow={['tenant']}><TenantLease /></WorkspaceGuard>} />
-        <Route path="/rent/tenant/pay" element={<WorkspaceGuard allow={['tenant']}><TenantPay /></WorkspaceGuard>} />
-        <Route path="/rent/tenant/register" element={<WorkspaceGuard allow={['tenant']}><TenantRegister /></WorkspaceGuard>} />
-        <Route path="/rent/tenant/cases" element={<WorkspaceGuard allow={['tenant']}><TenantCases /></WorkspaceGuard>} />
+        {/* Tenant site parked: the flag decides, and the tenant is recorded by the landlord or agent */}
+        <Route path="/rent/tenant" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantDashboard /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/find" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantFind /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/lease" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantLease /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/pay" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantPay /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/register" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantRegister /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/cases" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantCases /></WorkspaceGuard></ModuleGate>} />
 
         <Route path="/rent/agent" element={<WorkspaceGuard allow={['agent']}><AgentDashboard /></WorkspaceGuard>} />
         <Route path="/rent/assisted/register" element={<WorkspaceGuard allow={['agent', 'mtaa_officer', 'landlord']}><AssistedRegister /></WorkspaceGuard>} />

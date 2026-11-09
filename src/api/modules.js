@@ -20,6 +20,7 @@ export const MODULE_FLAGS = {
   contributions: 'contributions_module',
   propertyManager: 'property_manager_module',
   taxEstimates: 'tax_estimates_module',
+  tenant: 'tenant_module',
 };
 
 async function loadModuleSettings() {

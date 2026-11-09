@@ -33,6 +33,10 @@
     "tenant_phone": {
       "type": "string"
     },
+    "nida_number": {
+      "type": "string",
+      "description": "The tenant's NIDA national identity number: twenty digits, required before the tenant is recorded."
+    },
     "rent_amount": {
       "type": "number",
       "description": "Agreed rent as a whole number of shillings"
@@ -62,16 +66,60 @@
     "council_id": {
       "type": "string"
     },
+    "council_name": {
+      "type": "string",
+      "description": "Council named in the notice sent to the tenant"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Owner named in the notice sent to the tenant"
+    },
     "district": {
       "type": "string"
     },
     "ward": {
       "type": "string"
+    },
+    "notice_channel": {
+      "type": "string",
+      "default": "sms"
+    },
+    "notice_state": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "queued_gateway_off",
+        "sent"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green"
+      ],
+      "default": "not_sent",
+      "description": "Says plainly whether the tenant notice left the system. No SMS gateway is connected in this stage, so a recorded intake is queued, not sent."
+    },
+    "notice_text": {
+      "type": "string",
+      "description": "The notice as sent to the tenant, Swahili"
+    },
+    "notice_text_en": {
+      "type": "string",
+      "description": "The same notice in English"
+    },
+    "notice_to_masked": {
+      "type": "string",
+      "description": "The number the notice goes to, masked"
+    },
+    "notice_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
     "tenant_name",
     "tenant_phone",
+    "nida_number",
     "entered_by_role"
   ],
   "rls": {

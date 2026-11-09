@@ -6,12 +6,13 @@ import { useT } from '@/i18n/I18nContext';
  * The four ways in. Named in Swahili with the English name beside it, because
  * these are the words people actually use for the roles.
  *
- * Three of them ask for a code sent to the account before the workspace opens;
- * checking a record needs no account at all.
+ * Landlord and council ask for a code sent to the account before the workspace
+ * opens; checking a record needs no account at all. The tenant site is parked
+ * for this pilot — the tenant is recorded by the landlord or the agent instead.
  */
 const ENTRIES = [
   { id: 'landlord', sw: 'Mwenye Nyumba', en: 'Landlord', Icon: Building2, bodyKey: 'landing.landlordBody', route: '/rent/landlord' },
-  { id: 'tenant', sw: 'Mpangaji', en: 'Tenant', Icon: House, bodyKey: 'landing.tenantBody', route: '/rent/tenant' },
+  { id: 'tenant', sw: 'Mpangaji', en: 'Tenant', Icon: House, bodyKey: 'landing.tenantBody', route: '/rent/tenant', parked: true },
   { id: 'council', sw: 'Halmashauri', en: 'Council', Icon: Landmark, bodyKey: 'landing.councilBody', route: '/rent/council' },
   { id: 'verify', sw: 'Hakiki', en: 'Verify', Icon: ShieldCheck, bodyKey: 'landing.verifyBody', route: '/verify' },
 ];
@@ -27,7 +28,7 @@ export default function LandingEntryPoints({ onChoose, activeId }) {
       <h2 className="font-heading text-xl font-semibold text-navy sm:text-2xl">{t('landing.entryTitle')}</h2>
       <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {ENTRIES.map((entry) => {
-          const { id, sw, en, Icon, bodyKey, route } = entry;
+          const { id, sw, en, Icon, bodyKey, route, parked } = entry;
           const body = (
             <>
               <span className="flex h-11 w-11 items-center justify-center rounded-md bg-navy/[0.06] text-navy transition-colors group-hover:bg-gold-soft group-hover:text-gold-ink">
@@ -38,12 +39,24 @@ export default function LandingEntryPoints({ onChoose, activeId }) {
                 <span className="ml-2 text-[12px] font-medium uppercase tracking-[0.1em] text-muted-foreground">{en}</span>
               </h3>
               <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">{t(bodyKey)}</p>
-              <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-semibold text-navy group-hover:text-gold-ink">
-                {t('common.open')}
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
+              {parked ? (
+                <span className="ibmt-stamp mt-5">Haijafunguliwa · Not open yet</span>
+              ) : (
+                <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-semibold text-navy group-hover:text-gold-ink">
+                  {t('common.open')}
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              )}
             </>
           );
+
+          if (parked) {
+            return (
+              <div key={id} aria-disabled="true" className={cardClass}>
+                {body}
+              </div>
+            );
+          }
 
           if (id === 'verify') {
             return (

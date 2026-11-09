@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, Link2 } from 'lucide-react';
+import { Check, Copy, Link2, MessageSquare } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
 import Field, { SelectControl, TextArea, TextInput } from '@/components/ibmt/Field';
@@ -9,12 +9,21 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { callFn, fnError } from '@/lib/r4';
 
-const EMPTY = { unit_id: '', tenant_name: '', tenant_phone: '', rent_amount: '', start_date: '', notes: '' };
+const EMPTY = { unit_id: '', tenant_name: '', tenant_phone: '', nida_number: '', rent_amount: '', start_date: '', notes: '' };
+
+const digits = (value, max) => value.replace(/[^0-9]/g, '').slice(0, max);
+
+const maskNida = (value) => {
+  const text = String(value || '');
+  return text.length > 4 ? `${'*'.repeat(text.length - 4)}${text.slice(-4)}` : text;
+};
 
 /**
- * Pangisha: the link a landlord or a licensed agent uses to capture the
- * details of an incoming tenant against one of their units. Nothing is signed
- * and no tenancy is created here; the tenant still confirms on their account.
+ * Pangisha: the link a landlord or a licensed agent uses to capture an incoming
+ * tenant against one of their units. The tenant's NIDA number is required, and
+ * recording them issues the notice that names the council, the house and its
+ * owner — and states that the signed contract is between tenant and landlord,
+ * which the government does not enforce. Nothing is signed here.
  */
 export default function Pangisha() {
   const [role, setRole] = useState(null);
@@ -23,6 +32,7 @@ export default function Pangisha() {
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [issued, setIssued] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
@@ -39,9 +49,6 @@ export default function Pangisha() {
         unit_id: row.unit_id || row.id,
         unit_ref: row.unit_ref || row.unit_id || row.id,
         rent_amount: row.rent_amount || row.monthly_rent || 0,
-        council_id: row.council_id || '',
-        district: row.district || '',
-        ward: row.ward || '',
       })),
     );
 
@@ -57,31 +64,28 @@ export default function Pangisha() {
   }, [load]);
 
   const submit = async () => {
-    if (!form.tenant_name.trim() || !form.tenant_phone.trim() || !form.unit_id) {
+    if (!form.unit_id || !form.tenant_name.trim() || !form.tenant_phone.trim()) {
       setError('Chagua uniti, kisha andika jina na namba ya simu ya mpangaji.');
+      return;
+    }
+    if (form.nida_number.length !== 20) {
+      setError('Namba ya NIDA ina tarakimu 20. Hakikisha umeandika tarakimu zote.');
       return;
     }
     setBusy(true);
     setError('');
     try {
-      const me = await base44.auth.me();
-      const isAgent = role === 'agent';
-      const unit = units.find((row) => row.unit_id === form.unit_id) || {};
-      await base44.entities.TenantIntake.create({
-        unit_id: unit.unit_id || '',
-        unit_ref: unit.unit_ref || '',
-        landlord_id: isAgent ? null : me.id,
-        agent_id: isAgent ? me.id : null,
-        entered_by_role: isAgent ? 'agent' : 'landlord',
-        tenant_name: form.tenant_name.trim(),
-        tenant_phone: form.tenant_phone.trim(),
-        rent_amount: Number(form.rent_amount) || 0,
-        start_date: form.start_date || null,
-        notes: form.notes.trim(),
-        council_id: unit.council_id || null,
-        district: unit.district || null,
-        ward: unit.ward || null,
+      const result = await callFn('tenantIntake', {
+        action: 'create',
+        unit_id: form.unit_id,
+        tenant_name: form.tenant_name,
+        tenant_phone: form.tenant_phone,
+        nida_number: form.nida_number,
+        rent_amount: form.rent_amount,
+        start_date: form.start_date,
+        notes: form.notes,
       });
+      setIssued(result);
       setForm(EMPTY);
       await load();
     } catch (err) {
@@ -123,7 +127,7 @@ export default function Pangisha() {
           </Button>
         </div>
         <Notice tone="policy" className="mt-3">
-          Mpangaji bado atasaini mkataba na kuthibitisha malipo kwenye akaunti yake mwenyewe. Hapa tunarekodi taarifa tu.
+          Mpangaji bado atasaini mkataba na mwenye nyumba. Hapa tunarekodi taarifa tu, na kumtumia taarifa ya usajili.
         </Notice>
       </SectionCard>
 
@@ -159,6 +163,27 @@ export default function Pangisha() {
             )}
           </Field>
 
+          <Field label="Namba ya NIDA" required hint="Tarakimu 20 kutoka kitambulisho cha NIDA cha mpangaji">
+            {(props) => (
+              <TextInput
+                {...props}
+                inputMode="numeric"
+                value={form.nida_number}
+                onChange={(event) => setForm({ ...form, nida_number: digits(event.target.value, 20) })}
+              />
+            )}
+          </Field>
+
+          <Field label="Jina la mpangaji" required>
+            {(props) => <TextInput {...props} value={form.tenant_name} onChange={(event) => setForm({ ...form, tenant_name: event.target.value })} />}
+          </Field>
+
+          <Field label="Namba ya simu" required hint="Taarifa ya usajili inatumwa kwa namba hii">
+            {(props) => (
+              <TextInput {...props} inputMode="tel" value={form.tenant_phone} onChange={(event) => setForm({ ...form, tenant_phone: event.target.value })} />
+            )}
+          </Field>
+
           <Field label="Kodi ya mwezi (TZS)" hint="Namba kamili, bila desimali">
             {(props) => (
               <TextInput
@@ -170,21 +195,11 @@ export default function Pangisha() {
             )}
           </Field>
 
-          <Field label="Jina la mpangaji" required>
-            {(props) => <TextInput {...props} value={form.tenant_name} onChange={(event) => setForm({ ...form, tenant_name: event.target.value })} />}
-          </Field>
-
-          <Field label="Namba ya simu" required>
-            {(props) => (
-              <TextInput {...props} inputMode="tel" value={form.tenant_phone} onChange={(event) => setForm({ ...form, tenant_phone: event.target.value })} />
-            )}
-          </Field>
-
           <Field label="Tarehe ya kuanza">
             {(props) => <TextInput {...props} type="date" value={form.start_date} onChange={(event) => setForm({ ...form, start_date: event.target.value })} />}
           </Field>
 
-          <Field label="Maelezo" hint="Mpangaji anaingia lini, ana watu wangapi">
+          <Field label="Maelezo" hint="Mpangaji anaingia lini, ana watu wangapi" className="sm:col-span-2">
             {(props) => <TextArea {...props} rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />}
           </Field>
         </div>
@@ -196,9 +211,33 @@ export default function Pangisha() {
           className="ibmt-tap mt-4 w-full bg-navy font-semibold text-primary-foreground hover:bg-navy-deep sm:w-auto"
         >
           <Link2 className="h-4 w-4" aria-hidden="true" />
-          {busy ? 'Inahifadhi…' : 'Hifadhi taarifa za mpangaji'}
+          {busy ? 'Inahifadhi…' : 'Hifadhi na mtumie mpangaji taarifa'}
         </Button>
       </SectionCard>
+
+      {issued && (
+        <SectionCard
+          title="Taarifa iliyotumwa"
+          description={`Kwa ${issued.intake?.tenant_name} · ${issued.notice?.to || ''}`}
+          actions={<MessageSquare className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+        >
+          <div className="rounded-md border border-border bg-muted/30 p-4 text-[13px] leading-relaxed text-navy">
+            {issued.notice?.text}
+          </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{issued.notice?.text_en}</p>
+
+          {issued.notice?.state === 'sent' ? (
+            <Notice tone="positive" className="mt-3">
+              Taarifa imetumwa kwa simu ya mpangaji.
+            </Notice>
+          ) : (
+            <Notice tone="caution" className="mt-3" title="SMS haijatumwa bado">
+              Ujumbe umeandaliwa na kuhifadhiwa. Njia ya kutuma SMS haijaunganishwa, kwa hiyo hakuna ujumbe uliotoka
+              kwenye mfumo. Ujumbe huu utatumwa mara njia ya SMS itakapowekwa.
+            </Notice>
+          )}
+        </SectionCard>
+      )}
 
       <SectionCard title="Waliorekodiwa" description="Taarifa zilizokwisha kuingizwa kupitia kiungo hiki.">
         {rows.length === 0 ? (
@@ -211,6 +250,7 @@ export default function Pangisha() {
                   <p className="text-[13px] font-medium">{row.tenant_name}</p>
                   <p className="ibmt-num text-[11px] text-muted-foreground">
                     {row.tenant_phone}
+                    {row.nida_number ? ` · NIDA ${maskNida(row.nida_number)}` : ''}
                     {row.unit_ref ? ` · ${row.unit_ref}` : ''}
                     {row.start_date ? ` · kuanzia ${row.start_date}` : ''}
                   </p>
