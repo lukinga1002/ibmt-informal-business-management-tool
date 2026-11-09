@@ -1,51 +1,77 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Languages, ShieldCheck } from 'lucide-react';
-import { LANDING_COPY, pick } from '@/config/products';
+import { Menu, X } from 'lucide-react';
+import { useT } from '@/i18n/I18nContext';
+import { LANDING_COPY as copy } from '@/config/products';
 
-const pillButton =
-  'flex min-h-[40px] items-center gap-2 rounded-full px-3.5 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-primary-foreground/85 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-navy';
+const menuSections = ['home', 'about', 'services'];
+const pageSections = ['home', 'services', 'about', 'contact'];
 
-/** Wordmark, the nav pill, and the way in. */
-export default function LandingTopBar({ lang, setLang, onShowProducts }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Link to="/" aria-label="IBMT" className="flex shrink-0 items-baseline gap-1.5">
-        <span className="font-display text-2xl font-bold leading-none tracking-[0.08em] text-primary-foreground sm:text-[27px]">
-          IBMT
-        </span>
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-gold" />
-      </Link>
+export default function LandingTopBar() {
+  const { lang, setLang, tt } = useT();
+  const dialog = useRef(null);
+  const [active, setActive] = useState('home');
+  const [open, setOpen] = useState(false);
 
-      <nav
-        aria-label={pick(LANDING_COPY.products, lang)}
-        className="mx-auto flex items-center gap-0.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/[0.06] p-0.5 backdrop-blur-sm"
-      >
-        <button type="button" onClick={onShowProducts} className={pillButton}>
-          <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">{pick(LANDING_COPY.products, lang)}</span>
-        </button>
-        <Link to="/verify" className={pillButton} aria-label={pick(LANDING_COPY.verify, lang)}>
-          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">{pick(LANDING_COPY.verify, lang)}</span>
-        </Link>
-        <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-primary-foreground/15" />
-        <button
-          type="button"
-          onClick={() => setLang(lang === 'sw' ? 'en' : 'sw')}
-          aria-label={`${pick(LANDING_COPY.language, lang)}: ${lang.toUpperCase()}`}
-          className={pillButton}
-        >
-          <Languages className="h-4 w-4" aria-hidden="true" />
-          <span>{lang}</span>
-        </button>
-      </nav>
+  useEffect(() => {
+    let frame = 0;
+    function update() {
+      frame = 0;
+      const current = pageSections.filter(id =>
+        document.getElementById(id)?.getBoundingClientRect().top <= window.innerHeight * 0.45
+      ).pop();
+      setActive(current || 'home');
+    }
+    function schedule() {
+      if (!frame) frame = requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
-      <Link
-        to="/login"
-        className="ml-auto flex min-h-[40px] shrink-0 items-center rounded-full border border-primary-foreground/25 px-4 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-primary-foreground transition-colors hover:border-gold hover:bg-primary-foreground/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-navy sm:ml-0"
-      >
-        {pick(LANDING_COPY.login, lang)}
-      </Link>
+  useEffect(() => {
+    if (!open) return;
+    const wide = matchMedia('(min-width: 900px)');
+    const closeOnResize = () => { if (wide.matches) dialog.current?.close(); };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    wide.addEventListener('change', closeOnResize);
+    return () => {
+      document.body.style.overflow = previous;
+      wide.removeEventListener('change', closeOnResize);
+    };
+  }, [open]);
+
+  function navigation(mobile) {
+    return <nav aria-label={tt(copy.menu)}>
+      {menuSections.map(id => <a key={id} href={'#' + id}
+        aria-current={id === active ? 'location' : undefined}
+        onClick={() => { if (mobile) dialog.current.close(); }}>
+        {tt(copy[id])}
+      </a>)}
+      <button type="button" aria-label={tt(copy.language)} onClick={() => setLang(lang === 'sw' ? 'en' : 'sw')}>
+        <span className={lang === 'sw' ? 'l3-chosen' : ''}>SW</span> / <span className={lang === 'en' ? 'l3-chosen' : ''}>EN</span>
+      </button>
+      <Link className="l3-login" to="/login">{tt(copy.login)}</Link>
+    </nav>;
+  }
+
+  return <header className="l3-header" id="home">
+    <div className="l3-wrap l3-header-row">
+      <a href="#home" className="l3-brand"><strong>{tt(copy.wordmark)}</strong><span>{tt(copy.subtitle)}</span></a>
+      <div className="l3-desktop">{navigation(false)}</div>
+      <button className="l3-menu-button" aria-label={tt(copy.menu)} aria-expanded={open}
+        aria-controls="l3-menu" onClick={() => { dialog.current.showModal(); setOpen(true); }}><Menu /></button>
     </div>
-  );
+    <dialog id="l3-menu" ref={dialog} aria-label={tt(copy.menu)} onClose={() => setOpen(false)}>
+      <button className="l3-close" aria-label={tt(copy.close)} onClick={() => dialog.current.close()}><X /></button>
+      {navigation(true)}
+    </dialog>
+  </header>;
 }
