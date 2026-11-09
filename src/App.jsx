@@ -48,6 +48,8 @@ import TraOverview from '@/pages/tra/Overview';
 import TraAccess from '@/pages/tra/Access';
 
 import RentHub from '@/pages/rent/RentHub';
+import RentAccess from '@/pages/rent/Access';
+import Pangisha from '@/pages/rent/Pangisha';
 import LandlordDashboard from '@/pages/rent/landlord/Dashboard';
 import LandlordPortfolio from '@/pages/rent/landlord/Portfolio';
 import LandlordTenancies from '@/pages/rent/landlord/Tenancies';
@@ -114,6 +116,7 @@ const AuthenticatedApp = () => {
       <Route path="/documents" element={<Documents />} />
       <Route path="/data-rights" element={<DataRights />} />
       <Route path="/rent" element={<RentHub />} />
+      <Route path="/rent/access/:entry" element={<RentAccess />} />
       <Route path="/cert/:certificateNo" element={<PublicCertificate />} />
       <Route path="/lease/:code" element={<PublicLease />} />
 
@@ -152,6 +155,7 @@ const AuthenticatedApp = () => {
         <Route path="/rent/sim" element={<WorkspaceGuard adminOnly><MoneyEngine /></WorkspaceGuard>} />
         <Route path="/privacy" element={<PrivacyCentre />} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
+        <Route path="/rent/pangisha" element={<WorkspaceGuard allow={['landlord', 'agent']}><Pangisha /></WorkspaceGuard>} />
         <Route path="/rent/landlord/migrate" element={<WorkspaceGuard allow={['landlord']}><LandlordMigrate /></WorkspaceGuard>} />
         <Route path="/rent/certificate/:caseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><RegistrationCertificate /></WorkspaceGuard>} />
 

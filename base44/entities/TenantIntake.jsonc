@@ -1,0 +1,136 @@
+{
+  "name": "TenantIntake",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_ref": {
+      "type": "string"
+    },
+    "landlord_id": {
+      "type": "string",
+      "description": "Landlord the intake belongs to. Null when an agent recorded it."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent who recorded the intake. Null when the landlord did."
+    },
+    "entered_by_role": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "agent"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ]
+    },
+    "tenant_name": {
+      "type": "string"
+    },
+    "tenant_phone": {
+      "type": "string"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Agreed rent as a whole number of shillings"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "recorded",
+        "converted",
+        "cancelled"
+      ],
+      "enumColors": [
+        "blue",
+        "green",
+        "gray"
+      ],
+      "default": "recorded",
+      "description": "recorded = tenant details captured. A tenancy is only created once the tenant confirms on their own account."
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_name",
+    "tenant_phone",
+    "entered_by_role"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.ibmt_role": "landlord"
+          }
+        },
+        {
+          "user_condition": {
+            "data.ibmt_role": "agent"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "data.agent_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Link2 } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
 import SectionCard from '@/components/ibmt/SectionCard';
 import StatusBadge from '@/components/ibmt/StatusBadge';
@@ -87,7 +89,18 @@ export default function AgentDashboard() {
         title="Wakala"
         lede="Leseni yako, mandate zilizosainiwa na kamisheni inayodaiwa na mmiliki."
         meta={[{ label: 'Kamisheni hulipwa na mmiliki' }]}
-        actions={<TenantFeeNote />}
+        actions={
+          <>
+            <Link
+              to="/rent/pangisha"
+              className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground hover:bg-navy-deep"
+            >
+              <Link2 className="h-4 w-4" aria-hidden="true" />
+              Pangisha
+            </Link>
+            <TenantFeeNote />
+          </>
+        }
       />
 
       {error && (

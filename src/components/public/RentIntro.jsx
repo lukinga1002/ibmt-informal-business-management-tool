@@ -1,18 +1,15 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useT } from '@/i18n/I18nContext';
 import LandingEntryPoints from './LandingEntryPoints';
-import EntryCode from './EntryCode';
 
 /**
  * The first thing on the rent site: what IBMT Rent is, in one statement, and
- * then the four ways in. Nothing asks anyone to sign in here; choosing a
- * workspace is what starts the code step.
+ * then the four ways in. Nothing asks anyone to sign in here; choosing a way in
+ * moves to its own page, where the entry code is written.
  */
 export default function RentIntro() {
   const { t } = useT();
   const navigate = useNavigate();
-  const [entry, setEntry] = useState(null);
 
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 pt-10 sm:px-6 lg:px-10">
@@ -25,15 +22,7 @@ export default function RentIntro() {
       </h1>
       <p className="ibmt-lede mt-4 max-w-3xl text-[16px]">{t('landing.lede')}</p>
 
-      <LandingEntryPoints activeId={entry?.id} onChoose={setEntry} />
-
-      {entry && (
-        <EntryCode
-          entry={entry}
-          onBack={() => setEntry(null)}
-          onOpened={(route) => navigate(route)}
-        />
-      )}
+      <LandingEntryPoints onChoose={(chosen) => navigate(`/rent/access/${chosen.id}`)} />
     </section>
   );
 }

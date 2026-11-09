@@ -17,12 +17,16 @@ import { maskEmail, maskPhone } from '../../shared/r7.ts';
 const ENTRY_ROLES = {
   landlord: ['landlord'],
   tenant: ['tenant'],
+  agent: ['agent'],
+  mtaa_officer: ['mtaa_officer'],
   council: ['council_official', 'district_commissioner', 'regional_commissioner'],
 };
 
 const ROUTE_BY_ROLE = {
   landlord: '/rent/landlord',
   tenant: '/rent/tenant',
+  agent: '/rent/agent',
+  mtaa_officer: '/rent/ward',
   council_official: '/rent/council',
   district_commissioner: '/rent/district',
   regional_commissioner: '/rent/region',

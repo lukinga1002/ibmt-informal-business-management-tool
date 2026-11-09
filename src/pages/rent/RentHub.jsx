@@ -14,8 +14,8 @@ import RentIntro from '@/components/public/RentIntro';
 // The four main ways in (landlord, tenant, council, verify) live in the intro.
 // These are the remaining workspaces: licensed agents and mtaa officers.
 const ENTRIES = [
-  { to: '/rent/agent', role: 'agent', labelKey: 'roles.agent', Icon: HardHat },
-  { to: '/rent/ward', role: 'mtaa_officer', labelKey: 'roles.mtaa_officer', Icon: MapPin },
+  { to: '/rent/access/agent', role: 'agent', labelKey: 'roles.agent', Icon: HardHat },
+  { to: '/rent/access/mtaa_officer', role: 'mtaa_officer', labelKey: 'roles.mtaa_officer', Icon: MapPin },
 ];
 
 export default function RentHub() {

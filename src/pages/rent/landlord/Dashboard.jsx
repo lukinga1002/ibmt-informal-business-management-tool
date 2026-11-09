@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Link2 } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useIBMTQuery } from '@/api/hooks';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -25,6 +26,15 @@ export default function LandlordDashboard() {
           { label: `${t('term.mtaa')}: ${(overview.data?.jurisdiction?.mtaa || []).join(' · ') || '—'}` },
           { label: `Policy ${overview.data?.policy_version || '—'}` },
         ]}
+        actions={
+          <Link
+            to="/rent/pangisha"
+            className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground hover:bg-navy-deep"
+          >
+            <Link2 className="h-4 w-4" aria-hidden="true" />
+            Pangisha
+          </Link>
+        }
       />
 
       <DataState query={overview} skeleton="cards">
