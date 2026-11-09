@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { ageDays, cleanText, fail, isoNow, json, todayISO } from '../../shared/moneyOps.ts';
 import { hasAnyRole, isAdmin } from '../../shared/r5.ts';
+import { resolveCouncil } from '../../shared/councilScope.ts';
 import {
   MIN_CELL,
   SUPPRESSED_LABEL,
@@ -54,40 +55,6 @@ export default async function (req) {
   } catch (error) {
     return fail(500, 'SERVER', error && error.message ? error.message : 'Unexpected error');
   }
-}
-
-async function resolveCouncil(base44, user, payload) {
-  const page = await base44.asServiceRole.entities.Council.list({ limit: 100 }).catch(() => ({ items: [] }));
-  const councils = page.items || [];
-  if (!councils.length) return { refusal: fail(409, 'NO_COUNCIL', 'No council is configured yet') };
-
-  if (isAdmin(user)) {
-    const wanted = cleanText(payload.council_id);
-    const chosen = councils.find((row) => row.id === wanted);
-    if (chosen) return { council: chosen };
-    // An admin has no council of their own: open the district that holds the
-    // most registered units, so the desk opens on a working council.
-    const unitPage = await base44.asServiceRole.entities.RentalUnit.list({ limit: 500 }).catch(() => ({ items: [] }));
-    const counts = new Map();
-    for (const unit of unitPage.items || []) {
-      if (!unit.district) continue;
-      counts.set(unit.district, (counts.get(unit.district) || 0) + 1);
-    }
-    const busiest = [...councils].sort((a, b) => (counts.get(b.district) || 0) - (counts.get(a.district) || 0))[0];
-    return { council: busiest || councils[0] };
-  }
-
-  if (!hasAnyRole(user, ['council_official'])) {
-    return { refusal: fail(403, 'FORBIDDEN', 'Only a council official can open the council desk') };
-  }
-
-  const data = user.data || {};
-  const council =
-    councils.find((row) => row.id === data.council_id) ||
-    councils.find((row) => row.district === data.district) ||
-    null;
-  if (!council) return { refusal: fail(403, 'JURISDICTION', 'Your council is not configured yet') };
-  return { council };
 }
 
 function councilShape(council) {

@@ -34,6 +34,7 @@ const SCOPE_FILTERS = [
 /** Council desk: approve, reject, suspend or revoke a licence with a reason. */
 export default function CouncilAgents() {
   const [rows, setRows] = useState(null);
+  const [council, setCouncil] = useState(null);
   const [scopeFilter, setScopeFilter] = useState('');
   const [openId, setOpenId] = useState(null);
   const [reason, setReason] = useState('');
@@ -44,6 +45,7 @@ export default function CouncilAgents() {
     try {
       const data = await callFn('agentLicence', { action: 'queue', scope: scopeFilter || undefined });
       setRows(data.rows || []);
+      setCouncil(data.council || null);
     } catch (err) {
       setError(fnError(err));
       setRows([]);
@@ -86,7 +88,7 @@ export default function CouncilAgents() {
 
       <SectionCard
         title="Maombi na usajili"
-        description="Zilizowasilishwa katika halmashauri yako."
+        description={council?.name ? `Zilizowasilishwa katika ${council.name}.` : 'Zilizowasilishwa katika halmashauri yako.'}
         actions={SCOPE_FILTERS.map((item) => (
           <Button
             key={item.value || 'all'}

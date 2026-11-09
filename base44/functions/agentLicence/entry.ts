@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json, nextSerial } from '../../shared/moneyOps.ts';
 import { hasAnyRole, isAdmin, notify, rateLimit, requesterKey } from '../../shared/r5.ts';
+import { resolveCouncil as resolveDeskCouncil } from '../../shared/councilScope.ts';
 
 const DECISIONS = ['approve', 'reject', 'suspend', 'revoke'];
 const NEEDS_REASON = ['reject', 'suspend', 'revoke'];
@@ -192,11 +193,22 @@ async function queue(base44, user, payload) {
   if (!isAdmin(user) && !hasAnyRole(user, ['council_official'])) {
     return fail(403, 'FORBIDDEN', 'Only a council official can read the licence queue');
   }
-  const filter = !isAdmin(user) && user.data && user.data.council_id ? { council_id: user.data.council_id } : {};
+  // A council desk works in one council only, so the queue holds that council's
+  // agents and never a neighbouring council's: the official's own council, and
+  // for an admin the council the desk opened on.
+  const resolved = await resolveDeskCouncil(base44, user, payload);
+  if (!resolved.council) return resolved.refusal;
+  const council = resolved.council;
+
+  const filter = { council_id: council.id };
   const scope = cleanText(payload.scope);
   if (SCOPES.includes(scope)) filter.scope = scope;
   const page = await base44.asServiceRole.entities.AgentLicence.filter(filter, { sort: '-created_date', limit: 100 });
-  return json({ rows: (page.items || []).map(licenceShape), scope: SCOPES.includes(scope) ? scope : null });
+  return json({
+    rows: (page.items || []).map(licenceShape),
+    scope: SCOPES.includes(scope) ? scope : null,
+    council: { id: council.id, name: council.name || null, district: council.district || null },
+  });
 }
 
 async function mine(base44, user) {

@@ -17,7 +17,7 @@ import { formatDate } from '@/lib/format';
 
 export default function TenantDashboard() {
   const { t, tt, lang } = useT();
-  const tenancies = useIBMTQuery('listTenancies', { limit: 4 });
+  const tenancies = useIBMTQuery('listTenancies', { scope: 'tenant', limit: 4 });
   const payments = useIBMTQuery('listRentPayments', { scope: 'tenant', limit: 6 });
   const deposits = useIBMTQuery('listDeposits', { limit: 4 });
   const notices = useIBMTQuery('listNotices', { limit: 4 });

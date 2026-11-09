@@ -493,9 +493,32 @@ async function getLandlordOverview() {
   return invokeFunction('landlordOverview', {});
 }
 
+/**
+ * The signed-in account, read once per session. Row-level security already
+ * hides other people's rows; this lets a workspace ask for its own side of a
+ * tenancy explicitly, so a desk never relies on that alone.
+ */
+let viewerPromise = null;
+function viewer() {
+  if (!viewerPromise) viewerPromise = base44.auth.me().catch(() => null);
+  return viewerPromise;
+}
+
+const OWNER_FIELD = { tenant: 'tenant_id', landlord: 'landlord_id' };
+
+async function ownerQuery(params, base) {
+  const query = { ...base };
+  const field = OWNER_FIELD[params.scope];
+  if (!field) return query;
+  const user = await viewer();
+  if (user) query[field] = user.id;
+  return query;
+}
+
 async function listTenancies(params) {
-  const query = {};
-  if (params.status && params.status !== 'all') query.status = params.status;
+  const base = {};
+  if (params.status && params.status !== 'all') base.status = params.status;
+  const query = await ownerQuery(params, base);
   const page = await base44.entities.Tenancy.filter(query, {
     sort: '-created_date',
     limit: params.limit || 8,
@@ -505,7 +528,8 @@ async function listTenancies(params) {
 }
 
 async function listRentPayments(params) {
-  const page = await base44.entities.RentPayment.filter({}, {
+  const query = await ownerQuery(params, {});
+  const page = await base44.entities.RentPayment.filter(query, {
     sort: '-created_date',
     limit: params.limit || 8,
     ...(params.cursor ? { cursor: params.cursor } : {}),
