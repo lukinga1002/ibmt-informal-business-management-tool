@@ -1,69 +1,41 @@
 import { CalendarHeart, House } from 'lucide-react';
 
-/**
- * L1 — the one place a product is declared.
- *
- * Everything on the landing page is driven from this list: the cards, the hero,
- * the action, the selection order. To add a product, add one entry here and
- * nothing else. `route: null` means the product cannot be opened yet; it must
- * never point at a parked module.
- *
- * All wording below is PLACEHOLDER and is meant to be replaced.
- */
-export const PRODUCTS = [
-  {
-    order: 1,
-    id: 'makazi',
-    name: 'MAKAZI',
-    status: 'live',
-    route: '/rent',
-    hero: 'https://base44.app/api/apps/6addd095d984bcd6f356be2b/files/mp/public/6addd095d984bcd6f356be2b/3c3dfe2e3_makazi-hero.jpg',
-    icon: House,
-    tagline: {
-      sw: 'Nyumba za kupanga, mikataba na kodi yenye risiti.',
-      en: 'Rental homes, leases and rent with receipts.',
-    },
-  },
-  {
-    order: 2,
-    id: 'sherehe',
-    name: 'SHEREHE',
-    status: 'coming_soon',
-    route: null,
-    hero: 'https://base44.app/api/apps/6addd095d984bcd6f356be2b/files/mp/public/6addd095d984bcd6f356be2b/6a74765a5_sherehe-hero.jpg',
-    icon: CalendarHeart,
-    tagline: {
-      sw: 'Sherehe na hafla zilizosajiliwa. Bado tunajenga.',
-      en: 'Registered events and gatherings. Still being built.',
-    },
-  },
-];
-
-/** Selection on first load. Falls back to the first product if it is missing. */
-export const DEFAULT_PRODUCT_ID = 'makazi';
-
-export const orderedProducts = [...PRODUCTS].sort((a, b) => a.order - b.order);
-
-/** PLACEHOLDER landing wording, bilingual, in one place. */
 export const LANDING_COPY = {
-  products: { sw: 'Bidhaa', en: 'Products' },
+  wordmark: { sw: 'IBMT', en: 'IBMT' },
+  subtitle: { sw: 'Huduma za Kidijitali Tanzania', en: 'Digital Public Services Tanzania' },
+  home: { sw: 'Nyumbani', en: 'Home' },
+  services: { sw: 'Huduma', en: 'Services' },
+  about: { sw: 'Kuhusu', en: 'About' },
+  contact: { sw: 'Wasiliana', en: 'Contact' },
   verify: { sw: 'Hakiki', en: 'Verify' },
-  language: { sw: 'Lugha', en: 'Language' },
-  login: { sw: 'Ingia', en: 'Login' },
+  login: { sw: 'Ingia', en: 'Sign in' },
+  privacy: { sw: 'Faragha', en: 'Privacy' },
+  language: { sw: 'Badili lugha', en: 'Switch language' },
+  menu: { sw: 'Menyu', en: 'Menu' },
+  close: { sw: 'Funga menyu', en: 'Close menu' },
   headline: { sw: 'Chagua huduma yako', en: 'Choose your service' },
-  headlineNote: {
-    sw: 'Bidhaa za IBMT. Ongeza bidhaa mpya bila kubadilisha ukurasa.',
-    en: 'IBMT products. New products appear here without changing this page.',
-  },
-  selected: { sw: 'Imechaguliwa', en: 'Selected' },
-  live: { sw: 'Iko hai', en: 'Live' },
+  subline: { sw: 'Pata huduma za umma za Tanzania kwa njia ya kidijitali.', en: 'Access Tanzania’s public services online.' },
+  scene: { sw: 'Bandari ya Dar es Salaam na majengo ya katikati ya jiji yakionekana kutoka juu.', en: 'Aerial view of Dar es Salaam harbour and downtown buildings.' },
+  title: { sw: 'Huduma zetu', en: 'Our services' },
+  live: { sw: 'Inapatikana', en: 'Live' },
   comingSoon: { sw: 'Inakuja hivi karibuni', en: 'Coming soon' },
   open: { sw: 'Fungua', en: 'Open' },
-  imagePlaceholder: { sw: 'Picha ya mfano', en: 'Placeholder image' },
-  privacy: { sw: 'Faragha', en: 'Privacy' },
+  intro: { sw: 'IBMT ni jukwaa la kidijitali linalowawezesha wananchi kupata huduma za umma Tanzania.', en: 'IBMT is a Tanzanian digital platform where people can find and access public services.' },
+  statement: { sw: 'Huduma moja · Kwa kila Mtanzania', en: 'One service · For every Tanzanian' },
+  phone: { sw: 'Simu', en: 'Phone' },
+  email: { sw: 'Barua pepe', en: 'Email' },
+  office: { sw: 'Ofisi', en: 'Office location' },
+  pending: { sw: 'Mwanzilishi ataweka taarifa hapa.', en: 'Founder to add details here.' },
+  copyright: { sw: 'Haki zote zimehifadhiwa.', en: 'All rights reserved.' },
+  housing: { sw: 'Nyumba za kupanga, mikataba na risiti za kodi.', en: 'Rental homes, leases and rent receipts.' },
+  events: { sw: 'Vibali vya sherehe na hafla.', en: 'Permits for celebrations and events.' },
 };
 
-export const pick = (value, lang) => (value && typeof value === 'object' ? value[lang] || value.en : value);
+export const PRODUCTS = [
+  { id: 'makazi', name: 'MAKAZI', status: 'live', route: '/rent', icon: House, order: 1, tagline: LANDING_COPY.housing },
+  { id: 'sherehe', name: 'SHEREHE', status: 'coming_soon', route: null, icon: CalendarHeart, order: 2, tagline: LANDING_COPY.events },
+];
 
-export const statusLabel = (status, lang) =>
-  status === 'live' ? pick(LANDING_COPY.live, lang) : pick(LANDING_COPY.comingSoon, lang);
+export const orderedProducts = [...PRODUCTS].sort((a, b) => a.order - b.order);
+export const pick = (value, lang) => typeof value === 'object' && value ? value[lang] || value.en : value;
+export const statusLabel = (status, lang) => pick(status === 'live' ? LANDING_COPY.live : LANDING_COPY.comingSoon, lang);

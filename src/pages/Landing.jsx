@@ -1,90 +1,83 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronDown, ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useT } from '@/i18n/I18nContext';
 import LandingTopBar from '@/components/landing/LandingTopBar';
-import HeroStage from '@/components/landing/HeroStage';
-import { focusProductCard } from '@/components/landing/focus';
-import { DEFAULT_PRODUCT_ID, LANDING_COPY, orderedProducts, pick, statusLabel } from '@/config/products';
+import { LANDING_COPY as copy, orderedProducts, statusLabel } from '@/config/products';
 
-/**
- * L1 — the product chooser. IBMT holds many products, so this page no longer
- * speaks for rent alone: it shows every product declared in the config and lets
- * the reader pick one. Everything here comes from `src/config/products.js`.
- */
+const hero = '/landing/dar-1920.webp';
+const sources = '/landing/dar-960.webp 960w, ' + hero + ' 1920w';
+const contacts = [['phone', Phone], ['email', Mail], ['office', MapPin]];
+
 export default function Landing() {
-  const { lang, setLang } = useT();
-  const [selectedId, setSelectedId] = useState(
-    orderedProducts.some((product) => product.id === DEFAULT_PRODUCT_ID)
-      ? DEFAULT_PRODUCT_ID
-      : orderedProducts[0]?.id,
-  );
-
-  const selected = orderedProducts.find((product) => product.id === selectedId) || orderedProducts[0];
-
-  const focusCard = (id) => requestAnimationFrame(() => focusProductCard(id));
-
-  const move = (direction) => {
-    const index = orderedProducts.findIndex((product) => product.id === selectedId);
-    const next = orderedProducts[(index + direction + orderedProducts.length) % orderedProducts.length];
-    if (!next) return;
-    setSelectedId(next.id);
-    focusCard(next.id);
+  const { lang, tt } = useT();
+  const reduce = useReducedMotion();
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => {
+    const preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = 'image';
+    preload.href = hero;
+    preload.setAttribute('imagesrcset', sources);
+    preload.setAttribute('imagesizes', '100vw');
+    document.head.appendChild(preload);
+    return () => preload.remove();
+  }, []);
+  const reveal = reduce ? {} : {
+    initial: { opacity: 0, y: 10 }, whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true }, transition: { duration: 0.32 },
   };
 
-  if (!selected) return null;
-
-  return (
-    <div className="flex min-h-[calc(100dvh-2.25rem)] flex-col bg-background p-2 sm:p-3">
-      <section className="relative flex flex-1 flex-col overflow-hidden rounded-[26px] bg-navy text-primary-foreground shadow-[0_30px_80px_-45px_rgba(27,42,74,0.9)]">
-        <div aria-hidden="true" className="l1-light" />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"
-        />
-
-        <div className="relative z-20 px-3 pt-3 sm:px-6 sm:pt-4">
-          <LandingTopBar lang={lang} setLang={setLang} onShowProducts={() => focusCard(selected.id)} />
+  return <div className="l3">
+    <LandingTopBar />
+    <main>
+      <section aria-labelledby="landing-title" className="l3-hero">
+        {!imageFailed && <img src={hero} srcSet={sources} sizes="100vw" fetchpriority="high"
+          alt={tt(copy.scene)} onError={() => setImageFailed(true)} />}
+        <div className="l3-wrap l3-hero-copy">
+          <h1 id="landing-title">{tt(copy.headline)}</h1>
+          <p>{tt(copy.subline)}</p>
         </div>
-        <p aria-live="polite" className="sr-only">
-          {`${selected.name} — ${statusLabel(selected.status, lang)}`}
-        </p>
-
-        <header className="relative z-20 mt-5 px-5 text-center sm:mt-7">
-          <p className="flex items-center justify-center gap-2.5 text-[9.5px] font-semibold uppercase tracking-[0.24em] text-gold/90">
-            <span aria-hidden="true" className="h-px w-6 bg-gold/45" />
-            {pick(LANDING_COPY.products, lang)}
-            <span aria-hidden="true" className="h-px w-6 bg-gold/45" />
-          </p>
-          <h1 className="mx-auto mt-2.5 max-w-[20ch] font-display text-[clamp(32px,4.4vw,58px)] font-bold leading-[0.98] tracking-[-0.005em]">
-            {pick(LANDING_COPY.headline, lang)}
-          </h1>
-          <p className="mx-auto mt-2 max-w-[30rem] text-[11.5px] leading-relaxed text-primary-foreground/55 sm:text-[12px]">
-            {pick(LANDING_COPY.headlineNote, lang)}
-          </p>
-        </header>
-
-        <HeroStage
-          products={orderedProducts}
-          selected={selected}
-          lang={lang}
-          onSelect={setSelectedId}
-          onMove={move}
-        />
-
-        <div className="relative z-20 mt-auto px-4 pb-3 sm:px-6">
-          <div className="flex flex-col items-center gap-1 border-t border-primary-foreground/10 pt-2.5 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/40 sm:flex-row sm:justify-between">
-            <span>IBMT · Tanzania</span>
-            <span className="flex items-center gap-4">
-              <Link to="/privacy" className="inline-flex min-h-[40px] items-center hover:text-gold">
-                {pick(LANDING_COPY.privacy, lang)}
-              </Link>
-              <Link to="/verify" className="inline-flex min-h-[40px] items-center hover:text-gold">
-                {pick(LANDING_COPY.verify, lang)}
-              </Link>
-            </span>
-          </div>
-        </div>
+        <a className="l3-chevron" href="#services" aria-label={tt(copy.title)}><ChevronDown /></a>
       </section>
-    </div>
-  );
+      <section id="services" className="l3-section l3-services" aria-labelledby="services-title">
+        <motion.div className="l3-wrap" {...reveal}>
+          <h2 id="services-title">{tt(copy.title)}</h2>
+          <div className="l3-grid">
+            {orderedProducts.map(({ id, name, tagline, route, icon: Icon, image, status }) => {
+              const available = status === 'live' && route;
+              return <article key={id} className="l3-card">
+                {image ? <img loading="lazy" src={image} alt="" /> : <Icon className="l3-icon" aria-hidden="true" />}
+                <span className="l3-status">{statusLabel(status, lang)}</span>
+                <h3>{name}</h3><p>{tt(tagline)}</p>
+                {available && <Link className="l3-open" to={route} aria-label={tt(copy.open) + ' ' + name}>
+                  {tt(copy.open)} <ArrowRight size={18} aria-hidden="true" />
+                </Link>}
+              </article>;
+            })}
+          </div>
+        </motion.div>
+      </section>
+      <section id="about" className="l3-about" aria-labelledby="about-title">
+        <motion.div className="l3-section l3-wrap" {...reveal}>
+          <h2 id="about-title">{tt(copy.wordmark)}</h2><p>{tt(copy.intro)}</p>
+        </motion.div>
+        <div className="l3-band">{tt(copy.statement)}</div>
+      </section>
+      <section id="contact" className="l3-section" aria-labelledby="contact-title">
+        <motion.div className="l3-wrap" {...reveal}>
+          <h2 id="contact-title">{tt(copy.contact)}</h2>
+          <dl className="l3-contacts">{contacts.map(([key, Icon]) =>
+            <div key={key}><dt><Icon size={22} aria-hidden="true" />{tt(copy[key])}</dt><dd>{tt(copy.pending)}</dd></div>
+          )}</dl>
+        </motion.div>
+      </section>
+    </main>
+    <footer><div className="l3-wrap l3-footer-row">
+      <strong>{tt(copy.wordmark)}</strong>
+      <small>© {new Date().getFullYear()} {tt(copy.wordmark)}. {tt(copy.copyright)}</small>
+      <Link to="/privacy">{tt(copy.privacy)}</Link><Link to="/verify">{tt(copy.verify)}</Link>
+    </div></footer>
+  </div>;
 }
