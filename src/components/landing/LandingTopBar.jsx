@@ -4,7 +4,8 @@ import { Menu, X } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { LANDING_COPY as copy } from '@/config/products';
 
-const sections = ['home', 'services', 'about', 'contact'];
+const menuSections = ['home', 'about', 'services'];
+const pageSections = ['home', 'services', 'about', 'contact'];
 
 export default function LandingTopBar() {
   const { lang, setLang, tt } = useT();
@@ -16,7 +17,7 @@ export default function LandingTopBar() {
     let frame = 0;
     function update() {
       frame = 0;
-      const current = sections.filter(id =>
+      const current = pageSections.filter(id =>
         document.getElementById(id)?.getBoundingClientRect().top <= window.innerHeight * 0.45
       ).pop();
       setActive(current || 'home');
@@ -49,12 +50,11 @@ export default function LandingTopBar() {
 
   function navigation(mobile) {
     return <nav aria-label={tt(copy.menu)}>
-      {sections.map(id => <a key={id} href={'#' + id}
+      {menuSections.map(id => <a key={id} href={'#' + id}
         aria-current={id === active ? 'location' : undefined}
         onClick={() => { if (mobile) dialog.current.close(); }}>
         {tt(copy[id])}
       </a>)}
-      <Link to="/verify">{tt(copy.verify)}</Link>
       <button type="button" aria-label={tt(copy.language)} onClick={() => setLang(lang === 'sw' ? 'en' : 'sw')}>
         <span className={lang === 'sw' ? 'l3-chosen' : ''}>SW</span> / <span className={lang === 'en' ? 'l3-chosen' : ''}>EN</span>
       </button>
