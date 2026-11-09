@@ -2,7 +2,7 @@ import { CalendarHeart, House } from 'lucide-react';
 
 export const LANDING_COPY = {
   wordmark: { sw: 'IBMT', en: 'IBMT' },
-  subtitle: { sw: 'Huduma za Kidijitali Tanzania', en: 'Digital Public Services Tanzania' },
+  subtitle: { sw: 'Njia ya Kidijitali ya Kufanya Mambo', en: 'Digital Way Of Things' },
   home: { sw: 'Nyumbani', en: 'Home' },
   services: { sw: 'Huduma', en: 'Services' },
   about: { sw: 'Kuhusu', en: 'About' },
@@ -14,7 +14,7 @@ export const LANDING_COPY = {
   menu: { sw: 'Menyu', en: 'Menu' },
   close: { sw: 'Funga menyu', en: 'Close menu' },
   headline: { sw: 'Chagua huduma yako', en: 'Choose your service' },
-  subline: { sw: 'Pata huduma za umma za Tanzania kwa njia ya kidijitali.', en: 'Access Tanzania’s public services online.' },
+  subline: { sw: 'Na ushughulikie kila kitu kidijitali', en: 'And handle everything digitally' },
   scene: { sw: 'Bandari ya Dar es Salaam na majengo ya katikati ya jiji yakionekana kutoka juu.', en: 'Aerial view of Dar es Salaam harbour and downtown buildings.' },
   title: { sw: 'Huduma zetu', en: 'Our services' },
   live: { sw: 'Inapatikana', en: 'Live' },
