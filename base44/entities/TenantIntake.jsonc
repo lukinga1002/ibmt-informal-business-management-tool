@@ -114,13 +114,29 @@
     "notice_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "occupation": {
+      "type": "string"
+    },
+    "tenant_email": {
+      "type": "string"
+    },
+    "contract_months": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "unit_name": {
+      "type": "string"
     }
   },
   "required": [
     "tenant_name",
     "tenant_phone",
     "nida_number",
-    "entered_by_role"
+    "entered_by_role",
+    "occupation",
+    "contract_months",
+    "rent_amount"
   ],
   "rls": {
     "read": {

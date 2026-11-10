@@ -74,6 +74,19 @@
     "submitted_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "occupation": {
+      "type": "string"
+    },
+    "tenant_email": {
+      "type": "string"
+    },
+    "contract_months": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tenant_phone": {
+      "type": "string"
     }
   },
   "required": [
@@ -82,7 +95,10 @@
     "full_name",
     "nida_number",
     "rent_amount",
-    "paid_broker"
+    "paid_broker",
+    "occupation",
+    "contract_months",
+    "tenant_phone"
   ],
   "rls": {
     "read": {

@@ -1,3 +1,4 @@
+import PangishaDetails from '@/components/rent/PangishaDetails';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, ShieldCheck } from 'lucide-react';
@@ -20,7 +21,7 @@ export default function TenantJoin() {
   const [landlord, setLandlord] = useState('');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState('');
-  const [form, setForm] = useState({ full_name: '', nida_number: '', rent_amount: '', paid_broker: null, broker_amount: '' });
+  const [form, setForm] = useState({ full_name: '', nida_number: '', tenant_phone: '', occupation: '', tenant_email: '', contract_months: '', rent_amount: '', paid_broker: null, broker_amount: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
@@ -53,6 +54,10 @@ export default function TenantJoin() {
         code,
         full_name: form.full_name,
         nida_number: form.nida_number,
+        occupation: form.occupation,
+        tenant_email: form.tenant_email,
+        contract_months: form.contract_months,
+        tenant_phone: form.tenant_phone,
         rent_amount: Number(form.rent_amount),
         paid_broker: form.paid_broker === true,
         broker_amount: form.paid_broker ? Number(form.broker_amount) : 0,
@@ -115,6 +120,7 @@ export default function TenantJoin() {
       <header>
         <p className="ibmt-kicker">Usajili wa mpangaji</p>
         <h1 className="mt-2 font-heading text-2xl font-semibold tracking-tight text-navy">{unit.unit_name}</h1>
+        <p className="ibmt-num">{unit.unit_ref}</p>
         <p className="mt-1 text-[13px] text-muted-foreground">
           {[unit.street, unit.house_no && `nyumba ${unit.house_no}`, unit.ward, unit.district].filter(Boolean).join(' · ')}
           {landlord ? ` · mwenye nyumba ${landlord}` : ''}
@@ -138,6 +144,8 @@ export default function TenantJoin() {
               />
             )}
           </Field>
+
+          <PangishaDetails form={form} set={set} />
 
           <Field label="Kodi unayolipa kwa mwezi (TZS)" required>
             {(props) => (
