@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/I18nContext';
 import { callFn, fnError } from '@/lib/r4';
-import { STATE_LABEL } from '@/lib/money';
+import { STATE_LABEL, SPLIT_LABEL } from '@/lib/money';
 import SectionCard from '@/components/ibmt/SectionCard';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
@@ -68,7 +68,7 @@ export default function PaymentTable({ payments = [], onChanged, onCorrect }) {
                 <p>Simulation / Majaribio</p>
                 {payment.payout_state==='held_limit'&&<p role="status">Malipo yameshikiliwa kwa kikomo: ongeza akaunti ya benki. / Payout held by wallet limit: add a bank account.</p>}
                 {payment.fee_status !== 'in_force' && payment.stage==='stage2_partner' && <p>Ada inayopendekezwa (majaribio) / Proposed fee (simulation)</p>}
-                {(payment.split_lines||[]).filter(line=>line.key!=='service_fee'||line.amount>0).map(line=><p key={line.key}>{line.key} · TZS {line.amount.toLocaleString()}</p>)}
+                {(payment.split_lines||[]).filter(line=>line.key!=='service_fee'||line.amount>0).map(line=><p key={line.key}>{tt(SPLIT_LABEL[line.key] || {sw:line.key,en:line.key})} · Simulation / Majaribio TZS {line.amount.toLocaleString()}</p>)}
                 <p>Ada ya huduma ya halmashauri si kodi ya majengo wala kodi ya mapato. / The council service fee is not property rate and not income tax.</p>
               </div>
 
