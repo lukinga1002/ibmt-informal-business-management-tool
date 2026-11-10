@@ -59,6 +59,10 @@ export default async function (req) {
           "VALIDATION",
           "Units must have the same registered landlord",
         );
+      for(const key of ['council_id','district','ward']) {
+        if(!units[0][key] || units.some(unit=>unit[key]!==units[0][key]))
+          return fail(422,'JURISDICTION','Review unit council, district and ward before grouping');
+      }
       const reference = "SIM-PROP-EXISTING-" + units[0].id;
       let property = (
         await allRows(db.Property, { property_ref: reference })
@@ -75,6 +79,8 @@ export default async function (req) {
           name: cleanText(input.name),
           landlord_id: units[0].landlord_id,
           council_id: units[0].council_id,
+          district: units[0].district,
+          ward: units[0].ward,
           unit_count: units.length,
         });
       for (const unit of units)
