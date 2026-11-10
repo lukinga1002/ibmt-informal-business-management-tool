@@ -34,8 +34,7 @@
       "description": "Drives nothing but wording until an official proposes and an admin confirms it."
     },
     "bylaw_reference": {
-      "type": "string",
-      "description": "By-law number or citation that authorises any enforcement"
+      "type": "string"
     },
     "bylaw_effective_date": {
       "type": "string",
@@ -121,6 +120,36 @@
     },
     "notes": {
       "type": "string"
+    },
+    "council_fee_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "fixed"
+      ],
+      "default": "percent"
+    },
+    "council_fee_rate": {
+      "type": "number",
+      "default": 0.03
+    },
+    "council_fee_fixed_amount": {
+      "type": "number"
+    },
+    "fee_revision_id": {
+      "type": "string"
+    },
+    "council_fee_status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "in_force"
+      ],
+      "default": "proposed"
+    },
+    "fee_placeholder_status": {
+      "type": "string",
+      "default": "placeholder"
     }
   },
   "required": [

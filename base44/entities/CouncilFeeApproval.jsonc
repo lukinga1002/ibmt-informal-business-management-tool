@@ -1,0 +1,44 @@
+{
+  "name": "CouncilFeeApproval",
+  "type": "object",
+  "properties": {
+    "council_id": {
+      "type": "string"
+    },
+    "revision_id": {
+      "type": "string"
+    },
+    "admin_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "council_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}
