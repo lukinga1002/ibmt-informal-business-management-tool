@@ -6,6 +6,14 @@
       "type": "string",
       "description": "Serial reference, e.g. IBMT-UNIT-2026-002315"
     },
+    "unit_name": {
+      "type": "string",
+      "description": "The name the landlord gave this unit, e.g. Nyumba ya mbele, Chumba A1. Used to pick the unit when renting it out."
+    },
+    "house_no": {
+      "type": "string",
+      "description": "House number on the street, as the landlord writes it"
+    },
     "property_id": {
       "type": "string",
       "description": "The building this unit sits in"
