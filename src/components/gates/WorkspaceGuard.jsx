@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
+import { ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useIBMT } from '@/api/IBMTContext';
 import { useT } from '@/i18n/I18nContext';
@@ -40,6 +40,15 @@ export default function WorkspaceGuard({ allow = [], adminOnly = false, children
           </span>
           <h1 className="mt-4 font-heading text-xl font-semibold text-navy">{t('states.permissionTitle')}</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{t('states.permissionBody')}</p>
+          {allow.includes('landlord') && (
+            <Link
+              to="/rent/join"
+              className="ibmt-tap mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-gold-ink hover:underline"
+            >
+              Hujasajili nyumba bado? Jisajili hapa
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </section>
     );

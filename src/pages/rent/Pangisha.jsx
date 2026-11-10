@@ -48,6 +48,7 @@ export default function Pangisha() {
       unitRows.map((row) => ({
         unit_id: row.unit_id || row.id,
         unit_ref: row.unit_ref || row.unit_id || row.id,
+        unit_name: row.unit_name || '',
         rent_amount: row.rent_amount || row.monthly_rent || 0,
       })),
     );
@@ -156,7 +157,7 @@ export default function Pangisha() {
                 <option value="">Chagua uniti</option>
                 {units.map((unit) => (
                   <option key={unit.unit_id} value={unit.unit_id}>
-                    {unit.unit_ref}
+                    {unit.unit_name ? `${unit.unit_name} · ${unit.unit_ref}` : unit.unit_ref}
                   </option>
                 ))}
               </SelectControl>
