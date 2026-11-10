@@ -1,3 +1,5 @@
+import { settlementRules } from '../../shared/settlementRules.ts';
+import { feeEvidence } from '../../shared/councilFee.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, getPolicyRules, json, nextSerial, rentRates } from '../../shared/moneyOps.ts';
 import {
@@ -26,7 +28,7 @@ import {
  *  4. the callback rules a real provider would have to follow
  */
 
-const STAGES = [STAGE.stage1, STAGE.stage2, STAGE.stage3];
+
 
 /**
  * Rates from the active PolicyRule row, the single source. No tax: Stage 1 runs
@@ -53,6 +55,8 @@ function shape(payment) {
     rent_total: wholeTZS(payment.rent_total),
     deposit_amount: wholeTZS(payment.deposit_amount),
     tenant_pays: wholeTZS(payment.tenant_pays),
+    council_fee: wholeTZS(payment.council_fee),
+    partner_charge: wholeTZS(payment.partner_charge),
     tax: wholeTZS(payment.tax),
     agent_commission: wholeTZS(payment.agent_commission),
     service_fee: wholeTZS(payment.service_fee),
@@ -122,10 +126,12 @@ export default async function (req) {
 
     const rule = await getPolicyRules(base44);
     const policyRates = ratesFromRule(rule);
+    const context = ['quote','initiate'].includes(action)
+      ? await settlementRules(base44,user,payload,rule) : null;
 
     if (action === 'quote') {
-      const stage = STAGES.includes(cleanText(payload.stage)) ? cleanText(payload.stage) : STAGE.stage2;
-      const rates = isAdmin && payload.demo_rates ? payload.demo_rates : policyRates;
+      const stage = context.stage;
+      const rates = { ...policyRates, ...context.rates };
       const split = computeSplit({
         rent_total: payload.rent_total,
         monthly_rent: payload.monthly_rent,
@@ -139,13 +145,14 @@ export default async function (req) {
         simulation: true,
         split,
         rates_used: rates,
-        rates_source: isAdmin && payload.demo_rates ? 'explicit test rates' : 'active PolicyRule',
+        fee_status: context.approved ? 'in_force' : 'proposed',
+        rates_source: 'Council / PolicyRule · Simulation / Majaribio',
         policy_version: rule ? rule.version : null,
       });
     }
 
     if (action === 'initiate') {
-      const stage = STAGES.includes(cleanText(payload.stage)) ? cleanText(payload.stage) : STAGE.stage2;
+      const stage = context.stage;
       const idempotencyKey = cleanText(payload.idempotency_key);
       if (idempotencyKey) {
         const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, { limit: 1 });
@@ -153,7 +160,7 @@ export default async function (req) {
         if (rows.length) return json({ payment: shape(rows[0]), duplicate: true, simulation: true });
       }
 
-      const rates = isAdmin && payload.demo_rates ? payload.demo_rates : policyRates;
+      const rates = { ...policyRates, ...context.rates };
       const split = computeSplit({
         rent_total: payload.rent_total,
         monthly_rent: payload.monthly_rent,
@@ -181,6 +188,11 @@ export default async function (req) {
       const created = await base44.entities.SimPayment.create({
         reference,
         stage,
+        council_id: context.council?.id || null,
+        fee_revision_id: context.terms?.id || null,
+        fee_status: context.approved ? 'in_force' : 'proposed',
+        council_fee: split.council_fee,
+        partner_charge: split.partner_charge,
         tenancy_id: tenancyId || null,
         unit_ref: unitRef,
         landlord_id: landlordId,
@@ -304,6 +316,12 @@ export default async function (req) {
         return fail(409, 'AMOUNT_MISMATCH', 'The callback amount does not match the payment. It was not credited.');
       }
 
+      if (claimedStatus === 'succeeded' && payment.fee_status === 'in_force') {
+        const council = await base44.entities.Council.get(payment.council_id);
+        const evidence = await feeEvidence(base44.asServiceRole.entities,council);
+        if (!evidence.approved || council.council_fee_status !== 'in_force' || council.fee_revision_id !== payment.fee_revision_id)
+          return fail(409,'TERMS_CHANGED','Council fee approvals changed; obtain a new quote');
+      }
       // 4. One place decides whether the move exists.
       const path = statePath(payment.state, claimedStatus);
       if (!path) {

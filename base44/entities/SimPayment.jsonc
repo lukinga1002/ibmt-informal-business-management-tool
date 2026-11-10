@@ -180,6 +180,21 @@
     "idempotency_key": {
       "type": "string",
       "description": "Client action key: a retried submit can never create a second payment"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "fee_revision_id": {
+      "type": "string"
+    },
+    "fee_status": {
+      "type": "string"
+    },
+    "council_fee": {
+      "type": "number"
+    },
+    "partner_charge": {
+      "type": "number"
     }
   },
   "required": [

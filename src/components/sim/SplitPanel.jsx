@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useEffect, useState } from 'react';
 import { Calculator } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useFn } from '@/hooks/useFn';
@@ -8,7 +9,7 @@ import Notice from '@/components/ibmt/Notice';
 import Money from '@/components/ibmt/Money';
 import Field, { SelectControl } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { PLACEHOLDER_RATES, SPLIT_LABEL, STAGE_OPTION } from '@/lib/money';
+import { SPLIT_LABEL } from '@/lib/money';
 
 /** The split, computed on the server from rates, never in the browser. */
 export default function SplitPanel({ onStart, busy = false }) {
@@ -18,8 +19,13 @@ export default function SplitPanel({ onStart, busy = false }) {
   const [monthlyRent, setMonthlyRent] = useState(500000);
   const [deposit, setDeposit] = useState(0);
   const [newTenancy, setNewTenancy] = useState(true);
-  const [stage, setStage] = useState('stage3_tax_split');
-  const [placeholder, setPlaceholder] = useState(true);
+  const [councils,setCouncils] = useState([]);
+  const [councilId,setCouncilId] = useState('');
+  const [error,setError] = useState('');
+  useEffect(()=>{
+    base44.entities.Council.list('name',500).then(page=>setCouncils(Array.isArray(page)?page:page.items || []))
+      .catch(()=>setError('Imeshindikana kupakia halmashauri / Could not load councils'));
+  },[]);
 
   const quote = useFn('simPayment', {
     action: 'quote',
@@ -28,8 +34,7 @@ export default function SplitPanel({ onStart, busy = false }) {
     monthly_rent: monthlyRent,
     new_tenancy: newTenancy,
     deposit_amount: deposit,
-    stage,
-    demo_rates: placeholder ? PLACEHOLDER_RATES : undefined,
+    council_id: councilId,
   });
 
   return (
@@ -46,24 +51,19 @@ export default function SplitPanel({ onStart, busy = false }) {
         <Field label={tt({ en: 'Months covered', sw: 'Miezi' })} type="number" min="1" value={months} onChange={(event) => setMonths(Number(event.target.value))} />
         <Field label={tt({ en: 'Monthly rent (TZS)', sw: 'Kodi ya mwezi (TZS)' })} type="number" min="1" value={monthlyRent} onChange={(event) => setMonthlyRent(Number(event.target.value))} />
         <Field label={tt({ en: 'Deposit on the first payment (TZS)', sw: 'Amana kwenye malipo ya kwanza (TZS)' })} type="number" min="0" value={deposit} onChange={(event) => setDeposit(Number(event.target.value))} hint={tt({ en: 'Ignored on a renewal.', sw: 'Haizingatiwi kwenye upya.' })} />
-        <Field label={tt({ en: 'Stage', sw: 'Hatua' })}>
-          {({ id, className }) => (
-            <SelectControl id={id} className={className} value={stage} onChange={(event) => setStage(event.target.value)}>
-              {STAGE_OPTION.map((option) => (
-                <option key={option.value} value={option.value}>{tt(option.label)}</option>
-              ))}
-            </SelectControl>
-          )}
+        <Field label={tt({en:'Council',sw:'Halmashauri'})}>
+          {props=><SelectControl {...props} value={councilId} onChange={e=>setCouncilId(e.target.value)}>
+            <option value="">Hatua 1 / Record only</option>
+            {councils.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+          </SelectControl>}
         </Field>
+        {error && <p role="alert">{error}</p>}
         <div className="flex flex-col justify-end gap-2 pb-1">
           <label className="flex items-center gap-2 text-[13px]">
             <input type="checkbox" checked={newTenancy} onChange={(event) => setNewTenancy(event.target.checked)} className="h-4 w-4" />
             {tt({ en: 'New tenancy (agent commission applies)', sw: 'Upangaji mpya (kamisheni inatumika)' })}
           </label>
-          <label className="flex items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={placeholder} onChange={(event) => setPlaceholder(event.target.checked)} className="h-4 w-4" />
-            {tt({ en: 'Placeholder rates: 10% tax, 1% fee, one period commission', sw: 'Viwango vya mfano: kodi 10%, ada 1%, kamisheni ya kipindi kimoja' })}
-          </label>
+
         </div>
       </div>
 
@@ -72,6 +72,7 @@ export default function SplitPanel({ onStart, busy = false }) {
           {(data) => (
             <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
               <div className="rounded-md border border-border">
+                {data.split.runs && data.fee_status === 'proposed' && <p>Ada inayopendekezwa (majaribio) / Proposed fee (simulation)</p>}
                 {!data.split.runs && (
                   <p className="border-b border-border bg-muted/40 px-4 py-3 text-[12px] text-muted-foreground">
                     {tt(data.split.note)}
@@ -130,7 +131,7 @@ export default function SplitPanel({ onStart, busy = false }) {
             type="button"
             className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
             disabled={busy}
-            onClick={() => onStart({ rent_total: rentTotal, months, monthly_rent: monthlyRent, new_tenancy: newTenancy, deposit_amount: deposit, stage, demo_rates: placeholder ? PLACEHOLDER_RATES : undefined })}
+            onClick={() => onStart({ rent_total: rentTotal, months, monthly_rent: monthlyRent, new_tenancy: newTenancy, deposit_amount: deposit, council_id: councilId })}
           >
             {busy ? tt({ en: 'Starting…', sw: 'Inaanza…' }) : tt({ en: 'Start a simulated payment', sw: 'Anzisha malipo ya majaribio' })}
           </Button>
