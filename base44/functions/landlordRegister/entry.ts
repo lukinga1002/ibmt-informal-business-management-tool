@@ -20,6 +20,8 @@ export default async function (req) {
     const payload = await req.json().catch(() => ({}));
     const landlordName = cleanText(payload.landlord_name) || user.full_name;
     const region = cleanText(payload.region);
+    const phone = cleanText(payload.phone).replace(/[^0-9]/g, '');
+    const email = cleanText(payload.email);
     const district = cleanText(payload.district);
     const ward = cleanText(payload.ward);
     const councilId = cleanText(payload.council_id);
@@ -28,6 +30,12 @@ export default async function (req) {
     const rawUnits = Array.isArray(payload.units) ? payload.units : [];
 
     if (landlordName.length < 3) return fail(422, 'VALIDATION', 'Your name is required', { landlord_name: 'Enter your name.' });
+    if (!/^(0\d{9}|255\d{9})$/.test(phone)) {
+      return fail(422, 'VALIDATION', 'A phone number is required', { phone: 'Enter the phone number, for example 0712345678.' });
+    }
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return fail(422, 'VALIDATION', 'That email address is not valid', { email: 'Check the email address, or leave it empty.' });
+    }
     if (!district || !ward || !councilId) return fail(422, 'VALIDATION', 'District and ward are required', { ward: 'Choose the district and ward.' });
     if (street.length < 2) return fail(422, 'VALIDATION', 'The street name is required', { street: 'Enter the street name.' });
     if (!houseNo) return fail(422, 'VALIDATION', 'The house number is required', { house_no: 'Enter the house number.' });
@@ -89,12 +97,14 @@ export default async function (req) {
     // A landlord who registers here is a landlord: set the workspace role only
     // when nothing else has been assigned, and never overwrite an existing role.
     const current = user.data || {};
-    if (!current.ibmt_role || !current.district || !current.council_id) {
+    if (!current.ibmt_role || !current.district || !current.council_id || !current.phone) {
       await base44.asServiceRole.entities.User.update(user.id, {
         data: {
           ...current,
           ibmt_role: current.ibmt_role || 'landlord',
           region: current.region || region || null,
+          phone: current.phone || phone,
+          email: current.email || email || user.email || null,
           district: current.district || district,
           council_id: current.council_id || councilId,
         },
@@ -102,7 +112,7 @@ export default async function (req) {
     }
 
     return json({
-      landlord: { name: landlordName, region: region || null, district, ward, street, house_no: houseNo },
+      landlord: { name: landlordName, phone, email: email || user.email || null, region: region || null, district, ward, street, house_no: houseNo },
       units: created,
     });
   } catch (error) {

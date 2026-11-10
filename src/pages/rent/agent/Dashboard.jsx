@@ -37,6 +37,8 @@ export default function AgentDashboard() {
   const [commission, setCommission] = useState(null);
   const [form, setForm] = useState({
     agent_name: '',
+    agent_phone: '',
+    agent_email: '',
     nida_number: '',
     business_name: '',
     region: REGIONS[0].region,
@@ -63,7 +65,14 @@ export default function AgentDashboard() {
       setCouncils(councilData.items || []);
 
       const me = await base44.auth.me().catch(() => null);
-      if (me?.full_name) setForm((prev) => ({ ...prev, agent_name: prev.agent_name || me.full_name }));
+      if (me) {
+        setForm((prev) => ({
+          ...prev,
+          agent_name: prev.agent_name || me.full_name || '',
+          agent_email: prev.agent_email || me.email || '',
+          agent_phone: prev.agent_phone || (me.data && me.data.phone) || '',
+        }));
+      }
     } catch (err) {
       setError(fnError(err));
     } finally {
@@ -79,6 +88,9 @@ export default function AgentDashboard() {
 
   const apply = async () => {
     if (form.agent_name.trim().length < 3) return setError('Andika jina la broker.');
+    if (!/^(0\d{9}|255\d{9})$/.test(form.agent_phone.replace(/\D/g, ''))) {
+      return setError('Namba ya simu inahitajika. Mfano 0712345678.');
+    }
     if (form.nida_number.length !== 20) return setError('Namba ya NIDA ina tarakimu 20.');
     setBusy(true);
     setError('');
@@ -86,6 +98,8 @@ export default function AgentDashboard() {
       await callFn('agentLicence', {
         action: 'apply',
         agent_name: form.agent_name,
+        agent_phone: form.agent_phone,
+        agent_email: form.agent_email,
         nida_number: form.nida_number,
         business_name: form.business_name,
         region: form.region,
@@ -173,6 +187,27 @@ export default function AgentDashboard() {
                   <Field label="Jina la broker" required>
                     {(props) => (
                       <TextInput {...props} value={form.agent_name} onChange={(event) => setForm({ ...form, agent_name: event.target.value })} />
+                    )}
+                  </Field>
+                  <Field label="Namba ya simu" required hint="Mfano 0712345678">
+                    {(props) => (
+                      <TextInput
+                        {...props}
+                        className={`${props.className} ibmt-num`}
+                        inputMode="tel"
+                        value={form.agent_phone}
+                        onChange={(event) => setForm({ ...form, agent_phone: event.target.value.replace(/[^0-9+]/g, '').slice(0, 13) })}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Barua pepe" hint="Si lazima. Ukiitoa, halmashauri itaitumia kukufikia.">
+                    {(props) => (
+                      <TextInput
+                        {...props}
+                        type="email"
+                        value={form.agent_email}
+                        onChange={(event) => setForm({ ...form, agent_email: event.target.value })}
+                      />
                     )}
                   </Field>
                   <Field label="Namba ya NIDA" required hint="Tarakimu 20 kutoka kitambulisho cha broker">

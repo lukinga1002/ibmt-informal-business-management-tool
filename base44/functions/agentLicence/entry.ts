@@ -78,6 +78,17 @@ async function apply(base44, user, payload) {
       nida_number: 'Enter the twenty digits on the NIDA card.',
     });
   }
+  const phone = cleanText(payload.agent_phone).replace(/[^0-9]/g, '');
+  if (!/^(0\d{9}|255\d{9})$/.test(phone)) {
+    return fail(422, 'VALIDATION', 'A phone number is required', {
+      agent_phone: 'Enter the phone number, for example 0712345678.',
+    });
+  }
+  const email = cleanText(payload.agent_email);
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return fail(422, 'VALIDATION', 'That email address is not valid', { agent_email: 'Check the email, or leave it empty.' });
+  }
+
   const region = cleanText(payload.region);
   if (!region) return fail(422, 'VALIDATION', 'The region is required', { region: 'Choose the region.' });
 
@@ -103,7 +114,8 @@ async function apply(base44, user, payload) {
   const row = await base44.entities.AgentLicence.create({
     agent_id: user.id,
     agent_name: brokerName,
-    agent_email: user.email || null,
+    agent_phone: phone,
+    agent_email: email || user.email || null,
     nida_number: nida,
     business_name: cleanText(payload.business_name) || null,
     district: council.district,
@@ -238,6 +250,8 @@ function licenceShape(row) {
     licence_no: row.licence_no || null,
     agent_id: row.agent_id,
     agent_name: row.agent_name,
+    agent_phone: row.agent_phone || null,
+    agent_email: row.agent_email || null,
     nida_number: row.nida_number || null,
     business_name: row.business_name || null,
     district: row.district,

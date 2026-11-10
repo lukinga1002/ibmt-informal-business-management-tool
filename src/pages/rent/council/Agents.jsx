@@ -117,6 +117,7 @@ export default function CouncilAgents() {
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       {row.business_name || 'Broker binafsi'}
+                      <span className="ibmt-num">{row.agent_phone ? ` · ${row.agent_phone}` : ''}</span>
                       <span className="ibmt-num">{row.nida_number ? ` · NIDA ${row.nida_number}` : ''}</span>
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">

@@ -18,6 +18,9 @@ const first = PILOT_COUNCILS[0];
 
 const EMPTY_UNIT = { name: '', rent_amount: '', occupied: false };
 
+/** A Tanzanian number, written either as 07… or as 2557…. */
+const isPhone = (value) => /^(0\d{9}|255\d{9})$/.test(String(value || '').replace(/\D/g, ''));
+
 /**
  * A landlord's own way in. One short form creates the units and their reference
  * numbers, so from then on renting a unit out is a pick from a list, never a
@@ -28,6 +31,8 @@ export default function RentJoin() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     landlord_name: '',
+    phone: '',
+    email: '',
     region: first.region,
     council_id: first.council_id,
     district: first.district,
@@ -45,7 +50,14 @@ export default function RentJoin() {
   useEffect(() => {
     base44.auth
       .me()
-      .then((me) => setForm((prev) => ({ ...prev, landlord_name: prev.landlord_name || me.full_name || '' })))
+      .then((me) =>
+        setForm((prev) => ({
+          ...prev,
+          landlord_name: prev.landlord_name || me.full_name || '',
+          email: prev.email || me.email || '',
+          phone: prev.phone || (me.data && me.data.phone) || '',
+        })),
+      )
       .catch((err) => {
         if (err?.status === 401 || err?.response?.status === 401) {
           base44.auth.redirectToLogin(window.location.href);
@@ -83,6 +95,10 @@ export default function RentJoin() {
         setError('Jaza jina lako, jina la mtaa na namba ya nyumba.');
         return;
       }
+      if (!isPhone(form.phone)) {
+        setError('Namba ya simu inahitajika. Mfano 0712345678.');
+        return;
+      }
     }
     if (step === 1) {
       const names = units.map((unit) => unit.name.trim().toLowerCase());
@@ -104,6 +120,8 @@ export default function RentJoin() {
     try {
       const payload = await callFn('landlordRegister', {
         landlord_name: form.landlord_name,
+        phone: form.phone,
+        email: form.email,
         region: form.region,
         district: form.district,
         ward: form.ward,

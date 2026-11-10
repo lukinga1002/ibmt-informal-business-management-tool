@@ -9,8 +9,13 @@
       "type": "string",
       "description": "The broker's own name, as they wrote it on the application"
     },
+    "agent_phone": {
+      "type": "string",
+      "description": "The broker's phone number, required so the council can reach them about the licence"
+    },
     "agent_email": {
-      "type": "string"
+      "type": "string",
+      "description": "The broker's email, optional. Empty when they did not give one."
     },
     "nida_number": {
       "type": "string",

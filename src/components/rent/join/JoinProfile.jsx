@@ -13,6 +13,24 @@ export default function JoinProfile({ form, set }) {
         {(props) => <TextInput {...props} value={form.landlord_name} onChange={(event) => set({ landlord_name: event.target.value })} />}
       </Field>
 
+      <Field label="Namba ya simu" required hint="Mfano 0712345678">
+        {(props) => (
+          <TextInput
+            {...props}
+            className={`${props.className} ibmt-num`}
+            inputMode="tel"
+            value={form.phone}
+            onChange={(event) => set({ phone: event.target.value.replace(/[^0-9+]/g, '').slice(0, 13) })}
+          />
+        )}
+      </Field>
+
+      <Field label="Barua pepe" hint="Si lazima. Ukiitoa, tutaitumia kukutumia taarifa.">
+        {(props) => (
+          <TextInput {...props} type="email" value={form.email} onChange={(event) => set({ email: event.target.value })} />
+        )}
+      </Field>
+
       <Field label="Mkoa" required>
         {(props) => (
           <SelectControl
