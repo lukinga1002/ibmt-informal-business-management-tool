@@ -317,8 +317,8 @@ test("Simulated settlement uses approved accounts, records a wallet hold, and re
 test("Legacy unit grouping is reviewer-led, preserves unit references, and rejects mixed landlords", async () => {
   const f = fixture();
   f.records.RentalUnit = [
-    { id: "u1", unit_ref: "ORIGINAL-1", landlord_id: "A", council_id: "c" },
-    { id: "u2", unit_ref: "ORIGINAL-2", landlord_id: "B", council_id: "c" },
+    { id: "u1", unit_ref: "ORIGINAL-1",district:"Demo district",ward:"Demo ward", landlord_id: "A", council_id: "c" },
+    { id: "u2", unit_ref: "ORIGINAL-2",district:"Demo district",ward:"Demo ward", landlord_id: "B", council_id: "c" },
   ];
   let response = await request(payout, {
     action: "prepareProperty",
