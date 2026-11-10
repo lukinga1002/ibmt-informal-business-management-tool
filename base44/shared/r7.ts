@@ -35,6 +35,8 @@ export const STAGE_LABEL = {
 };
 
 export const SPLIT_KEY_LABEL = {
+  council_fee: { sw: 'Ada ya huduma ya halmashauri', en: 'Council service fee' },
+  partner_charge: { sw: 'Ada ya mshirika', en: 'Partner charge' },
   tax: { en: 'Tax (withheld)', sw: 'Kodi (inayozuiliwa)' },
   agent_commission: { en: 'Agent commission', sw: 'Kamisheni ya wakala' },
   service_fee: { en: 'Landlord service fee', sw: 'Ada ya huduma kwa mmiliki' },
@@ -53,6 +55,38 @@ export function wholeTZS(value) {
  * The split. Rates arrive from the policy version (or from an explicit
  * placeholder set in a test), never from the browser.
  */
+/** Floor the decimal rate before converting the result back to whole TZS. */
+function share(amount, rate) {
+  const decimal = String(rate ?? 0);
+  if (!Number.isSafeInteger(amount) || amount < 0 || !/^(0(\.\d+)?|1(\.0+)?)$/.test(decimal)) {
+    throw new Error('Invalid simulated amount or rate');
+  }
+  const decimals = (decimal.split('.')[1] || '').length;
+  return Number(BigInt(amount) * BigInt(decimal.replace('.', '')) / (10n ** BigInt(decimals)));
+}
+
+export function incomeForSettlement(split, rules) {
+  if (!split.runs) return { system_fee: 0, partner_rebate: 0 };
+  if (!['share_of_rent', 'share_of_council_fee'].includes(rules.ibmt_fee_basis)) throw new Error('Unknown invoice basis');
+  const basis = rules.ibmt_fee_basis === 'share_of_rent' ? split.rent_total : split.council_fee;
+  const rebate = share(split.rent_total, rules.partner_rebate_rate);
+  if (rebate > split.partner_charge) throw new Error('Partner rebate exceeds the partner charge');
+  return { system_fee: share(basis, rules.ibmt_fee_rate), partner_rebate: rebate };
+}
+
+/** Use amounts from the original settled bill and invoice, including their rounding. */
+export function reversalAdjustments(original) {
+  const credit = value => {
+    if (!Number.isSafeInteger(value) || value < 0) throw new Error('Missing or invalid original posting amount');
+    return value === 0 ? 0 : -value;
+  };
+  return {
+    council_fee: credit(original.council_fee),
+    system_fee: credit(original.system_fee),
+    partner_rebate: credit(original.partner_rebate),
+  };
+}
+
 export function computeSplit(input = {}) {
   const rentTotal = wholeTZS(input.rent_total);
   if (rentTotal <= 0) throw new Error('The rent must be a positive whole amount');
@@ -64,7 +98,7 @@ export function computeSplit(input = {}) {
   const rates = input.rates || {};
 
   const taxRate = Number(rates.tax_rate) || 0;
-  const feeRate = Number(rates.service_fee_rate) || 0;
+  const feeRate = stage === STAGE.stage2 ? 0 : Number(rates.service_fee_rate) || 0;
   const commissionShare = Number(rates.commission_share) || 0;
   const commissionCap = Number(rates.commission_cap) || 0;
 
@@ -83,6 +117,8 @@ export function computeSplit(input = {}) {
       deposit,
       tenant_pays: tenantPays,
       tax: 0,
+      council_fee: 0,
+      partner_charge: 0,
       agent_commission: 0,
       service_fee: 0,
       landlord_remainder: null,
@@ -100,19 +136,25 @@ export function computeSplit(input = {}) {
   const rawCommission = Math.floor(monthlyRent * commissionShare);
   const commission = newTenancy ? (commissionCap > 0 ? Math.min(rawCommission, commissionCap) : rawCommission) : 0;
   const serviceFee = Math.floor(rentTotal * feeRate);
-  const landlord = rentTotal - tax - commission - serviceFee;
-  if (landlord < 0) throw new Error('The split is larger than the rent: check the rates');
+  const councilFee = rates.council_fee_type === 'fixed'
+    ? rates.council_fee_fixed_amount : share(rentTotal, rates.council_fee_rate);
+  if (!Number.isSafeInteger(councilFee) || councilFee < 0) throw new Error('Invalid fixed council fee');
+  const partnerCharge = share(rentTotal, rates.partner_charge_rate);
+  const landlord = rentTotal - tax - councilFee - commission - partnerCharge - serviceFee;
+  if (landlord < 0) throw new Error(`Simulation / Majaribio: upungufu / shortfall TZS ${-landlord}`);
 
   const lines = [];
   if (stage === STAGE.stage3) {
     lines.push({ key: 'tax', amount: tax, basis: `${(taxRate * 100).toFixed(2)}% of rent` });
   }
+  if (councilFee) lines.push({ key: 'council_fee', amount: councilFee, basis: 'registered rent' });
   lines.push({
     key: 'agent_commission',
     amount: commission,
     basis: newTenancy ? `one period share, capped` : 'renewal — no commission',
   });
-  lines.push({ key: 'service_fee', amount: serviceFee, basis: `${(feeRate * 100).toFixed(2)}% of rent` });
+  if (partnerCharge) lines.push({ key: 'partner_charge', amount: partnerCharge, basis: 'rent only' });
+  if (serviceFee) lines.push({ key: 'service_fee', amount: serviceFee, basis: `${(feeRate * 100).toFixed(2)}% of rent` });
   lines.push({ key: 'landlord_remainder', amount: landlord, basis: 'rent less the lines above' });
 
   const allocated = lines.reduce((sum, line) => sum + line.amount, 0);
@@ -127,6 +169,8 @@ export function computeSplit(input = {}) {
     deposit,
     tenant_pays: tenantPays,
     tax,
+    council_fee: councilFee,
+    partner_charge: partnerCharge,
     agent_commission: commission,
     service_fee: serviceFee,
     landlord_remainder: landlord,
@@ -144,6 +188,8 @@ export function computeSplit(input = {}) {
 export const ACCOUNTS = {
   partner_clearing: { en: 'Partner clearing (funds received)', sw: 'Malipo kwa mshirika (fedha zilizopokelewa)' },
   tenant_funds: { en: 'Tenant funds held for allocation', sw: 'Fedha za mpangaji zinazosubiri mgawanyo' },
+  council_fee_payable: { en: 'Council service fee payable', sw: 'Ada ya huduma ya halmashauri' },
+  partner_charge: { en: 'Partner charge', sw: 'Ada ya mshirika' },
   tax_payable: { en: 'Tax payable', sw: 'Kodi inayodaiwa' },
   agent_payable: { en: 'Agent commission payable', sw: 'Kamisheni ya wakala inayodaiwa' },
   platform_income: { en: 'IBMT service fee income', sw: 'Mapato ya ada ya huduma ya IBMT' },
@@ -153,6 +199,8 @@ export const ACCOUNTS = {
 };
 
 export const ACCOUNT_BY_SPLIT_KEY = {
+  council_fee: 'council_fee_payable',
+  partner_charge: 'partner_charge',
   tax: 'tax_payable',
   agent_commission: 'agent_payable',
   service_fee: 'platform_income',
@@ -498,7 +546,7 @@ export function runWorkedExamples() {
   const stage2 = splitOf({ stage: STAGE.stage2 });
   cases.push({
     name: 'Stage 3 off: tax zero and no tax line',
-    expected: { tax: 0, tax_line: false, service_fee: 30000 },
+    expected: { tax: 0, tax_line: false, service_fee: 0 },
     actual: { tax: stage2.tax, tax_line: stage2.lines.some((line) => line.key === 'tax'), service_fee: stage2.service_fee },
   });
 
