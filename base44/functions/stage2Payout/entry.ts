@@ -40,6 +40,47 @@ export default async function (req) {
         simulation: true,
       });
     }
+    if (input.action === "prepareProperty") {
+      if (user.role !== "admin")
+        return fail(403, "FORBIDDEN", "Reviewer required");
+      const ids = input.unit_ids;
+      if (!Array.isArray(ids) || !ids.length || !cleanText(input.name))
+        return fail(
+          422,
+          "VALIDATION",
+          "Select existing units and name the property",
+        );
+      const units = [];
+      for (const unitId of new Set(ids))
+        units.push(await db.RentalUnit.get(unitId));
+      if (new Set(units.map((u) => u.landlord_id)).size !== 1)
+        return fail(
+          422,
+          "VALIDATION",
+          "Units must have the same registered landlord",
+        );
+      const reference = "SIM-PROP-EXISTING-" + units[0].id;
+      let property = (
+        await allRows(db.Property, { property_ref: reference })
+      )[0];
+      if (units.some((u) => u.property_id && u.property_id !== property?.id))
+        return fail(
+          409,
+          "PROPERTY_EXISTS",
+          "A selected unit already belongs to another property",
+        );
+      if (!property)
+        property = await db.Property.create({
+          property_ref: reference,
+          name: cleanText(input.name),
+          landlord_id: units[0].landlord_id,
+          council_id: units[0].council_id,
+          unit_count: units.length,
+        });
+      for (const unit of units)
+        await db.RentalUnit.update(unit.id, { property_id: property.id });
+      return json({ property_id: property.id, simulation: true });
+    }
     const property = await db.Property.get(cleanText(input.property_id));
     const current = await payoutFor(db, property.id);
     const owner = current.roster?.owners?.find((o) => o.owner_id === user.id);
@@ -145,15 +186,18 @@ export default async function (req) {
           "POLICY_REQUIRED",
           "Configure simulated cooling-off hours (at least 24)",
         );
-      if(input.account_type==='mobile_money' && !/^(?:0|\+?255)[67]\d{8}$/.test(account.replace(/[\s-]/g,'')))
-        return fail(422,'VALIDATION','Use a valid-format synthetic mobile account number');
-      const partnerName = cleanText(input.simulated_partner_name);
-      if (!partnerName)
+      if (
+        input.account_type === "mobile_money" &&
+        !/^(?:0|\+?255)[67]\d{8}$/.test(account.replace(/[\s-]/g, ""))
+      )
         return fail(
           422,
           "VALIDATION",
-          "Simulated partner account name required",
+          "Use a valid-format synthetic mobile account number",
         );
+      // Server-owned synthetic directory; the caller cannot manufacture a successful name check.
+      const directory = {SIM1234:'Demo','SIM-ACCOUNT-A':'Mmiliki wa mfano','SIM-ACCOUNT-B':'Joint Owner Demo'};
+      const partnerName = directory[account] || 'SIM: human name review required';
       const row = await db.PayoutAccountChange.create({
         property_id: property.id,
         landlord_id: property.landlord_id,

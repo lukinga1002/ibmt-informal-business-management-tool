@@ -1,4 +1,4 @@
-import { allRows } from '../../shared/stage2Payout.ts';
+import { allRows, payoutFor } from "../../shared/stage2Payout.ts";
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { feeEvidence } from "../../shared/councilFee.ts";
@@ -66,12 +66,27 @@ export default async function (req) {
       });
       await db.Council.update(id, { rent_stage: input.rent_stage });
       if (input.rent_stage === "partner" && council.rent_stage !== "partner") {
-        const units = await allRows(db.RentalUnit, {council_id:id});
+        const units = await allRows(db.RentalUnit, { council_id: id });
         for (const landlord of new Set(
           (Array.isArray(units) ? units : units.items || []).map(
             (u) => u.landlord_id,
           ),
         )) {
+          const properties = [
+            ...new Set(
+              units
+                .filter((u) => u.landlord_id === landlord)
+                .map((u) => u.property_id),
+            ),
+          ];
+          const ready = await Promise.all(
+            properties.map(async (propertyId) =>
+              propertyId
+                ? Boolean((await payoutFor(db, propertyId)).account)
+                : false,
+            ),
+          );
+          if (ready.length && ready.every(Boolean)) continue;
           await db.Notification.create({
             subject_id: landlord,
             kind: "stage2_payout_required",

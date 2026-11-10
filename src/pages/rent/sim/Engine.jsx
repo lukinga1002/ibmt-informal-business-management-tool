@@ -49,7 +49,7 @@ export default function MoneyEngine() {
     <div className="space-y-6">
       <PageHeader
         kicker={tt({ en: 'Money engine', sw: 'Injini ya fedha' })}
-        title={tt({ en: 'Stages 2 and 3 — simulation', sw: 'Hatua 2 na 3 — majaribio' })}
+        title={tt({ en: 'Stage 2 — simulation', sw: 'Hatua 2 — majaribio' })}
         lede={tt({
           en: 'The split, the payment states, the ledger and the callback rules, running end to end with a mock partner.',
           sw: 'Mgawanyo, hali za malipo, daftari na kanuni za taarifa, vikifanya kazi kwa mshirika wa kubuni.',

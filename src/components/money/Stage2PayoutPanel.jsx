@@ -5,6 +5,8 @@ import Field from "@/components/ibmt/Field";
 import { Button } from "@/components/ui/button";
 
 export default function Stage2PayoutPanel() {
+  const [legacyUnits, setLegacyUnits] = useState(""),
+    [legacyName, setLegacyName] = useState("");
   const [properties, setProperties] = useState([]),
     [id, setId] = useState(""),
     [data, setData] = useState(null);
@@ -13,7 +15,6 @@ export default function Stage2PayoutPanel() {
     provider: "",
     account_number: "",
     account_name: "",
-    simulated_partner_name: "",
     consent: false,
   });
   const [error, setError] = useState(""),
@@ -83,6 +84,46 @@ export default function Stage2PayoutPanel() {
           ))}
         </select>
       </label>
+      {admin && (
+        <div className="space-y-2 border p-3">
+          <Field
+            label="Jengo la vitengo vilivyopo / Property for existing units"
+            value={legacyName}
+            onChange={(e) => setLegacyName(e.target.value)}
+          />
+          <Field
+            label="Unit IDs separated by semicolons (reviewed grouping)"
+            value={legacyUnits}
+            onChange={(e) => setLegacyUnits(e.target.value)}
+          />
+          <Button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await callFn("stage2Payout", {
+                  action: "prepareProperty",
+                  name: legacyName,
+                  unit_ids: legacyUnits
+                    .split(";")
+                    .map((v) => v.trim())
+                    .filter(Boolean),
+                });
+                const response = await callFn("stage2Payout", {
+                  action: "properties",
+                });
+                setProperties(response.properties);
+              } catch (e) {
+                setError(fnError(e));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Unganisha vitengo vilivyohakikiwa / Link reviewed existing units
+          </Button>
+        </div>
+      )}
       {data && (
         <div className="space-y-4">
           {admin && (
@@ -129,10 +170,6 @@ export default function Stage2PayoutPanel() {
             ["provider", "Mtoa huduma / Provider"],
             ["account_number", "Namba ya akaunti / Account number"],
             ["account_name", "Jina la akaunti / Account name"],
-            [
-              "simulated_partner_name",
-              "Jina kutoka mshirika wa kubuni / Simulated partner name",
-            ],
           ].map(([key, label]) => (
             <Field
               key={key}

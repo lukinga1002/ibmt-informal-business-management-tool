@@ -242,17 +242,112 @@ test("Another council cannot read fee records and draft contracts only receive p
   assert.equal(f.records.SimCouncilInvoice.length, 1);
 });
 
-test('Simulated settlement uses approved accounts, records a wallet hold, and retries once',async()=>{
- const {recordSettlement}=await import('../base44/shared/stage2Settlement.ts');
- const f=fixture();
- f.records.PolicyRule[0]={id:'policy',partner_rebate_rate:.0075,mobile_wallet_limit:100000};
- f.records.Tenancy=[{id:'t',unit_id:'u'}];f.records.RentalUnit=[{id:'u',property_id:'p'}];
- f.records.CouncilSettlementTerms=[{id:'v',ibmt_fee_basis:'share_of_rent',ibmt_fee_rate:.015,ibmt_contract_status:'signed'}];
- f.records.PayoutAccountChange.push({id:'r',property_id:'p',record_kind:'verified_roster',owners:[{owner_id:'A'}]},
-  {id:'n',property_id:'p',record_kind:'nomination',roster_id:'r',consent:true,name_check:'matched',account_type:'mobile_money',status:'cooling_off',cooling_off_ends_at:'2020-01-01'},
-  {id:'a',property_id:'p',record_kind:'owner_approval',old_account_id:'n',owner_id:'A'});
- const payment={id:'payment',stage:'stage2_partner',tenancy_id:'t',fee_revision_id:'v',council_id:'c',rent_total:3000000,council_fee:90000,partner_charge:60000,landlord_remainder:2350000,succeeded_at:'2026-11-10T00:00:00Z'};
- const row=await recordSettlement(globalThis.stage2TestClient,{...payment,deposit_amount:500000});
- assert.equal(row.landlord_amount,2850000);assert.equal(row.landlord_state,'held_limit');assert.equal(row.income.system_fee,45000);assert.equal(row.income.partner_rebate,22500);
- assert.equal((await recordSettlement(globalThis.stage2TestClient,payment)).id,row.id);assert.equal(f.records.SimSettlement.length,1);
+test("Simulated settlement uses approved accounts, records a wallet hold, and retries once", async () => {
+  const { recordSettlement } =
+    await import("../base44/shared/stage2Settlement.ts");
+  const f = fixture();
+  f.records.PolicyRule[0] = {
+    id: "policy",
+    partner_rebate_rate: 0.0075,
+    mobile_wallet_limit: 100000,
+  };
+  f.records.Tenancy = [{ id: "t", unit_id: "u" }];
+  f.records.RentalUnit = [{ id: "u", property_id: "p" }];
+  f.records.CouncilSettlementTerms = [
+    {
+      id: "v",
+      ibmt_fee_basis: "share_of_rent",
+      ibmt_fee_rate: 0.015,
+      ibmt_contract_status: "signed",
+    },
+  ];
+  f.records.PayoutAccountChange.push(
+    {
+      id: "r",
+      property_id: "p",
+      record_kind: "verified_roster",
+      owners: [{ owner_id: "A" }],
+    },
+    {
+      id: "n",
+      property_id: "p",
+      record_kind: "nomination",
+      roster_id: "r",
+      consent: true,
+      name_check: "matched",
+      account_type: "mobile_money",
+      status: "cooling_off",
+      cooling_off_ends_at: "2020-01-01",
+    },
+    {
+      id: "a",
+      property_id: "p",
+      record_kind: "owner_approval",
+      old_account_id: "n",
+      owner_id: "A",
+    },
+  );
+  const payment = {
+    id: "payment",
+    stage: "stage2_partner",
+    tenancy_id: "t",
+    fee_revision_id: "v",
+    council_id: "c",
+    rent_total: 3000000,
+    council_fee: 90000,
+    partner_charge: 60000,
+    landlord_remainder: 2350000,
+    succeeded_at: "2026-11-10T00:00:00Z",
+  };
+  const row = await recordSettlement(globalThis.stage2TestClient, {
+    ...payment,
+    deposit_amount: 500000,
+  });
+  assert.equal(row.landlord_amount, 2850000);
+  assert.equal(row.landlord_state, "held_limit");
+  assert.equal(row.income.system_fee, 45000);
+  assert.equal(row.income.partner_rebate, 22500);
+  assert.equal(
+    (await recordSettlement(globalThis.stage2TestClient, payment)).id,
+    row.id,
+  );
+  assert.equal(f.records.SimSettlement.length, 1);
+});
+
+test("Legacy unit grouping is reviewer-led, preserves unit references, and rejects mixed landlords", async () => {
+  const f = fixture();
+  f.records.RentalUnit = [
+    { id: "u1", unit_ref: "ORIGINAL-1", landlord_id: "A", council_id: "c" },
+    { id: "u2", unit_ref: "ORIGINAL-2", landlord_id: "B", council_id: "c" },
+  ];
+  let response = await request(payout, {
+    action: "prepareProperty",
+    name: "Demo property",
+    unit_ids: ["u1", "u2"],
+  });
+  assert.equal(response.status, 422);
+  response = await request(payout, {
+    action: "prepareProperty",
+    name: "Demo property",
+    unit_ids: ["u1"],
+  });
+  assert.equal(response.status, 200);
+  const propertyId = (await response.json()).property_id;
+  assert.equal(f.records.RentalUnit[0].property_id, propertyId);
+  assert.equal(f.records.RentalUnit[0].unit_ref, "ORIGINAL-1");
+  response = await request(payout, {
+    action: "prepareProperty",
+    name: "Demo property",
+    unit_ids: ["u1"],
+  });
+  assert.equal((await response.json()).property_id, propertyId);
+});
+
+test('The account holder cannot forge the simulated partner name check',async()=>{
+ const f=fixture();f.records.PayoutAccountChange.push({id:'roster',property_id:'p',record_kind:'verified_roster',owners:[{owner_id:'A',contact_phone:'0712345678'}]});
+ f.as({id:'A',role:'user'});
+ const response=await request(payout,{action:'nominate',property_id:'p',account_type:'bank',provider:'SIM',account_number:'UNKNOWN-SIM',account_name:'Claimed Name',simulated_partner_name:'Claimed Name',consent:true});
+ assert.equal(response.status,200);
+ const id=(await response.json()).id;
+ assert.equal(f.records.PayoutAccountChange.find(r=>r.id===id).name_check,'mismatch');
 });
