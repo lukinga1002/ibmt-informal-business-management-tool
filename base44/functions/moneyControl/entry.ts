@@ -1,3 +1,4 @@
+import { reverseSettlement } from '../../shared/stage2Settlement.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, json } from '../../shared/moneyOps.ts';
 import {
@@ -79,7 +80,7 @@ export default async function (req) {
 
     if (action === 'list') {
       const approvals = await base44.entities.ApprovalRequest.filter({}, { sort: '-created_date', limit: 20 });
-      const payouts = await base44.entities.PayoutAccountChange.filter({}, { sort: '-created_date', limit: 20 });
+      const payouts = []; // Account details are available only through the property-owner payout function.
       return json({
         simulation: true,
         approvals: approvals.items || approvals,
@@ -187,6 +188,9 @@ export default async function (req) {
         const fullyRefunded = refundedTotal >= wholeTZS(payment.tenant_pays);
         const history = Array.isArray(payment.state_history) ? [...payment.state_history] : [];
         const update = { refunded_amount: refundedTotal };
+        if (payment.stage === 'stage2_partner') {
+          await base44.asServiceRole.entities.PaymentAlert.create({payment_id:payment.id,kind:'amount_mismatch',detail:'Simulation: refund requires manual partner/council reconciliation; no automatic fee allocation',state:'open'});
+        }
         if (fullyRefunded) {
           const path = statePath(payment.state, 'reversed');
           if (path) {
@@ -245,12 +249,14 @@ export default async function (req) {
         ],
         result: { reversed_entries: mirrored.length },
       });
+      await reverseSettlement(base44,payment.id);
       await audit(base44, user, 'money.reverse.executed', 'SimPayment', payment.id, 'confirmed', request.reason, {
         reversed_entries: mirrored.length,
       });
       return json({ request: updated, simulation: true });
     }
 
+    if (['payoutRequest','payoutVerify','payoutActivate'].includes(action)) return fail(409,'PAYOUT_FLOW_UPDATED','Use property payout nominations and all-owner approvals');
     if (action === 'payoutRequest') {
       const newPhone = cleanText(payload.new_phone);
       const declaredOld = cleanText(payload.old_phone);

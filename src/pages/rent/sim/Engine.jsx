@@ -1,3 +1,5 @@
+import CouncilTermsPanel from '@/components/sim/CouncilTermsPanel';
+import Stage2CouncilPanel from '@/components/sim/Stage2CouncilPanel';
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
@@ -65,6 +67,8 @@ export default function MoneyEngine() {
       {error && <Notice tone="danger" className="mt-4">{error}</Notice>}
 
       <div className="space-y-6">
+        <CouncilTermsPanel admin />
+        <Stage2CouncilPanel admin />
         <SplitPanel onStart={start} busy={busy} />
 
         <AsyncBlock state={ledger}>

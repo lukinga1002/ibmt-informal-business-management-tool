@@ -1,3 +1,5 @@
+import { recordSettlement } from '../../shared/stage2Settlement.ts';
+import { leasePayoutGuard } from '../../shared/stage2Payout.ts';
 import { settlementRules } from '../../shared/settlementRules.ts';
 import { feeEvidence } from '../../shared/councilFee.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
@@ -38,6 +40,7 @@ import {
 function ratesFromRule(rule) {
   const rates = rentRates(rule);
   return {
+    partner_rebate_rate: rule?.partner_rebate_rate,
     tax_rate: 0,
     service_fee_rate: rates.landlord_service_fee_rate,
     commission_share: rates.commission_months,
@@ -57,6 +60,8 @@ function shape(payment) {
     tenant_pays: wholeTZS(payment.tenant_pays),
     council_fee: wholeTZS(payment.council_fee),
     partner_charge: wholeTZS(payment.partner_charge),
+    fee_status: payment.fee_status || 'proposed',
+    payout_state: payment.payout_state || null,
     tax: wholeTZS(payment.tax),
     agent_commission: wholeTZS(payment.agent_commission),
     service_fee: wholeTZS(payment.service_fee),
@@ -153,6 +158,7 @@ export default async function (req) {
 
     if (action === 'initiate') {
       const stage = context.stage;
+      if (stage===STAGE.stage2 && !payload.tenancy_id) return fail(422,'TENANCY_REQUIRED','A registered tenancy is required for Stage 2');
       const idempotencyKey = cleanText(payload.idempotency_key);
       if (idempotencyKey) {
         const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, { limit: 1 });
@@ -316,6 +322,11 @@ export default async function (req) {
         return fail(409, 'AMOUNT_MISMATCH', 'The callback amount does not match the payment. It was not credited.');
       }
 
+      if (claimedStatus === 'succeeded' && payment.stage === STAGE.stage2) {
+        if (!payment.tenancy_id) return fail(409,'TENANCY_REQUIRED','Select a signed tenancy for Stage 2');
+        const tenancy=await base44.entities.Tenancy.get(payment.tenancy_id);
+        await leasePayoutGuard(base44,{unit_id:tenancy.unit_id});
+      }
       if (claimedStatus === 'succeeded' && payment.fee_status === 'in_force') {
         const council = await base44.entities.Council.get(payment.council_id);
         const evidence = await feeEvidence(base44.asServiceRole.entities,council);
@@ -418,6 +429,15 @@ export default async function (req) {
       }
 
       const updated = await base44.asServiceRole.entities.SimPayment.get(payment.id);
+      if (claimedStatus === 'succeeded') {
+        try {
+          const settlement=await recordSettlement(base44,{...payment,...update});
+          if(settlement)await base44.asServiceRole.entities.SimPayment.update(payment.id,{payout_state:settlement.landlord_state});
+        } catch {
+          await raiseAlert(base44,{payment_id:payment.id,kind:'state_violation',detail:'Simulation settlement incomplete after callback. Review ledger and retry the same signed callback.'});
+          return fail(409,'SETTLEMENT_REVIEW','Simulated settlement needs review; no real funds moved');
+        }
+      }
       return json({
         payment: shape(updated),
         credits_written: creditsWritten,

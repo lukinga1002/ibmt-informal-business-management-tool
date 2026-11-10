@@ -1,3 +1,4 @@
+import Stage2PayoutPanel from '@/components/money/Stage2PayoutPanel';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -21,6 +22,7 @@ export default function LandlordRegister() {
         meta={[{ label: 'Hatua 4' }, { label: DISCLAIMER.sw }]}
       />
 
+      <Stage2PayoutPanel />
       {AMNESTY_NOTICE_ENABLED && <AmnestyNotice />}
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">

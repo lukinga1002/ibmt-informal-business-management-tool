@@ -1,3 +1,4 @@
+import { leasePayoutGuard } from '../../shared/stage2Payout.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { LEASE_TEMPLATE_LABEL, STAMP_DUTY_PLACEHOLDER, buildLeaseTerms } from '../../shared/leaseTemplate.ts';
@@ -112,6 +113,7 @@ export default async function (req) {
         signed_at: isoNow(),
       }];
       const both = ['landlord', 'tenant'].every((party) => signatures.some((row) => row.party === party));
+      if (both) await leasePayoutGuard(base44,lease);
       const updated = await base44.entities.Lease.update(lease.id, {
         signatures,
         otp: null,

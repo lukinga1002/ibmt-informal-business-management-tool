@@ -37,7 +37,8 @@
     },
     "landlord_service_fee_rate": {
       "type": "number",
-      "description": "Fee charged to the landlord share. Share of rent as a decimal, e.g. 0.01 = 1%. Stage 1 placeholder; never deducted from tenant funds."
+      "description": "Fee charged to the landlord share. Share of rent as a decimal, e.g. 0.01 = 1%. Stage 1 placeholder; never deducted from tenant funds.",
+      "default": 0
     },
     "commission_cap": {
       "type": "number",
@@ -99,6 +100,30 @@
           "type": "string"
         }
       }
+    },
+    "partner_charge_rate": {
+      "type": "number",
+      "default": 0.02
+    },
+    "partner_rebate_rate": {
+      "type": "number",
+      "default": 0.0075
+    },
+    "mobile_wallet_limit": {
+      "type": "number",
+      "description": "Synthetic placeholder. Get from partner."
+    },
+    "payout_cooling_off_hours": {
+      "type": "number",
+      "default": 24,
+      "description": "Simulation 24 hours; 72 recommended live."
+    },
+    "payment_parameters_status": {
+      "type": "string",
+      "enum": [
+        "placeholder"
+      ],
+      "default": "placeholder"
     }
   },
   "required": [

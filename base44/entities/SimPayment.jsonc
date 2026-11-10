@@ -195,6 +195,9 @@
     },
     "partner_charge": {
       "type": "number"
+    },
+    "payout_state": {
+      "type": "string"
     }
   },
   "required": [

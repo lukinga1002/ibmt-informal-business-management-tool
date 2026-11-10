@@ -88,6 +88,14 @@ export function reversalAdjustments(original) {
 }
 
 export function computeSplit(input = {}) {
+  for (const key of ['rent_total', 'monthly_rent', 'months', 'deposit_amount']) {
+    if (input[key] == null) continue;
+    const value = Number(input[key]);
+    if (!Number.isSafeInteger(value) || value < (key === 'deposit_amount' ? 0 : 1)) {
+      throw new Error('Simulation requires whole TZS and whole months; deposit may be zero');
+    }
+  }
+
   const rentTotal = wholeTZS(input.rent_total);
   if (rentTotal <= 0) throw new Error('The rent must be a positive whole amount');
 

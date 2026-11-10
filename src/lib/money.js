@@ -20,6 +20,8 @@ export const STAGE_OPTION = [
 ];
 
 export const SPLIT_LABEL = {
+  council_fee:{sw:'Ada ya huduma ya halmashauri',en:'Council service fee'},
+  partner_charge:{sw:'Ada ya mshirika',en:'Partner charge'},
   tax: { en: 'Tax (withheld)', sw: 'Kodi (inayozuiliwa)' },
   agent_commission: { en: 'Agent commission', sw: 'Kamisheni ya wakala' },
   service_fee: { en: 'Landlord service fee', sw: 'Ada ya huduma kwa mmiliki' },

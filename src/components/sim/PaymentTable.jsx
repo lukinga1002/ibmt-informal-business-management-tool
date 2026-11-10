@@ -64,11 +64,12 @@ export default function PaymentTable({ payments = [], onChanged, onCorrect }) {
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-2 text-[12px] text-muted-foreground sm:grid-cols-4">
-                <span>{tt({ en: 'Tax', sw: 'Kodi' })}: <span className="ibmt-num text-foreground">{payment.tax.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Agent', sw: 'Wakala' })}: <span className="ibmt-num text-foreground">{payment.agent_commission.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Fee', sw: 'Ada' })}: <span className="ibmt-num text-foreground">{payment.service_fee.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Landlord', sw: 'Mmiliki' })}: <span className="ibmt-num text-foreground">{payment.landlord_remainder == null ? '—' : payment.landlord_remainder.toLocaleString('en-US')}</span></span>
+              <div className="mt-3 space-y-2 text-[13px]">
+                <p>Simulation / Majaribio</p>
+                {payment.payout_state==='held_limit'&&<p role="status">Malipo yameshikiliwa kwa kikomo: ongeza akaunti ya benki. / Payout held by wallet limit: add a bank account.</p>}
+                {payment.fee_status !== 'in_force' && payment.stage==='stage2_partner' && <p>Ada inayopendekezwa (majaribio) / Proposed fee (simulation)</p>}
+                {(payment.split_lines||[]).filter(line=>line.key!=='service_fee'||line.amount>0).map(line=><p key={line.key}>{line.key} · TZS {line.amount.toLocaleString()}</p>)}
+                <p>Ada ya huduma ya halmashauri si kodi ya majengo wala kodi ya mapato. / The council service fee is not property rate and not income tax.</p>
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">

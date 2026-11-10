@@ -19,6 +19,7 @@ export default function SplitPanel({ onStart, busy = false }) {
   const [monthlyRent, setMonthlyRent] = useState(500000);
   const [deposit, setDeposit] = useState(0);
   const [newTenancy, setNewTenancy] = useState(true);
+  const [tenancyId,setTenancyId]=useState('');
   const [councils,setCouncils] = useState([]);
   const [councilId,setCouncilId] = useState('');
   const [error,setError] = useState('');
@@ -35,14 +36,15 @@ export default function SplitPanel({ onStart, busy = false }) {
     new_tenancy: newTenancy,
     deposit_amount: deposit,
     council_id: councilId,
+    tenancy_id: tenancyId,
   });
 
   return (
     <SectionCard
       title={tt({ en: 'Split engine', sw: 'Injini ya mgawanyo' })}
       description={tt({
-        en: 'Order: tax, agent commission, landlord service fee, then the remainder to the landlord. Every remainder from rounding goes to the landlord.',
-        sw: 'Mpangilio: kodi, kamisheni ya wakala, ada ya huduma, kisha salio kwa mmiliki. Salio lolote la kuzungusha huenda kwa mmiliki.',
+        en: 'Simulation / Majaribio: council service fee, agent commission, partner charge and landlord remainder. Every remainder from rounding goes to the landlord.',
+        sw: 'Simulation / Majaribio: ada ya halmashauri, kamisheni ya wakala, ada ya mshirika na salio la mmiliki. Salio lolote la kuzungusha huenda kwa mmiliki.',
       })}
       actions={<Calculator className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
     >
@@ -57,6 +59,7 @@ export default function SplitPanel({ onStart, busy = false }) {
             {councils.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
           </SelectControl>}
         </Field>
+        <Field label="Rejea ya tenancy / Registered tenancy ID" value={tenancyId} onChange={e=>setTenancyId(e.target.value)} />
         {error && <p role="alert">{error}</p>}
         <div className="flex flex-col justify-end gap-2 pb-1">
           <label className="flex items-center gap-2 text-[13px]">
@@ -110,7 +113,7 @@ export default function SplitPanel({ onStart, busy = false }) {
                 <Notice tone="privacy">
                   {tt({ en: 'Rates used:', sw: 'Viwango vilivyotumika:' })}{' '}
                   <span className="ibmt-num">
-                    tax {(Number(data.rates_used.tax_rate) * 100).toFixed(2)}% · fee {(Number(data.rates_used.service_fee_rate) * 100).toFixed(2)}% · commission {(Number(data.rates_used.commission_share) * 100).toFixed(0)}%
+                    Partner / Mshirika {((data.rates_used.partner_charge_rate || 0) * 100).toFixed(2)}%
                   </span>
                   <span className="mt-1 block text-[11px]">{data.rates_source} · {data.policy_version || '—'}</span>
                 </Notice>
@@ -131,7 +134,7 @@ export default function SplitPanel({ onStart, busy = false }) {
             type="button"
             className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
             disabled={busy}
-            onClick={() => onStart({ rent_total: rentTotal, months, monthly_rent: monthlyRent, new_tenancy: newTenancy, deposit_amount: deposit, council_id: councilId })}
+            onClick={() => onStart({ rent_total: rentTotal, months, monthly_rent: monthlyRent, new_tenancy: newTenancy, deposit_amount: deposit, council_id: councilId, tenancy_id: tenancyId })}
           >
             {busy ? tt({ en: 'Starting…', sw: 'Inaanza…' }) : tt({ en: 'Start a simulated payment', sw: 'Anzisha malipo ya majaribio' })}
           </Button>

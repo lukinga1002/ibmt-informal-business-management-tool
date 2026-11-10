@@ -1,3 +1,4 @@
+import Stage2PayoutPanel from '@/components/money/Stage2PayoutPanel';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronRight, ShieldCheck } from 'lucide-react';
@@ -168,6 +169,7 @@ export default function RentJoin() {
           </ul>
         </SectionCard>
 
+        <Stage2PayoutPanel />
         <ShareLinks units={result.units} />
 
         <Notice tone="policy" title="Usajili si umiliki">

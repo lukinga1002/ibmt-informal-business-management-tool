@@ -74,6 +74,67 @@
           }
         }
       }
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "record_kind": {
+      "type": "string"
+    },
+    "account_type": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "account_number": {
+      "type": "string"
+    },
+    "account_name": {
+      "type": "string"
+    },
+    "partner_name": {
+      "type": "string"
+    },
+    "name_check": {
+      "type": "string"
+    },
+    "consent_version": {
+      "type": "string"
+    },
+    "roster_id": {
+      "type": "string"
+    },
+    "old_account_id": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "owner_id": {
+      "type": "string"
+    },
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "consent": {
+      "type": "boolean"
+    },
+    "simulation": {
+      "type": "boolean",
+      "default": true
+    },
+    "cooling_off_hours": {
+      "type": "number"
     }
   },
   "required": [
@@ -82,32 +143,9 @@
     "status"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.landlord_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
   }
 }

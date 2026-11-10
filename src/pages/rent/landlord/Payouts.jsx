@@ -1,7 +1,7 @@
+import Stage2PayoutPanel from '@/components/money/Stage2PayoutPanel';
 import { useT } from '@/i18n/I18nContext';
 import PageHeader from '@/components/ibmt/PageHeader';
 import Notice from '@/components/ibmt/Notice';
-import PayoutChangePanel from '@/components/money/PayoutChangePanel';
 import { Banknote } from 'lucide-react';
 
 /** Where a landlord changes the number they are paid on. */
@@ -28,7 +28,7 @@ export default function LandlordPayouts() {
       </Notice>
 
       <div>
-        <PayoutChangePanel />
+        <Stage2PayoutPanel />
       </div>
     </div>
   );

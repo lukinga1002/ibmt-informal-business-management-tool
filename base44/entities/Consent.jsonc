@@ -12,7 +12,8 @@
         "core_service",
         "council_sharing",
         "listings",
-        "rent_history_credit"
+        "rent_history_credit",
+        "payments_through_ibmt"
       ],
       "enumColors": [
         "green",

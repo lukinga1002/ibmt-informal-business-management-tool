@@ -58,6 +58,10 @@ export default async function (req) {
     const year = new Date().getFullYear();
     const address = [houseNo, street, ward, district].filter(Boolean).join(', ');
     const created = [];
+    const property = await base44.asServiceRole.entities.Property.create({
+      property_ref:'SIM-PROP-'+crypto.randomUUID(),landlord_id:user.id,landlord_name:landlordName,
+      name:address,address,council_id:councilId,region,district,ward,mtaa:street,unit_count:rows.length,verification_status:'pending'
+    });
 
     for (const row of rows) {
       const unitRef = await nextSerial(base44, 'RentalUnit', `IBMT-UNIT-${year}-`, 'unit_ref');
@@ -65,6 +69,7 @@ export default async function (req) {
       // the tenant records themselves. The long random code is the only key.
       const tenantLinkCode = row.occupied ? crypto.randomUUID() : null;
       const unit = await base44.entities.RentalUnit.create({
+        property_id: property.id,
         unit_ref: unitRef,
         unit_name: row.name,
         tenant_link_code: tenantLinkCode,

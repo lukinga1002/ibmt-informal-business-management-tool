@@ -1,0 +1,258 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
+registerHooks({
+  resolve(specifier, context, next) {
+    if (specifier === "npm:@base44/sdk@0.8.54")
+      return {
+        url: "data:text/javascript,export const createClientFromRequest = () => globalThis.stage2TestClient;",
+        shortCircuit: true,
+      };
+    return next(specifier, context);
+  },
+});
+const payout = (await import("../base44/functions/stage2Payout/entry.ts"))
+  .default;
+const council = (await import("../base44/functions/stage2Council/entry.ts"))
+  .default;
+function fixture() {
+  const records = {
+    Property: [{ id: "p", landlord_id: "A" }],
+    PayoutAccountChange: [],
+    Consent: [],
+    Notification: [],
+    OtpChallenge: [],
+    User: [{ id: "A" }, { id: "B" }],
+    PolicyRule: [{ id: "policy", payout_cooling_off_hours: 24 }],
+    Council: [{ id: "c" }],
+    SimSettlement: [],
+    SimCouncilBill: [],
+    SimCouncilInvoice: [],
+    SimSettlementAdjustment: [],
+    LedgerEntry: [],
+    PaymentAlert: [],
+  };
+  let sequence = 0;
+  const db = new Proxy(
+    {},
+    {
+      get(_, name) {
+        return {
+          get: async (id) => {
+            const row = (records[name] || []).find((r) => r.id === id);
+            if (!row) throw Error("Not found");
+            return row;
+          },
+          filter: async (query = {}, sort, limit = 100, skip = 0) =>
+            (records[name] || [])
+              .filter((row) =>
+                Object.entries(query).every(([k, v]) => row[k] === v),
+              )
+              .slice()
+              .reverse()
+              .slice(skip, skip + limit),
+          create: async (data) => {
+            const row = {
+              ...data,
+              id: "row" + ++sequence,
+              created_date: new Date(Date.now() + sequence).toISOString(),
+            };
+            (records[name] ||= []).push(row);
+            return row;
+          },
+          update: async (id, change) => {
+            const row = (records[name] || []).find((r) => r.id === id);
+            Object.assign(row, change);
+            return row;
+          },
+          updateMany: async (query, change) => {
+            for (const row of records[name] || [])
+              if (Object.entries(query).every(([k, v]) => row[k] === v))
+                Object.assign(row, change.$set);
+            return { updated: 1 };
+          },
+        };
+      },
+    },
+  );
+  let user = { id: "reviewer", role: "admin" };
+  globalThis.stage2TestClient = {
+    entities: db,
+    asServiceRole: { entities: db },
+    auth: { me: async () => user },
+  };
+  return {
+    records,
+    as: (value) => {
+      user = value;
+    },
+  };
+}
+const request = (handler, input) =>
+  handler(
+    new Request("https://simulation.test", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  );
+test("Verified joint owners approve only their own nomination; codes cannot be replayed", async () => {
+  const f = fixture();
+  let response = await request(payout, {
+    action: "verifyOwners",
+    property_id: "p",
+    owners: [
+      { owner_id: "A", contact_phone: "0712345678" },
+      { owner_id: "B", contact_phone: "0752345678" },
+    ],
+  });
+  assert.equal(response.status, 200);
+  f.as({ id: "A", role: "user" });
+  response = await request(payout, {
+    action: "nominate",
+    property_id: "p",
+    account_type: "bank",
+    provider: "SIM",
+    account_number: "SIM1234",
+    account_name: "Demo",
+    simulated_partner_name: "Demo",
+    consent: true,
+  });
+  assert.equal(response.status, 200);
+  const id = (await response.json()).id;
+  response = await request(payout, {
+    action: "requestOtp",
+    property_id: "p",
+    id,
+  });
+  const otp = await response.json();
+  assert.ok(otp.simulation_code);
+  f.as({ id: "B", role: "user" });
+  assert.equal(
+    (
+      await request(payout, {
+        action: "approve",
+        property_id: "p",
+        id,
+        challenge_id: otp.challenge_id,
+        code: otp.simulation_code,
+      })
+    ).status,
+    403,
+  );
+  f.as({ id: "A", role: "user" });
+  assert.equal(
+    (
+      await request(payout, {
+        action: "approve",
+        property_id: "p",
+        id,
+        challenge_id: otp.challenge_id,
+        code: otp.simulation_code,
+      })
+    ).status,
+    200,
+  );
+  const nomination = f.records.PayoutAccountChange.find((r) => r.id === id);
+  assert.equal(nomination.approvals.length, 1);
+  assert.equal(nomination.cooling_off_ends_at, undefined);
+  f.as({ id: "B", role: "user" });
+  response = await request(payout, {
+    action: "requestOtp",
+    property_id: "p",
+    id,
+  });
+  const b = await response.json();
+  assert.equal(
+    (
+      await request(payout, {
+        action: "approve",
+        property_id: "p",
+        id,
+        challenge_id: b.challenge_id,
+        code: b.simulation_code,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(nomination.approvals.length, 2);
+  assert.ok(nomination.cooling_off_ends_at);
+  f.as({ id: "reviewer", role: "admin" });
+  response = await request(payout, { action: "read", property_id: "p" });
+  const view = await response.json();
+  assert.equal(view.records[0].account_number, "****1234");
+  assert.equal(JSON.stringify(view).includes("0712345678"), false);
+});
+test("Another council cannot read fee records and draft contracts only receive previews", async () => {
+  const f = fixture();
+  f.as({
+    id: "staff",
+    role: "user",
+    data: { ibmt_role: "council_official", council_id: "other" },
+  });
+  assert.equal(
+    (await request(council, { action: "read", council_id: "c" })).status,
+    403,
+  );
+  f.as({ id: "reviewer", role: "admin" });
+  f.records.SimSettlement.push({
+    id: "s",
+    payment_id: "payment",
+    council_id: "c",
+    council_amount: 90000,
+    income: {
+      system_fee: 45000,
+      partner_rebate: 22500,
+      contract_status: "draft",
+    },
+  });
+  f.records.LedgerEntry.push({
+    payment_id: "payment",
+    account: "council_fee_payable",
+    side: "credit",
+    amount: 90000,
+  });
+  let response = await request(council, {
+    action: "invoice",
+    council_id: "c",
+    month: "2026-11",
+  });
+  assert.equal(response.status, 409);
+  f.records.SimCouncilBill.push({
+    id: "bill",
+    council_id: "c",
+    state: "settled",
+    day: "2026-11-10",
+    amount: 90000,
+    lines: [{ source_id: "s" }],
+  });
+  response = await request(council, {
+    action: "invoice",
+    council_id: "c",
+    month: "2026-11",
+  });
+  assert.equal((await response.json()).invoice.state, "non_payable_preview");
+  assert.equal(f.records.SimCouncilInvoice.length, 0);
+  f.records.SimSettlement[0].income.contract_status = "signed";
+  response = await request(council, {
+    action: "invoice",
+    council_id: "c",
+    month: "2026-11",
+  });
+  assert.equal((await response.json()).invoice.amount, 45000);
+  assert.equal(f.records.SimCouncilInvoice.length, 1);
+});
+
+test('Simulated settlement uses approved accounts, records a wallet hold, and retries once',async()=>{
+ const {recordSettlement}=await import('../base44/shared/stage2Settlement.ts');
+ const f=fixture();
+ f.records.PolicyRule[0]={id:'policy',partner_rebate_rate:.0075,mobile_wallet_limit:100000};
+ f.records.Tenancy=[{id:'t',unit_id:'u'}];f.records.RentalUnit=[{id:'u',property_id:'p'}];
+ f.records.CouncilSettlementTerms=[{id:'v',ibmt_fee_basis:'share_of_rent',ibmt_fee_rate:.015,ibmt_contract_status:'signed'}];
+ f.records.PayoutAccountChange.push({id:'r',property_id:'p',record_kind:'verified_roster',owners:[{owner_id:'A'}]},
+  {id:'n',property_id:'p',record_kind:'nomination',roster_id:'r',consent:true,name_check:'matched',account_type:'mobile_money',status:'cooling_off',cooling_off_ends_at:'2020-01-01'},
+  {id:'a',property_id:'p',record_kind:'owner_approval',old_account_id:'n',owner_id:'A'});
+ const payment={id:'payment',stage:'stage2_partner',tenancy_id:'t',fee_revision_id:'v',council_id:'c',rent_total:3000000,council_fee:90000,partner_charge:60000,landlord_remainder:2350000,succeeded_at:'2026-11-10T00:00:00Z'};
+ const row=await recordSettlement(globalThis.stage2TestClient,{...payment,deposit_amount:500000});
+ assert.equal(row.landlord_amount,2850000);assert.equal(row.landlord_state,'held_limit');assert.equal(row.income.system_fee,45000);assert.equal(row.income.partner_rebate,22500);
+ assert.equal((await recordSettlement(globalThis.stage2TestClient,payment)).id,row.id);assert.equal(f.records.SimSettlement.length,1);
+});
