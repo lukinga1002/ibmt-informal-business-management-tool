@@ -19,6 +19,7 @@ export default async function (req) {
 
     const payload = await req.json().catch(() => ({}));
     const landlordName = cleanText(payload.landlord_name) || user.full_name;
+    const region = cleanText(payload.region);
     const district = cleanText(payload.district);
     const ward = cleanText(payload.ward);
     const councilId = cleanText(payload.council_id);
@@ -62,6 +63,7 @@ export default async function (req) {
         house_no: houseNo,
         landlord_id: user.id,
         landlord_name: landlordName,
+        region: region || null,
         district,
         ward,
         council_id: councilId,
@@ -92,6 +94,7 @@ export default async function (req) {
         data: {
           ...current,
           ibmt_role: current.ibmt_role || 'landlord',
+          region: current.region || region || null,
           district: current.district || district,
           council_id: current.council_id || councilId,
         },
@@ -99,7 +102,7 @@ export default async function (req) {
     }
 
     return json({
-      landlord: { name: landlordName, district, ward, street, house_no: houseNo },
+      landlord: { name: landlordName, region: region || null, district, ward, street, house_no: houseNo },
       units: created,
     });
   } catch (error) {

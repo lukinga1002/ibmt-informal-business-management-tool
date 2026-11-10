@@ -6,10 +6,19 @@
       "type": "string"
     },
     "agent_name": {
-      "type": "string"
+      "type": "string",
+      "description": "The broker's own name, as they wrote it on the application"
     },
     "agent_email": {
       "type": "string"
+    },
+    "nida_number": {
+      "type": "string",
+      "description": "The broker's NIDA national identity number: twenty digits, asked at registration and read by the council when it decides."
+    },
+    "business_name": {
+      "type": "string",
+      "description": "The brokerage's trading name, when the broker has one. Optional: a broker may work under their own name."
     },
     "council_id": {
       "type": "string"
@@ -19,7 +28,8 @@
       "description": "Denormalized council name, so a public check can answer with the council and nothing else."
     },
     "region": {
-      "type": "string"
+      "type": "string",
+      "description": "Region the council sits in, chosen by the broker before the district"
     },
     "district": {
       "type": "string"

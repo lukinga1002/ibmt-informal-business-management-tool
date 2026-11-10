@@ -115,6 +115,10 @@ export default function CouncilAgents() {
                     <p className="text-[13px] font-medium">
                       {row.agent_name} · {row.council_name || row.district}
                     </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {row.business_name || 'Broker binafsi'}
+                      <span className="ibmt-num">{row.nida_number ? ` · NIDA ${row.nida_number}` : ''}</span>
+                    </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {SCOPE_LABEL[row.scope] || SCOPE_LABEL.rental}
                       <span className="ibmt-num">

@@ -28,6 +28,7 @@ export default function RentJoin() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     landlord_name: '',
+    region: first.region,
     council_id: first.council_id,
     district: first.district,
     ward: first.wards[0],
@@ -103,6 +104,7 @@ export default function RentJoin() {
     try {
       const payload = await callFn('landlordRegister', {
         landlord_name: form.landlord_name,
+        region: form.region,
         district: form.district,
         ward: form.ward,
         council_id: form.council_id,

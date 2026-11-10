@@ -68,6 +68,19 @@ async function apply(base44, user, payload) {
   if (!hasAnyRole(user, ['agent']) && !isAdmin(user)) {
     return fail(403, 'FORBIDDEN', 'Only an agent account can apply for an agent licence');
   }
+  const brokerName = cleanText(payload.agent_name) || user.full_name || '';
+  if (brokerName.length < 3) {
+    return fail(422, 'VALIDATION', 'The broker name is required', { agent_name: 'Enter the broker name.' });
+  }
+  const nida = cleanText(payload.nida_number).replace(/[^0-9]/g, '');
+  if (nida.length !== 20) {
+    return fail(422, 'VALIDATION', 'A NIDA number of twenty digits is required', {
+      nida_number: 'Enter the twenty digits on the NIDA card.',
+    });
+  }
+  const region = cleanText(payload.region);
+  if (!region) return fail(422, 'VALIDATION', 'The region is required', { region: 'Choose the region.' });
+
   const district = cleanText(payload.district);
   if (!district) return fail(422, 'VALIDATION', 'The district is required', { district: 'Choose the district.' });
 
@@ -89,10 +102,12 @@ async function apply(base44, user, payload) {
 
   const row = await base44.entities.AgentLicence.create({
     agent_id: user.id,
-    agent_name: user.full_name || user.email || 'Agent',
+    agent_name: brokerName,
     agent_email: user.email || null,
+    nida_number: nida,
+    business_name: cleanText(payload.business_name) || null,
     district: council.district,
-    region: council.region || null,
+    region: region || council.region || null,
     council_id: council.id,
     council_name: council.name || null,
     scope,
@@ -223,6 +238,8 @@ function licenceShape(row) {
     licence_no: row.licence_no || null,
     agent_id: row.agent_id,
     agent_name: row.agent_name,
+    nida_number: row.nida_number || null,
+    business_name: row.business_name || null,
     district: row.district,
     region: row.region || null,
     council_id: row.council_id,

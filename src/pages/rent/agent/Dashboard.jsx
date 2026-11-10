@@ -11,6 +11,7 @@ import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
 import { callFn, fnError } from '@/lib/r4';
 import { base44 } from '@/api/base44Client';
+import { REGIONS } from '@/config/r3';
 
 const LICENCE_LABEL = {
   pending: 'Inasubiri halmashauri',
@@ -19,8 +20,6 @@ const LICENCE_LABEL = {
   suspended: 'Imesimamishwa',
   revoked: 'Imefutwa',
 };
-
-const DISTRICTS = ['Kinondoni', 'Ubungo', 'Ilala', 'Temeke', 'Kigamboni', 'Bagamoyo', 'Kisarawe'];
 
 const SCOPE_LABEL = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Kupangisha na mauzo' };
 const SCOPES = [
@@ -36,7 +35,16 @@ export default function AgentDashboard() {
   const [councils, setCouncils] = useState([]);
   const [mandates, setMandates] = useState([]);
   const [commission, setCommission] = useState(null);
-  const [form, setForm] = useState({ district: 'Kinondoni', scope: 'rental', ward: '', notes: '' });
+  const [form, setForm] = useState({
+    agent_name: '',
+    nida_number: '',
+    business_name: '',
+    region: REGIONS[0].region,
+    district: REGIONS[0].districts[0],
+    scope: 'rental',
+    ward: '',
+    notes: '',
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,6 +61,9 @@ export default function AgentDashboard() {
       setMandates(mandateData.rows || []);
       setCommission(commissionData);
       setCouncils(councilData.items || []);
+
+      const me = await base44.auth.me().catch(() => null);
+      if (me?.full_name) setForm((prev) => ({ ...prev, agent_name: prev.agent_name || me.full_name }));
     } catch (err) {
       setError(fnError(err));
     } finally {
@@ -64,11 +75,25 @@ export default function AgentDashboard() {
     load();
   }, [load]);
 
+  const districts = REGIONS.find((item) => item.region === form.region)?.districts || REGIONS[0].districts;
+
   const apply = async () => {
+    if (form.agent_name.trim().length < 3) return setError('Andika jina la broker.');
+    if (form.nida_number.length !== 20) return setError('Namba ya NIDA ina tarakimu 20.');
     setBusy(true);
     setError('');
     try {
-      await callFn('agentLicence', { action: 'apply', district: form.district, scope: form.scope, ward: form.ward, notes: form.notes });
+      await callFn('agentLicence', {
+        action: 'apply',
+        agent_name: form.agent_name,
+        nida_number: form.nida_number,
+        business_name: form.business_name,
+        region: form.region,
+        district: form.district,
+        scope: form.scope,
+        ward: form.ward,
+        notes: form.notes,
+      });
       await load();
     } catch (err) {
       setError(fnError(err));
@@ -145,10 +170,49 @@ export default function AgentDashboard() {
                 </Notice>
               ) : (
                 <>
+                  <Field label="Jina la broker" required>
+                    {(props) => (
+                      <TextInput {...props} value={form.agent_name} onChange={(event) => setForm({ ...form, agent_name: event.target.value })} />
+                    )}
+                  </Field>
+                  <Field label="Namba ya NIDA" required hint="Tarakimu 20 kutoka kitambulisho cha broker">
+                    {(props) => (
+                      <TextInput
+                        {...props}
+                        className={`${props.className} ibmt-num`}
+                        inputMode="numeric"
+                        value={form.nida_number}
+                        onChange={(event) => setForm({ ...form, nida_number: event.target.value.replace(/[^0-9]/g, '').slice(0, 20) })}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Jina la biashara" hint="Kama lipo. Broker anaweza kufanya kazi kwa jina lake mwenyewe.">
+                    {(props) => (
+                      <TextInput {...props} value={form.business_name} onChange={(event) => setForm({ ...form, business_name: event.target.value })} />
+                    )}
+                  </Field>
+                  <Field label="Mkoa" required>
+                    {(props) => (
+                      <SelectControl
+                        {...props}
+                        value={form.region}
+                        onChange={(event) => {
+                          const next = REGIONS.find((item) => item.region === event.target.value) || REGIONS[0];
+                          setForm({ ...form, region: next.region, district: next.districts[0] });
+                        }}
+                      >
+                        {REGIONS.map((item) => (
+                          <option key={item.region} value={item.region}>
+                            {item.region}
+                          </option>
+                        ))}
+                      </SelectControl>
+                    )}
+                  </Field>
                   <Field label="Wilaya" required>
                     {(props) => (
                       <SelectControl {...props} value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
-                        {DISTRICTS.map((value) => (
+                        {districts.map((value) => (
                           <option key={value} value={value}>
                             {value}
                           </option>

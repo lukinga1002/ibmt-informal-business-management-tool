@@ -15,14 +15,28 @@ export const PILOT_COUNCILS = [
   {
     council_id: '6aeb0119b746308e2106ef11',
     name: 'Kinondoni Municipal Council',
+    region: 'Dar es Salaam',
     district: 'Kinondoni',
     wards: ['Msasani', 'Mikocheni', 'Kijitonyama', 'Magomeni', 'Mwananyamala'],
   },
   {
     council_id: '6aeb0119b746308e2106ef12',
     name: 'Ubungo Municipal Council',
+    region: 'Dar es Salaam',
     district: 'Ubungo',
     wards: ['Sinza', 'Manzese', 'Kimara', 'Mbezi'],
+  },
+];
+
+/** Region first, then the districts inside it. */
+export const REGIONS = [
+  {
+    region: 'Dar es Salaam',
+    districts: ['Kinondoni', 'Ubungo', 'Ilala', 'Temeke', 'Kigamboni'],
+  },
+  {
+    region: 'Pwani',
+    districts: ['Bagamoyo', 'Kisarawe'],
   },
 ];
 
