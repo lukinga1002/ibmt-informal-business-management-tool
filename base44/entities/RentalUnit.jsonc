@@ -14,6 +14,10 @@
       "type": "string",
       "description": "House number on the street, as the landlord writes it"
     },
+    "tenant_link_code": {
+      "type": "string",
+      "description": "Long random code behind the link the landlord shares with a tenant who is already in. The code is the only key to that unit's tenant form; it is never shown publicly."
+    },
     "property_id": {
       "type": "string",
       "description": "The building this unit sits in"

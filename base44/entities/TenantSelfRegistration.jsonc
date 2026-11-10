@@ -1,0 +1,128 @@
+{
+  "name": "TenantSelfRegistration",
+  "type": "object",
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "description": "The unit the tenant submitted against"
+    },
+    "unit_ref": {
+      "type": "string",
+      "description": "Unit serial reference, denormalized for display"
+    },
+    "unit_name": {
+      "type": "string",
+      "description": "The name the landlord gave the unit"
+    },
+    "landlord_id": {
+      "type": "string",
+      "description": "Landlord the unit belongs to"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "The tenant's full name as they wrote it"
+    },
+    "nida_number": {
+      "type": "string",
+      "description": "Twenty-digit NIDA number"
+    },
+    "nida_masked": {
+      "type": "string",
+      "description": "Masked NIDA number, for lists and notices"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Rent the tenant says they pay, whole shillings"
+    },
+    "paid_broker": {
+      "type": "boolean",
+      "description": "Whether the tenant paid a broker when they moved in. False is recorded too: the answer is the record."
+    },
+    "broker_amount": {
+      "type": "number",
+      "description": "What the tenant paid the broker, whole shillings. Zero when they paid nothing."
+    },
+    "source": {
+      "type": "string",
+      "default": "tenant_link",
+      "description": "How the record arrived: tenant_link = the landlord shared the link"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "reviewed"
+      ],
+      "enumColors": [
+        "blue",
+        "green"
+      ],
+      "default": "submitted"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "unit_id",
+    "landlord_id",
+    "full_name",
+    "nida_number",
+    "rent_amount",
+    "paid_broker"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.landlord_id": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "data.ibmt_role": "council_official"
+              }
+            },
+            {
+              "data.council_id": "{{user.data.council_id}}"
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

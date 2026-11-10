@@ -52,9 +52,13 @@ export default async function (req) {
 
     for (const row of rows) {
       const unitRef = await nextSerial(base44, 'RentalUnit', `IBMT-UNIT-${year}-`, 'unit_ref');
+      // A unit that already has a tenant gets a link the landlord can share, so
+      // the tenant records themselves. The long random code is the only key.
+      const tenantLinkCode = row.occupied ? crypto.randomUUID() : null;
       const unit = await base44.entities.RentalUnit.create({
         unit_ref: unitRef,
         unit_name: row.name,
+        tenant_link_code: tenantLinkCode,
         house_no: houseNo,
         landlord_id: user.id,
         landlord_name: landlordName,
@@ -76,6 +80,7 @@ export default async function (req) {
         unit_ref: unit.unit_ref,
         rent_amount: unit.rent_amount,
         occupancy: unit.occupancy,
+        tenant_link_code: unit.tenant_link_code || null,
       });
     }
 

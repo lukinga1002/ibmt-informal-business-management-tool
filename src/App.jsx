@@ -50,6 +50,7 @@ import TraAccess from '@/pages/tra/Access';
 import RentHub from '@/pages/rent/RentHub';
 import RentAccess from '@/pages/rent/Access';
 import RentJoin from '@/pages/rent/Join';
+import TenantJoin from '@/pages/rent/TenantJoin';
 import Pangisha from '@/pages/rent/Pangisha';
 import LandlordDashboard from '@/pages/rent/landlord/Dashboard';
 import LandlordPortfolio from '@/pages/rent/landlord/Portfolio';
@@ -119,6 +120,7 @@ const AuthenticatedApp = () => {
       <Route path="/rent" element={<RentHub />} />
       <Route path="/rent/access/:entry" element={<RentAccess />} />
       <Route path="/rent/join" element={<RentJoin />} />
+      <Route path="/rent/tenant/join/:code" element={<TenantJoin />} />
       <Route path="/cert/:certificateNo" element={<PublicCertificate />} />
       <Route path="/lease/:code" element={<PublicLease />} />
 

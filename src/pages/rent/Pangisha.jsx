@@ -29,6 +29,7 @@ export default function Pangisha() {
   const [role, setRole] = useState(null);
   const [units, setUnits] = useState([]);
   const [rows, setRows] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -58,6 +59,14 @@ export default function Pangisha() {
       { sort: '-created_date', limit: 20 },
     );
     setRows(intake.items || []);
+
+    if (!isAgent) {
+      const sent = await base44.entities.TenantSelfRegistration.filter(
+        { landlord_id: me.id },
+        { sort: '-created_date', limit: 20 },
+      );
+      setSubmissions(sent.items || []);
+    }
   }, []);
 
   useEffect(() => {
@@ -237,6 +246,30 @@ export default function Pangisha() {
               kwenye mfumo. Ujumbe huu utatumwa mara njia ya SMS itakapowekwa.
             </Notice>
           )}
+        </SectionCard>
+      )}
+
+      {role !== 'agent' && submissions.length > 0 && (
+        <SectionCard title="Wapangaji waliojituma" description="Taarifa walizojaza wenyewe kupitia kiungo ulichowapa.">
+          <ul className="space-y-3">
+            {submissions.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 last:border-b-0">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium">{row.full_name}</p>
+                  <p className="ibmt-num text-[11px] text-muted-foreground">
+                    {row.unit_name || row.unit_ref}
+                    {row.nida_masked ? ` · NIDA ${row.nida_masked}` : ''}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {row.paid_broker
+                      ? `Alimlipa broker ${Number(row.broker_amount || 0).toLocaleString('en-US')} TZS`
+                      : 'Hakulipa broker'}
+                  </p>
+                </div>
+                <Money amount={row.rent_amount} />
+              </li>
+            ))}
+          </ul>
         </SectionCard>
       )}
 

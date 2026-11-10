@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import JoinProfile from '@/components/rent/join/JoinProfile';
 import JoinUnits from '@/components/rent/join/JoinUnits';
 import JoinRent from '@/components/rent/join/JoinRent';
+import ShareLinks from '@/components/rent/join/ShareLinks';
 import { base44 } from '@/api/base44Client';
 import { callFn, fnError } from '@/lib/r4';
 import { DISCLAIMER, PILOT_COUNCILS } from '@/config/r3';
@@ -146,6 +147,8 @@ export default function RentJoin() {
             ))}
           </ul>
         </SectionCard>
+
+        <ShareLinks units={result.units} />
 
         <Notice tone="policy" title="Usajili si umiliki">
           {DISCLAIMER.sw} / {DISCLAIMER.en}
