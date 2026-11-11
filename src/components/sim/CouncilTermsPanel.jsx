@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import SimulationCouncilPicker from "./SimulationCouncilPicker";
 import { callFn, fnError } from "@/lib/r4";
 import Field from "@/components/ibmt/Field";
 import SectionCard from "@/components/ibmt/SectionCard";
@@ -34,7 +34,7 @@ const options = {
   ibmt_contract_status: ["draft", "signed"],
 };
 export default function CouncilTermsPanel({ councilId, admin = false }) {
-  const [list, setList] = useState([]),
+  const
     [selected, setSelected] = useState(""),
     [model, setModel] = useState(null),
     [form, setForm] = useState(defaults);
@@ -48,12 +48,6 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
       mobile_wallet_limit: "",
     });
   const id = councilId || selected;
-  useEffect(() => {
-    if (admin)
-      base44.entities.Council.list("name", 500)
-        .then((p) => setList(Array.isArray(p) ? p : p.items || []))
-        .catch((e) => setError(fnError(e)));
-  }, [admin]);
   async function load(key) {
     const data = await callFn("councilSettlementTerms", {
       action: "read",
@@ -91,24 +85,9 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
   return (
     <SectionCard
       title="Masharti ya halmashauri / Council terms"
-      description="Simulation / Majaribio · Placeholder"
+      description="Simulation / Majaribio � Placeholder"
     >
-      {admin && (
-        <label>
-          Halmashauri / Council{" "}
-          <select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            <option value="">—</option>
-            {list.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      {admin && <SimulationCouncilPicker value={selected} onChange={setSelected} />}
       {model && (
         <div className="space-y-3">
           <p>
@@ -119,7 +98,7 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
           {Object.keys(defaults).map((key) =>
             !admin ? (
               <p key={key}>
-                {labels[key]} · {model.terms?.[key] ?? "—"}
+                {labels[key]} � {model.terms?.[key] ?? "-"}
               </p>
             ) : options[key] ? (
               <label className="block" key={key}>
@@ -199,7 +178,7 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
                   key={key}
                   label={
                     key === "mobile_wallet_limit"
-                      ? "Kikomo cha mfano kutoka mshirika / Synthetic limit — get from partner"
+                      ? "Kikomo cha mfano kutoka mshirika / Synthetic limit - get from partner"
                       : key
                   }
                   type="number"
@@ -214,7 +193,7 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
                   }
                 />
               ))}
-              <p>Cooling-off 24 hours in demo · 72 recommended live.</p>
+              <p>Cooling-off 24 hours in demo � 72 recommended live.</p>
               <Button
                 disabled={busy}
                 onClick={() => run("configureSimulation")}
@@ -229,3 +208,4 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
     </SectionCard>
   );
 }
+

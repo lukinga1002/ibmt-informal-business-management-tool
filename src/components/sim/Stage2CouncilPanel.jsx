@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import SimulationCouncilPicker from "./SimulationCouncilPicker";
 import { callFn, fnError } from "@/lib/r4";
 import SectionCard from "@/components/ibmt/SectionCard";
 import Field from "@/components/ibmt/Field";
 import { Button } from "@/components/ui/button";
 
 export default function Stage2CouncilPanel({ councilId, admin = false }) {
-  const [list, setList] = useState([]),
+  const
     [selected, setSelected] = useState(""),
     [data, setData] = useState(null),
     [result, setResult] = useState(null);
@@ -15,12 +15,6 @@ export default function Stage2CouncilPanel({ councilId, admin = false }) {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const id = councilId || selected;
-  useEffect(() => {
-    if (admin)
-      base44.entities.Council.list("name", 500)
-        .then((p) => setList(Array.isArray(p) ? p : p.items || []))
-        .catch((e) => setError(fnError(e)));
-  }, [admin]);
   useEffect(() => {
     setData(null);
     if (id)
@@ -53,22 +47,7 @@ export default function Stage2CouncilPanel({ councilId, admin = false }) {
         Ada ya huduma ya halmashauri si kodi ya majengo wala kodi ya mapato. /
         The council service fee is not property rate and not income tax.
       </p>
-      {admin && (
-        <label>
-          Halmashauri / Council{" "}
-          <select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            <option value="">—</option>
-            {list.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      {admin && <SimulationCouncilPicker value={selected} onChange={setSelected} />}
       {data && (
         <div className="space-y-4">
           {admin && (
@@ -104,40 +83,40 @@ export default function Stage2CouncilPanel({ councilId, admin = false }) {
           <h3>Ada kwa jengo na siku / Fees by property and day</h3>
           {data.settlements.map((s) => (
             <p key={s.id}>
-              {s.property_id} · {s.day} · Simulation / Majaribio TZS{" "}
+              {s.property_id} � {s.day} � Simulation / Majaribio TZS{" "}
               {s.council_amount.toLocaleString()}
             </p>
           ))}
           {admin && (
             <p>
-              Partner rebate · Simulation / Majaribio TZS{" "}
+              Partner rebate � Simulation / Majaribio TZS{" "}
               {data.partner_rebate_report?.toLocaleString()}
             </p>
           )}
           <h3>Bili / Bills</h3>
           {data.bills.map((b) => (
             <p key={b.id}>
-              {b.control_number} · {b.state} · Simulation / Majaribio TZS{" "}
+              {b.control_number} � {b.state} � Simulation / Majaribio TZS{" "}
               {b.amount.toLocaleString()}
             </p>
           ))}
           <h3>Ankara / Invoices</h3>
           {data.invoices.map((i) => (
             <p key={i.id}>
-              {i.reference} · {i.state} · Simulation / Majaribio TZS{" "}
+              {i.reference} � {i.state} � Simulation / Majaribio TZS{" "}
               {i.amount.toLocaleString()}
             </p>
           ))}
           {result?.invoice && (
             <p>
-              {result.invoice.state} · Simulation / Majaribio TZS{" "}
+              {result.invoice.state} � Simulation / Majaribio TZS{" "}
               {result.invoice.amount.toLocaleString()}
             </p>
           )}
           {result?.result && (
             <p>
-              Ledger {result.result.ledger} · Partner {result.result.partner} ·
-              SIM-GePG {result.result.gepg} ·{" "}
+              Ledger {result.result.ledger} � Partner {result.result.partner} �
+              SIM-GePG {result.result.gepg} �{" "}
               {result.result.balanced
                 ? "Sawa / Matched"
                 : "Tofauti / Difference"}
@@ -149,3 +128,4 @@ export default function Stage2CouncilPanel({ councilId, admin = false }) {
     </SectionCard>
   );
 }
+
