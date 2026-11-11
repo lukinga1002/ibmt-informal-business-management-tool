@@ -1,3 +1,4 @@
+import PangishaDetails from '@/components/rent/PangishaDetails';
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, Link2, MessageSquare } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -9,7 +10,29 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { callFn, fnError } from '@/lib/r4';
 
-const EMPTY = { unit_id: '', tenant_name: '', tenant_phone: '', nida_number: '', rent_amount: '', start_date: '', notes: '' };
+const EMPTY = { unit_id: '', tenant_name: '', tenant_phone: '', nida_number: '', occupation: '', tenant_email: '', contract_months: '', rent_amount: '', start_date: '', notes: '' };
+
+async function allRows(entity, filter) {
+  const rows = [];
+  const size = 100;
+  for (let skip = 0; ; skip += size) {
+    const page = await entity.filter(filter, '-created_date', size, skip);
+    const batch = Array.isArray(page) ? page : page.items || [];
+    rows.push(...batch);
+    if (batch.length < size) return rows;
+  }
+}
+
+function RecordedDetails({ row }) {
+  const fields = [row.occupation, row.tenant_phone, row.tenant_email,
+    row.contract_months ? `${row.contract_months} miezi` : null].filter(Boolean);
+  return fields.length ? <p className="break-words text-[12px] text-muted-foreground">{fields.join(' · ')}</p> : null;
+}
+
+function unitOption(unit) {
+  return { unit_id: unit.id, unit_ref: unit.unit_ref || unit.id, unit_name: unit.unit_name || '',
+    rent_amount: unit.rent_amount || unit.monthly_rent || 0 };
+}
 
 const digits = (value, max) => value.replace(/[^0-9]/g, '').slice(0, max);
 
@@ -41,31 +64,28 @@ export default function Pangisha() {
     const isAgent = (me?.data?.ibmt_role || '') === 'agent';
     setRole(isAgent ? 'agent' : 'landlord');
 
-    const unitRows = isAgent
-      ? (await callFn('agentMandate', { action: 'list' })).rows || []
-      : (await base44.entities.RentalUnit.filter({ landlord_id: me.id }, { sort: '-created_date', limit: 50 })).items || [];
-
-    setUnits(
-      unitRows.map((row) => ({
-        unit_id: row.unit_id || row.id,
-        unit_ref: row.unit_ref || row.unit_id || row.id,
-        unit_name: row.unit_name || '',
-        rent_amount: row.rent_amount || row.monthly_rent || 0,
-      })),
-    );
+    const owned = isAgent ? { agent_id: me.id } : { landlord_id: me.id };
+    const unitRows = await allRows(base44.entities.RentalUnit, owned);
+    if (isAgent) {
+      const mandates = await allRows(base44.entities.Mandate, { agent_id: me.id, status: 'active' });
+      const allowed = new Set(mandates.map(row => row.unit_id));
+      setUnits(unitRows.filter(row => allowed.has(row.id)).map(unitOption));
+    } else {
+      setUnits(unitRows.map(unitOption));
+    }
 
     const intake = await base44.entities.TenantIntake.filter(
       isAgent ? { agent_id: me.id } : { landlord_id: me.id },
-      { sort: '-created_date', limit: 20 },
+      '-created_date', 20,
     );
-    setRows(intake.items || []);
+    setRows(Array.isArray(intake) ? intake : intake.items || []);
 
     if (!isAgent) {
       const sent = await base44.entities.TenantSelfRegistration.filter(
         { landlord_id: me.id },
-        { sort: '-created_date', limit: 20 },
+        '-created_date', 20,
       );
-      setSubmissions(sent.items || []);
+      setSubmissions(Array.isArray(sent) ? sent : sent.items || []);
     }
   }, []);
 
@@ -91,7 +111,10 @@ export default function Pangisha() {
         tenant_name: form.tenant_name,
         tenant_phone: form.tenant_phone,
         nida_number: form.nida_number,
-        rent_amount: form.rent_amount,
+        occupation: form.occupation,
+        tenant_email: form.tenant_email,
+        contract_months: form.contract_months,
+        rent_amount: '',
         start_date: form.start_date,
         notes: form.notes,
       });
@@ -188,13 +211,9 @@ export default function Pangisha() {
             {(props) => <TextInput {...props} value={form.tenant_name} onChange={(event) => setForm({ ...form, tenant_name: event.target.value })} />}
           </Field>
 
-          <Field label="Namba ya simu" required hint="Taarifa ya usajili inatumwa kwa namba hii">
-            {(props) => (
-              <TextInput {...props} inputMode="tel" value={form.tenant_phone} onChange={(event) => setForm({ ...form, tenant_phone: event.target.value })} />
-            )}
-          </Field>
+          <PangishaDetails form={form} set={patch => setForm(prev => ({ ...prev, ...patch }))} />
 
-          <Field label="Kodi ya mwezi (TZS)" hint="Namba kamili, bila desimali">
+          <Field label="Kodi ya mwezi (TZS)" required hint="Namba kamili, bila desimali">
             {(props) => (
               <TextInput
                 {...props}
@@ -256,8 +275,9 @@ export default function Pangisha() {
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 last:border-b-0">
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium">{row.full_name}</p>
+                  <RecordedDetails row={row} />
                   <p className="ibmt-num text-[11px] text-muted-foreground">
-                    {row.unit_name || row.unit_ref}
+                    {[row.unit_name, row.unit_ref].filter(Boolean).join(' · ')}
                     {row.nida_masked ? ` · NIDA ${row.nida_masked}` : ''}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
@@ -283,8 +303,8 @@ export default function Pangisha() {
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium">{row.tenant_name}</p>
                   <p className="ibmt-num text-[11px] text-muted-foreground">
-                    {row.tenant_phone}
                     {row.nida_number ? ` · NIDA ${maskNida(row.nida_number)}` : ''}
+                    {row.unit_name && row.unit_name !== row.unit_ref ? ` · ${row.unit_name}` : ''}
                     {row.unit_ref ? ` · ${row.unit_ref}` : ''}
                     {row.start_date ? ` · kuanzia ${row.start_date}` : ''}
                   </p>

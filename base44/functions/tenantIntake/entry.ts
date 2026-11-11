@@ -1,3 +1,4 @@
+import { rentalDetails } from '../../shared/pangisha.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { hasAnyRole, isAdmin } from '../../shared/r5.ts';
@@ -12,7 +13,6 @@ import { hasAnyRole, isAdmin } from '../../shared/r5.ts';
  * it is required before anything is recorded.
  */
 const NIDA = /^\d{20}$/;
-const PHONE = /^(?:\+?255|0)([67]\d{8})$/;
 
 export default async function (req) {
   try {
@@ -41,14 +41,9 @@ async function createIntake(base44, user, role, payload) {
     return fail(422, 'VALIDATION', 'The tenant name is required', { tenant_name: 'Andika jina kamili la mpangaji.' });
   }
 
-  const rawPhone = cleanText(payload.tenant_phone).replace(/[\s-]/g, '');
-  const phoneMatch = rawPhone.match(PHONE);
-  if (!phoneMatch) {
-    return fail(422, 'VALIDATION', 'A Tanzanian mobile number is required', {
-      tenant_phone: 'Namba ya simu ya Tanzania, mfano 0712 345 678.',
-    });
-  }
-  const phone = `0${phoneMatch[1]}`;
+  const details = rentalDetails(payload);
+  if (Object.keys(details.errors).length) return fail(422, 'VALIDATION', Object.values(details.errors)[0], details.errors);
+  const phone = details.values.tenant_phone;
 
   const nida = cleanText(payload.nida_number).replace(/[\s-]/g, '');
   if (!NIDA.test(nida)) {
@@ -71,9 +66,9 @@ async function createIntake(base44, user, role, payload) {
       return fail(403, 'FORBIDDEN', 'Only the landlord of this unit, or their agent, can record a tenant');
     }
     const mandate = await base44.asServiceRole.entities.Mandate
-      .filter({ unit_id: unit.id, agent_id: user.id, status: 'active' }, { limit: 1 })
+      .filter({ unit_id: unit.id, agent_id: user.id, status: 'active' }, '-created_date', 1)
       .catch(() => ({ items: [] }));
-    if (!(mandate.items || []).length) {
+    if (!(Array.isArray(mandate) ? mandate : mandate.items || []).length) {
       return fail(403, 'NO_MANDATE', 'You do not hold an active mandate for this unit');
     }
     agentId = user.id;
@@ -83,9 +78,9 @@ async function createIntake(base44, user, role, payload) {
   const councilName = await councilOf(base44, unit);
 
   const duplicatePage = await base44.entities.TenantIntake
-    .filter({ unit_id: unit.id, nida_number: nida }, { sort: '-created_date', limit: 1 })
+    .filter({ unit_id: unit.id, nida_number: nida }, '-created_date', 1)
     .catch(() => ({ items: [] }));
-  const existing = (duplicatePage.items || [])[0];
+  const existing = (Array.isArray(duplicatePage) ? duplicatePage : duplicatePage.items || [])[0];
   if (existing && existing.status === 'recorded') {
     return json({
       duplicate: true,
@@ -103,14 +98,14 @@ async function createIntake(base44, user, role, payload) {
 
   const row = await base44.entities.TenantIntake.create({
     unit_id: unit.id,
-    unit_ref: unit.unit_ref || null,
+    unit_ref: unit.unit_ref || unit.id,
+    unit_name: unit.unit_name || unit.unit_ref || unit.id,
     landlord_id: unit.landlord_id,
     agent_id: agentId,
     entered_by_role: agentId ? 'agent' : 'landlord',
     tenant_name: tenantName,
-    tenant_phone: phone,
+    ...details.values,
     nida_number: nida,
-    rent_amount: Math.round(Number(payload.rent_amount) || 0) || null,
     start_date: cleanText(payload.start_date) || null,
     notes: cleanText(payload.notes) || null,
     status: 'recorded',
@@ -159,7 +154,6 @@ function intakeShape(row) {
     unit_ref: row.unit_ref || null,
     tenant_name: row.tenant_name,
     tenant_phone: row.tenant_phone,
-    nida_number: row.nida_number,
     nida_masked: maskNida(row.nida_number),
     rent_amount: row.rent_amount || 0,
     start_date: row.start_date || null,

@@ -1,3 +1,4 @@
+import { rentalDetails } from '../../shared/pangisha.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { rateLimit, requesterKey } from '../../shared/r5.ts';
@@ -27,8 +28,8 @@ export default async function (req) {
       return fail(429, 'RATE_LIMITED', 'Too many attempts from this connection. Try again in a few minutes.');
     }
 
-    const found = await base44.asServiceRole.entities.RentalUnit.filter({ tenant_link_code: code }, { limit: 1 });
-    const unit = (found.items || [])[0];
+    const found = await base44.asServiceRole.entities.RentalUnit.filter({ tenant_link_code: code }, '-created_date', 1);
+    const unit = (Array.isArray(found) ? found : found.items || [])[0];
     if (!unit) return fail(404, 'NOT_FOUND', 'This link is not active. Ask the landlord for a new one.');
 
     if (action === 'open') {
@@ -49,13 +50,13 @@ export default async function (req) {
 
     const fullName = cleanText(payload.full_name);
     const nida = digits(payload.nida_number);
-    const rent = Math.round(Number(payload.rent_amount) || 0);
+    const details = rentalDetails(payload);
+    if (Object.keys(details.errors).length) return fail(422, 'VALIDATION', Object.values(details.errors)[0], details.errors);
     const paidBroker = payload.paid_broker === true;
     const brokerAmount = paidBroker ? Math.round(Number(payload.broker_amount) || 0) : 0;
 
     if (fullName.length < 3) return fail(422, 'VALIDATION', 'Your full name is required', { full_name: 'Write your full name.' });
     if (nida.length !== 20) return fail(422, 'VALIDATION', 'The NIDA number has twenty digits', { nida_number: 'Write all twenty digits.' });
-    if (rent <= 0) return fail(422, 'VALIDATION', 'The rent you pay is required', { rent_amount: 'Write the rent you pay.' });
     if (paidBroker && brokerAmount <= 0) {
       return fail(422, 'VALIDATION', 'Write how much you paid the broker', { broker_amount: 'Write the amount you paid.' });
     }
@@ -72,7 +73,7 @@ export default async function (req) {
       full_name: fullName,
       nida_number: nida,
       nida_masked: `${'*'.repeat(16)}${nida.slice(-4)}`,
-      rent_amount: rent,
+      ...details.values,
       paid_broker: paidBroker,
       broker_amount: brokerAmount,
       source: 'tenant_link',
