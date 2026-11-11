@@ -42,7 +42,7 @@ async function audit(base44, user, action, subjectType, subjectId, outcome, reas
 }
 
 async function ledgerFor(base44, paymentId) {
-  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, { limit: 500 });
+  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, 'created_date', 500);
   return page.items || page;
 }
 
@@ -79,7 +79,7 @@ export default async function (req) {
     const isAdmin = user.role === 'admin';
 
     if (action === 'list') {
-      const approvals = await base44.entities.ApprovalRequest.filter({}, { sort: '-created_date', limit: 20 });
+      const approvals = await base44.entities.ApprovalRequest.filter({}, '-created_date', 20);
       const payouts = []; // Account details are available only through the property-owner payout function.
       return json({
         simulation: true,
@@ -273,7 +273,8 @@ export default async function (req) {
       // Rate limit per person, then per number.
       const recentPage = await base44.asServiceRole.entities.OtpChallenge.filter(
         { subject_id: user.id, purpose: 'payout_change' },
-        { sort: '-created_date', limit: 20 },
+        '-created_date',
+        20,
       );
       const recentRows = recentPage.items || recentPage;
       const perUser = withinRateLimit(recentRows.map((row) => row.issued_at), RATE_LIMIT.otp_per_user_per_hour, 60);

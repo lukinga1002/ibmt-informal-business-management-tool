@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import {
+  asRows,
   bilingual,
   fail,
   getActivePolicy,
@@ -15,29 +16,29 @@ import {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    // A missing or expired session is a 401 from the platform, not a server fault.
+    const user = await base44.auth.me().catch((error) => (isUnauthenticated(error) ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const today = todayISO();
     const monthStart = `${today.slice(0, 7)}-01`;
 
-    const [unitsPage, tenanciesPage, paymentsAggregate] = await Promise.all([
-      base44.entities.RentalUnit.filter({ landlord_id: user.id }, { sort: '-created_date', limit: 100 }),
-      base44.entities.Tenancy.filter({ landlord_id: user.id, status: 'active' }, { sort: '-created_date', limit: 100 }),
-      base44.entities.RentPayment.aggregate({
-        query: { landlord_id: user.id, paid_at: { $gte: monthStart } },
-        sum: ['amount', 'withholding_amount'],
-      }),
+    // Positional reads and an in-code sum: the cursor-page and aggregate routes
+    // are not implemented by the local `base44 dev` store, which forwards them
+    // to the hosted app instead of answering from local data.
+    const [unitsPage, tenanciesPage, paymentsPage] = await Promise.all([
+      base44.entities.RentalUnit.filter({ landlord_id: user.id }, '-created_date', 100),
+      base44.entities.Tenancy.filter({ landlord_id: user.id, status: 'active' }, '-created_date', 100),
+      base44.entities.RentPayment.filter({ landlord_id: user.id, paid_at: { $gte: monthStart } }, '-paid_at', MONTH_PAYMENT_LIMIT),
     ]);
 
-    const units = unitsPage.items || unitsPage;
-    const tenancies = tenanciesPage.items || tenanciesPage;
-    const aggregateRows = (paymentsAggregate && paymentsAggregate.rows) || [];
-    const paymentTotals = aggregateRows[0] || {};
+    const units = asRows(unitsPage);
+    const tenancies = asRows(tenanciesPage);
+    const payments = asRows(paymentsPage);
 
     const rentDue = tenancies.reduce((sum, tenancy) => sum + (Number(tenancy.rent_amount) || 0), 0);
-    const collected = Number(paymentTotals.sum_amount) || 0;
-    const taxWithheld = Number(paymentTotals.sum_withholding_amount) || 0;
+    const collected = payments.reduce((sum, row) => sum + (Math.round(Number(row.amount)) || 0), 0);
+    const taxWithheld = payments.reduce((sum, row) => sum + (Math.round(Number(row.withholding_amount)) || 0), 0);
     const arrears = Math.max(0, rentDue - collected);
 
     const occupiedUnitIds = new Set(tenancies.map((tenancy) => tenancy.unit_id));
@@ -72,8 +73,17 @@ export default async function (req) {
       policy_version: policy ? policy.version : null,
     });
   } catch (error) {
-    return fail(500, 'SERVER', error && error.message ? error.message : 'Unexpected error');
+    // Internal and upstream messages stay in the server log, never in the response.
+    console.error('landlordOverview failed', { status: error && error.status ? error.status : null });
+    return fail(500, 'SERVER', 'The overview could not be loaded. Try again.');
   }
+}
+
+const MONTH_PAYMENT_LIMIT = 500;
+
+function isUnauthenticated(error) {
+  const status = error && (error.status || (error.response && error.response.status));
+  return status === 401;
 }
 
 function cleanDistrict(user, units) {

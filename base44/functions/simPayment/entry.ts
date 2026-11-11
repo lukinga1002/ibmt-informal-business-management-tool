@@ -94,7 +94,7 @@ async function raiseAlert(base44, input) {
 }
 
 async function ledgerFor(base44, paymentId) {
-  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, { limit: 200 });
+  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, 'created_date', 200);
   return page.items || page;
 }
 
@@ -161,7 +161,7 @@ export default async function (req) {
       if (stage===STAGE.stage2 && !payload.tenancy_id) return fail(422,'TENANCY_REQUIRED','A registered tenancy is required for Stage 2');
       const idempotencyKey = cleanText(payload.idempotency_key);
       if (idempotencyKey) {
-        const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, { limit: 1 });
+        const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, '-created_date', 1);
         const rows = existing.items || existing;
         if (rows.length) return json({ payment: shape(rows[0]), duplicate: true, simulation: true });
       }
@@ -285,7 +285,7 @@ export default async function (req) {
       }
 
       // 2. A provider reference may be used once, by one payment only.
-      const dupPage = await base44.asServiceRole.entities.SimPayment.filter({ provider_reference: providerReference }, { limit: 10 });
+      const dupPage = await base44.asServiceRole.entities.SimPayment.filter({ provider_reference: providerReference }, '-created_date', 10);
       const duplicates = (dupPage.items || dupPage).filter((row) => row.id !== payment.id);
       if (duplicates.length) {
         await raiseAlert(base44, {
@@ -451,8 +451,8 @@ export default async function (req) {
       const paymentId = cleanText(payload.payment_id);
       const query = paymentId ? { id: paymentId } : {};
       const ownPage = isAdmin
-        ? await base44.asServiceRole.entities.SimPayment.filter(query, { sort: '-created_date', limit: 25 })
-        : await base44.entities.SimPayment.filter(query, { sort: '-created_date', limit: 25 });
+        ? await base44.asServiceRole.entities.SimPayment.filter(query, '-created_date', 25)
+        : await base44.entities.SimPayment.filter(query, '-created_date', 25);
       const payments = ownPage.items || ownPage;
       const ids = payments.map((row) => row.id);
       const entries = [];
@@ -478,7 +478,7 @@ export default async function (req) {
 
     if (action === 'alerts') {
       if (!isAdmin) return fail(403, 'FORBIDDEN', 'The alert queue is for the platform admin, so two people see a mismatch');
-      const page = await base44.asServiceRole.entities.PaymentAlert.filter({ state: 'open' }, { sort: '-created_date', limit: 50 });
+      const page = await base44.asServiceRole.entities.PaymentAlert.filter({ state: 'open' }, '-created_date', 50);
       const rows = page.items || page;
       return json({ alerts: rows, count: rows.length });
     }
@@ -497,7 +497,7 @@ export default async function (req) {
     }
 
     if (action === 'list') {
-      const page = await base44.entities.SimPayment.filter({}, { sort: '-created_date', limit: 25 });
+      const page = await base44.entities.SimPayment.filter({}, '-created_date', 25);
       const rows = page.items || page;
       return json({ simulation: true, payments: rows.map(shape) });
     }
