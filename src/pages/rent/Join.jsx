@@ -12,8 +12,8 @@ import JoinRent from '@/components/rent/join/JoinRent';
 import ShareLinks from '@/components/rent/join/ShareLinks';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
-import { isLocalSimulation, localCouncilChoices } from '@/lib/localSimulation';
-import { callFn, fnError } from '@/lib/r4';
+import { isLocalSimulation, localCouncilChoices, localDefaultCouncil } from '@/lib/localSimulation';
+import { callFn, fnError, newKey } from '@/lib/r4';
 import { DISCLAIMER, PILOT_COUNCILS } from '@/config/r3';
 
 const STEPS = ['Wewe na nyumba', 'Uniti zako', 'Kodi na wapangaji'];
@@ -50,6 +50,9 @@ export default function RentJoin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  // One key per filled-in form: a retry after a partial failure resumes the
+  // same registration on the server instead of creating a second property.
+  const [registrationKey] = useState(() => newKey('reg'));
 
   useEffect(() => {
     const environment = [import.meta.env.DEV, window.location.href, appParams.appBaseUrl];
@@ -57,7 +60,17 @@ export default function RentJoin() {
     let active = true;
     base44.entities.Council.filter({ code: 'SIM-TEST' })
       .then((page) => {
-        if (active) setCouncils(localCouncilChoices(PILOT_COUNCILS, Array.isArray(page) ? page : page.items || [], environment));
+        if (!active) return;
+        const choices = localCouncilChoices(PILOT_COUNCILS, Array.isArray(page) ? page : page.items || [], environment);
+        setCouncils(choices);
+        // Local data must never default onto a real pilot council's ID: start on
+        // the fictional council, carrying its ID, region, district and ward together.
+        const fixture = localDefaultCouncil(choices, PILOT_COUNCILS);
+        if (fixture) {
+          setForm((prev) => ({ ...prev, council_id: fixture.council_id, region: fixture.region, district: fixture.district, ward: fixture.wards[0] }));
+        } else {
+          setError('Local simulation: create the fictional council on /rent/sim first. Pilot councils are not available in local data.');
+        }
       })
       .catch(() => { if (active) setError('Could not load the fictional local council. Reload before registering test data.'); });
     return () => { active = false; };
@@ -135,6 +148,7 @@ export default function RentJoin() {
     setError('');
     try {
       const payload = await callFn('landlordRegister', {
+        registration_key: registrationKey,
         landlord_name: form.landlord_name,
         phone: form.phone,
         email: form.email,
@@ -164,7 +178,7 @@ export default function RentJoin() {
         <PageHeader
           kicker="Usajili umekamilika"
           title="Uniti zako zimesajiliwa"
-          lede={`${result.landlord.street}, nyumba ${result.landlord.house_no} � ${result.landlord.ward}, ${result.landlord.district}`}
+          lede={`${result.landlord.street}, nyumba ${result.landlord.house_no} · ${result.landlord.ward}, ${result.landlord.district}`}
         />
 
         <SectionCard title="Namba za kumbukumbu" description="Kila uniti lina namba yake. Hizi ndizo utakazotumia unapopangisha.">

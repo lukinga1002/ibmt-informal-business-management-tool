@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLocalCouncil, isLocalSimulation, localCouncilChoices } from '../src/lib/localSimulation.js';
+import { createLocalCouncil, isLocalSimulation, localCouncilChoices, localDefaultCouncil } from '../src/lib/localSimulation.js';
 
 const local = [true, 'http://localhost:5173/rent/sim', 'http://localhost:4400'];
 test('onboarding keeps the actual local fixture council ID and jurisdiction together', () => {
@@ -54,4 +54,13 @@ test('test data setup creates explicit placeholders and reuses them on retry', a
   policies[0].version = 'existing-policy';
   await createLocalCouncil(client, local);
   assert.equal(policies[0].version, 'existing-policy');
+});
+
+test("local onboarding defaults to the fictional council, never a pilot ID", () => {
+  const pilots = [{ council_id: "pilot", region: "Dar es Salaam", district: "Kinondoni", wards: ["Msasani"] }];
+  const fixture = { id: "actual-local-id", code: "SIM-TEST", name: "Test council", region: "Synthetic test region", district: "Synthetic test district" };
+  const chosen = localDefaultCouncil(localCouncilChoices(pilots, [fixture], local), pilots);
+  assert.deepEqual([chosen.council_id, chosen.region, chosen.district, chosen.wards[0]], [fixture.id, fixture.region, fixture.district, "SIMULATION - Test Ward"]);
+  assert.equal(localDefaultCouncil(localCouncilChoices(pilots, [], local), pilots), null);
+  assert.equal(localDefaultCouncil(localCouncilChoices(pilots, [fixture], [false, local[1], local[2]]), pilots), null);
 });

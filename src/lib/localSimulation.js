@@ -20,6 +20,12 @@ export function localCouncilChoices(pilots, records, environment) {
   }];
 }
 
+/** The fictional council added by localCouncilChoices, or null when only pilots are offered. */
+export function localDefaultCouncil(choices, pilots) {
+  const pilotIds = new Set(pilots.map((row) => row.council_id));
+  return choices.find((row) => !pilotIds.has(row.council_id)) || null;
+}
+
 // Explicit local fixture setup, never run automatically or against a remote API.
 export async function createLocalCouncil(client, environment) {
   if (!isLocalSimulation(...environment)) throw Error('Local backend required');
