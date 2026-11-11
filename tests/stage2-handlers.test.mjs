@@ -15,6 +15,8 @@ const payout = (await import("../base44/functions/stage2Payout/entry.ts"))
   .default;
 const council = (await import("../base44/functions/stage2Council/entry.ts"))
   .default;
+const terms = (await import("../base44/functions/councilSettlementTerms/entry.ts"))
+  .default;
 function fixture() {
   const records = {
     Property: [{ id: "p", landlord_id: "A" }],
@@ -351,3 +353,71 @@ test('The account holder cannot forge the simulated partner name check',async()=
  const id=(await response.json()).id;
  assert.equal(f.records.PayoutAccountChange.find(r=>r.id===id).name_check,'mismatch');
 });
+
+test('Signed-out callers cannot read or change Stage 2 resources', async () => {
+  const f = fixture();
+  f.as(null);
+  for (const [handler, input] of [
+    [payout, { action: 'properties' }],
+    [payout, { action: 'nominate', property_id: 'p' }],
+    [council, { action: 'read', council_id: 'c' }],
+    [council, { action: 'invoice', council_id: 'c' }],
+    [terms, { action: 'read', council_id: 'c' }],
+    [terms, { action: 'propose', council_id: 'c' }],
+  ]) assert.equal((await request(handler, input)).status, 401);
+  assert.equal(f.records.PayoutAccountChange.length, 0);
+  assert.equal(f.records.SimCouncilInvoice.length, 0);
+});
+
+test('Unrelated users cannot discover or operate another property payout', async () => {
+  const f = fixture();
+  f.as({ id: 'stranger', role: 'user' });
+  const discovery = await request(payout, { action: 'properties' });
+  assert.deepEqual((await discovery.json()).properties, []);
+  for (const action of ['read', 'nominate', 'verifyOwners', 'requestOtp', 'approve', 'withdraw']) {
+    assert.equal((await request(payout, { action, property_id: 'p' })).status, 403, action);
+  }
+  assert.equal(f.records.PayoutAccountChange.length, 0);
+});
+
+test('A landlord cannot act as the ownership reviewer or nominate before review', async () => {
+  const f = fixture();
+  f.as({ id: 'A', role: 'user' });
+  assert.equal((await request(payout, { action: 'verifyOwners', property_id: 'p', owners: [] })).status, 403);
+  assert.equal((await request(payout, { action: 'nominate', property_id: 'p', consent: true })).status, 409);
+  assert.equal(f.records.PayoutAccountChange.length, 0);
+});
+
+test('Council staff can read their own fees but cannot bill, invoice or edit terms', async () => {
+  const f = fixture();
+  f.as({ id: 'staff', role: 'user', data: { ibmt_role: 'council_official', council_id: 'c' } });
+  f.records.SimSettlement.push({ id: 's', property_id: 'p', council_id: 'c', council_amount: 90000,
+    account_number: 'PRIVATE-ACCOUNT', landlord_amount: 2850000, settled_at: '2026-11-10T00:00:00Z',
+    income: { partner_rebate: 22500 } });
+  const response = await request(council, { action: 'read', council_id: 'c' });
+  assert.equal(response.status, 200);
+  const view = await response.json();
+  assert.equal(view.settlements[0].council_amount, 90000);
+  for (const secret of ['PRIVATE-ACCOUNT', 'landlord_amount', 'partner_rebate']) {
+    assert.equal(JSON.stringify(view).includes(secret), false, secret);
+  }
+  for (const action of ['batch', 'invoice']) {
+    assert.equal((await request(council, { action, council_id: 'c' })).status, 403);
+  }
+  for (const action of ['propose', 'approve', 'configureSimulation']) {
+    assert.equal((await request(terms, { action, council_id: 'c' })).status, 403);
+  }
+});
+
+test('Commercial terms reject tenants and officials from another council', async () => {
+  const f = fixture();
+  for (const user of [
+    { id: 'tenant', role: 'user', data: { ibmt_role: 'tenant', council_id: 'c' } },
+    { id: 'staff', role: 'user', data: { ibmt_role: 'council_official', council_id: 'other' } },
+  ]) {
+    f.as(user);
+    assert.equal((await request(terms, { action: 'read', council_id: 'c' })).status, 403);
+    assert.equal((await request(council, { action: 'read', council_id: 'c' })).status, 403);
+  }
+});
+
