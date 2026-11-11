@@ -10,6 +10,16 @@ export function isLocalSimulation(isDev, pageUrl, backendUrl) {
   return isDev === true && loopback(pageUrl) && loopback(backendUrl);
 }
 
+export function localCouncilChoices(pilots, records, environment) {
+  if (!isLocalSimulation(...environment)) return pilots;
+  const fixture = records.find((row) => row.code === 'SIM-TEST' && row.id && row.region && row.district);
+  if (!fixture || pilots.some((row) => row.council_id === fixture.id)) return pilots;
+  return [...pilots, {
+    council_id: fixture.id, name: fixture.name, region: fixture.region,
+    district: fixture.district, wards: ['SIMULATION - Test Ward'],
+  }];
+}
+
 // Explicit local fixture setup, never run automatically or against a remote API.
 export async function createLocalCouncil(client, environment) {
   if (!isLocalSimulation(...environment)) throw Error('Local backend required');

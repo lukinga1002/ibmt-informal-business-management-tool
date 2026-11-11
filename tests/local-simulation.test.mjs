@@ -1,8 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLocalCouncil, isLocalSimulation } from '../src/lib/localSimulation.js';
+import { createLocalCouncil, isLocalSimulation, localCouncilChoices } from '../src/lib/localSimulation.js';
 
 const local = [true, 'http://localhost:5173/rent/sim', 'http://localhost:4400'];
+test('onboarding keeps the actual local fixture council ID and jurisdiction together', () => {
+  const pilots = [{ council_id: 'pilot', region: 'Dar es Salaam', district: 'Kinondoni' }];
+  const fixture = { id: 'actual-local-id', code: 'SIM-TEST', name: 'Test council', region: 'Synthetic test region', district: 'Synthetic test district' };
+  const choices = localCouncilChoices(pilots, [fixture], local);
+  assert.equal(choices[1].council_id, fixture.id);
+  assert.equal(choices[1].region, fixture.region);
+  assert.equal(choices[1].district, fixture.district);
+  assert.deepEqual(choices[1].wards, ['SIMULATION - Test Ward']);
+  assert.equal(pilots.length, 1);
+  assert.equal(localCouncilChoices(pilots, [fixture], [false, local[1], local[2]]), pilots);
+  assert.equal(localCouncilChoices(pilots, [fixture], [true, local[1], 'https://example.com']), pilots);
+  assert.equal(localCouncilChoices(pilots, [{ ...fixture, code: 'OTHER' }], local), pilots);
+});
 test('test data setup rejects production builds, remote APIs and lookalike hosts', async () => {
   for (const environment of [
     [false, local[1], local[2]],

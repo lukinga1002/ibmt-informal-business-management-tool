@@ -2,10 +2,12 @@ import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import { PILOT_COUNCILS, REGIONS } from '@/config/r3';
 
 /** Where the landlord works and where the house stands: region, district, ward. */
-export default function JoinProfile({ form, set }) {
-  const choice = PILOT_COUNCILS.find((item) => item.council_id === form.council_id) || PILOT_COUNCILS[0];
+export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
+  const choice = councils.find((item) => item.council_id === form.council_id) || councils[0];
   const region = form.region || choice.region;
-  const districts = PILOT_COUNCILS.filter((item) => item.region === region);
+  const districts = councils.filter((item) => item.region === region);
+  const regions = [...new Set([...REGIONS.map((item) => item.region), ...councils.map((item) => item.region)])]
+    .filter((name) => councils.some((item) => item.region === name));
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -38,13 +40,13 @@ export default function JoinProfile({ form, set }) {
             value={region}
             onChange={(event) => {
               const next =
-                PILOT_COUNCILS.find((item) => item.region === event.target.value) || PILOT_COUNCILS[0];
+                councils.find((item) => item.region === event.target.value) || councils[0];
               set({ region: next.region, council_id: next.council_id, district: next.district, ward: next.wards[0] });
             }}
           >
-            {REGIONS.filter((item) => PILOT_COUNCILS.some((council) => council.region === item.region)).map((item) => (
-              <option key={item.region} value={item.region}>
-                {item.region}
+            {regions.map((name) => (
+              <option key={name} value={name}>
+                {name}
               </option>
             ))}
           </SelectControl>

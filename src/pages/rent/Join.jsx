@@ -11,6 +11,8 @@ import JoinUnits from '@/components/rent/join/JoinUnits';
 import JoinRent from '@/components/rent/join/JoinRent';
 import ShareLinks from '@/components/rent/join/ShareLinks';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
+import { isLocalSimulation, localCouncilChoices } from '@/lib/localSimulation';
 import { callFn, fnError } from '@/lib/r4';
 import { DISCLAIMER, PILOT_COUNCILS } from '@/config/r3';
 
@@ -19,7 +21,7 @@ const first = PILOT_COUNCILS[0];
 
 const EMPTY_UNIT = { name: '', rent_amount: '', occupied: false };
 
-/** A Tanzanian number, written either as 07… or as 2557…. */
+/** A Tanzanian number, written either as 07. or as 2557.. */
 const isPhone = (value) => /^(0\d{9}|255\d{9})$/.test(String(value || '').replace(/\D/g, ''));
 
 /**
@@ -29,6 +31,7 @@ const isPhone = (value) => /^(0\d{9}|255\d{9})$/.test(String(value || '').replac
  * the landlord or the agent through Pangisha.
  */
 export default function RentJoin() {
+  const [councils, setCouncils] = useState(PILOT_COUNCILS);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     landlord_name: '',
@@ -47,6 +50,18 @@ export default function RentJoin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    const environment = [import.meta.env.DEV, window.location.href, appParams.appBaseUrl];
+    if (!isLocalSimulation(...environment)) return;
+    let active = true;
+    base44.entities.Council.filter({ code: 'SIM-TEST' })
+      .then((page) => {
+        if (active) setCouncils(localCouncilChoices(PILOT_COUNCILS, Array.isArray(page) ? page : page.items || [], environment));
+      })
+      .catch(() => { if (active) setError('Could not load the fictional local council. Reload before registering test data.'); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     base44.auth
@@ -149,7 +164,7 @@ export default function RentJoin() {
         <PageHeader
           kicker="Usajili umekamilika"
           title="Uniti zako zimesajiliwa"
-          lede={`${result.landlord.street}, nyumba ${result.landlord.house_no} · ${result.landlord.ward}, ${result.landlord.district}`}
+          lede={`${result.landlord.street}, nyumba ${result.landlord.house_no} � ${result.landlord.ward}, ${result.landlord.district}`}
         />
 
         <SectionCard title="Namba za kumbukumbu" description="Kila uniti lina namba yake. Hizi ndizo utakazotumia unapopangisha.">
@@ -218,7 +233,7 @@ export default function RentJoin() {
             ))}
           </ol>
 
-          {step === 0 && <JoinProfile form={form} set={set} />}
+          {step === 0 && <JoinProfile form={form} set={set} councils={councils} />}
           {step === 1 && <JoinUnits units={units} onCount={setCount} onRename={(index, name) => patchUnit(index, { name })} />}
           {step === 2 && (
             <JoinRent
@@ -259,7 +274,7 @@ export default function RentJoin() {
                 disabled={busy}
               >
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                {busy ? 'Inasajili…' : 'Sajili uniti zangu'}
+                {busy ? 'Inasajili.' : 'Sajili uniti zangu'}
               </Button>
             )}
           </div>
@@ -267,7 +282,7 @@ export default function RentJoin() {
 
         <aside className="space-y-4">
           <Notice tone="neutral" title="Kwa nini jina la uniti?">
-            Mpangaji anaporekodiwa, unachagua jina la uniti — si kuandika nyumba upya. Jina moja, mpangaji mmoja.
+            Mpangaji anaporekodiwa, unachagua jina la uniti - si kuandika nyumba upya. Jina moja, mpangaji mmoja.
           </Notice>
           <Notice tone="privacy" title="Anwani na mita">
             Anwani kamili haionyeshwi kwa umma. Inaonekana kwa afisa wa Mtaa na kwa wewe pekee.
