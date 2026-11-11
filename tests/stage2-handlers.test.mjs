@@ -78,13 +78,15 @@ function fixture() {
     },
   );
   let user = { id: "reviewer", role: "admin" };
+  let sessionError = null;
   globalThis.stage2TestClient = {
     entities: db,
     asServiceRole: { entities: db },
-    auth: { me: async () => user },
+    auth: { me: async () => { if (sessionError) throw sessionError; return user; } },
   };
   return {
     records,
+    rejectSession: (error) => { sessionError = error; },
     as: (value) => {
       user = value;
     },
@@ -418,6 +420,33 @@ test('Commercial terms reject tenants and officials from another council', async
     f.as(user);
     assert.equal((await request(terms, { action: 'read', council_id: 'c' })).status, 403);
     assert.equal((await request(council, { action: 'read', council_id: 'c' })).status, 403);
+  }
+});
+
+test('SDK auth_required exceptions return 401 rather than a server error', async () => {
+  for (const error of [
+    { status: 401 },
+    { status: 403, data: { extra_data: { reason: 'auth_required' } } },
+    { response: { status: 403, data: { extra_data: { reason: 'auth_required' } } } },
+  ]) {
+    const f = fixture();
+    f.rejectSession(error);
+    for (const handler of [payout, council, terms]) {
+      const response = await request(handler, { action: 'read', property_id: 'p', council_id: 'c' });
+      assert.equal(response.status, 401);
+      assert.equal((await response.json()).code, 'SESSION_EXPIRED');
+    }
+    assert.equal(f.records.PayoutAccountChange.length, 0);
+  }
+});
+
+test('SDK outages are not mistaken for successful authentication or signed-out sessions', async () => {
+  const f = fixture();
+  f.rejectSession({ status: 503, message: 'private diagnostic' });
+  for (const handler of [payout, council, terms]) {
+    const response = await request(handler, { action: 'read', property_id: 'p', council_id: 'c' });
+    assert.equal(response.status, 500);
+    assert.equal((await response.text()).includes('private diagnostic'), false);
   }
 });
 

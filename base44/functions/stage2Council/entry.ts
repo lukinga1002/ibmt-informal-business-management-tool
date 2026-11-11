@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
+import { requestUser } from "../../shared/requestUser.ts";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { allRows } from "../../shared/stage2Payout.ts";
 import { reconciliation, invoiceLines } from "../../shared/stage2Settlement.ts";
@@ -6,7 +7,7 @@ import { reconciliation, invoiceLines } from "../../shared/stage2Settlement.ts";
 export default async function (req) {
   try {
     const app = createClientFromRequest(req),
-      user = await app.auth.me();
+      user = await requestUser(app);
     if (!user) return fail(401, "SESSION_EXPIRED", "Sign in required");
     const input = await req.json(),
       id = cleanText(input.council_id),
@@ -182,3 +183,4 @@ export default async function (req) {
     );
   }
 }
+

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
+import { requestUser } from "../../shared/requestUser.ts";
 import {
   cleanText,
   fail,
@@ -12,7 +13,7 @@ import { maskPhone } from "../../shared/r7.ts";
 export default async function (req) {
   try {
     const app = createClientFromRequest(req),
-      user = await app.auth.me();
+      user = await requestUser(app);
     if (!user) return fail(401, "SESSION_EXPIRED", "Sign in required");
     const input = await req.json(),
       db = app.asServiceRole.entities;
@@ -418,3 +419,4 @@ export default async function (req) {
     return fail(500, "SERVER", "Could not process simulated payout account");
   }
 }
+

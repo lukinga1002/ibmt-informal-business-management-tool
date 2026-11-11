@@ -1,12 +1,13 @@
 import { allRows, payoutFor } from "../../shared/stage2Payout.ts";
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
+import { requestUser } from "../../shared/requestUser.ts";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { feeEvidence } from "../../shared/councilFee.ts";
 
 export default async function (req) {
   try {
     const app = createClientFromRequest(req);
-    const user = await app.auth.me();
+    const user = await requestUser(app);
     if (!user) return fail(401, "SESSION_EXPIRED", "Sign in required");
     const input = await req.json();
     const id = cleanText(input.council_id);
@@ -176,3 +177,4 @@ export default async function (req) {
     return fail(500, "SERVER", "Could not process simulated council terms");
   }
 }
+
