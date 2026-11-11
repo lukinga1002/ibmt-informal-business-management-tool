@@ -85,7 +85,7 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
   return (
     <SectionCard
       title="Masharti ya halmashauri / Council terms"
-      description="Simulation / Majaribio � Placeholder"
+      description="Simulation / Majaribio · Placeholder"
     >
       {admin && <SimulationCouncilPicker value={selected} onChange={setSelected} />}
       {model && (
@@ -98,7 +98,7 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
           {Object.keys(defaults).map((key) =>
             !admin ? (
               <p key={key}>
-                {labels[key]} � {model.terms?.[key] ?? "-"}
+                {labels[key]} · {model.terms?.[key] ?? "-"}
               </p>
             ) : options[key] ? (
               <label className="block" key={key}>
@@ -193,8 +193,9 @@ export default function CouncilTermsPanel({ councilId, admin = false }) {
                   }
                 />
               ))}
-              <p>Cooling-off 24 hours in demo � 72 recommended live.</p>
+              <p>Cooling-off: 24 hours in demo; 72 recommended live.</p>
               <Button
+                className="h-auto min-h-11 w-full whitespace-normal py-2 sm:w-auto"
                 disabled={busy}
                 onClick={() => run("configureSimulation")}
               >

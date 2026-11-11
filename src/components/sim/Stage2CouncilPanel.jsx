@@ -83,40 +83,40 @@ export default function Stage2CouncilPanel({ councilId, admin = false }) {
           <h3>Ada kwa jengo na siku / Fees by property and day</h3>
           {data.settlements.map((s) => (
             <p key={s.id}>
-              {s.property_id} � {s.day} � Simulation / Majaribio TZS{" "}
+              {s.property_id} · {s.day} · Simulation / Majaribio TZS{" "}
               {s.council_amount.toLocaleString()}
             </p>
           ))}
           {admin && (
             <p>
-              Partner rebate � Simulation / Majaribio TZS{" "}
+              Partner rebate · Simulation / Majaribio TZS{" "}
               {data.partner_rebate_report?.toLocaleString()}
             </p>
           )}
           <h3>Bili / Bills</h3>
           {data.bills.map((b) => (
             <p key={b.id}>
-              {b.control_number} � {b.state} � Simulation / Majaribio TZS{" "}
+              {b.control_number} · {b.state} · Simulation / Majaribio TZS{" "}
               {b.amount.toLocaleString()}
             </p>
           ))}
           <h3>Ankara / Invoices</h3>
           {data.invoices.map((i) => (
             <p key={i.id}>
-              {i.reference} � {i.state} � Simulation / Majaribio TZS{" "}
+              {i.reference} · {i.state} · Simulation / Majaribio TZS{" "}
               {i.amount.toLocaleString()}
             </p>
           ))}
           {result?.invoice && (
             <p>
-              {result.invoice.state} � Simulation / Majaribio TZS{" "}
+              {result.invoice.state} · Simulation / Majaribio TZS{" "}
               {result.invoice.amount.toLocaleString()}
             </p>
           )}
           {result?.result && (
             <p>
-              Ledger {result.result.ledger} � Partner {result.result.partner} �
-              SIM-GePG {result.result.gepg} �{" "}
+              Ledger {result.result.ledger} · Partner {result.result.partner} ·
+              SIM-GePG {result.result.gepg} ·{" "}
               {result.result.balanced
                 ? "Sawa / Matched"
                 : "Tofauti / Difference"}
