@@ -21,6 +21,8 @@ export function releaseScreens() {
   const start = new Set();
   for (const el of routes.filter((r) => !/ModuleGate/.test(r))) for (const m of el.matchAll(/<(\w+)/g)) if (imports[m[1]]) start.add(imports[m[1]]);
   for (const [name, p] of Object.entries(imports)) if (/Layout|Shell|Nav|Header|Footer|Guard|Gate/.test(name)) start.add(p);
+  // Anything App.jsx renders around the routes (banners, providers, shells) is on every screen.
+  for (const p of Object.values(imports)) if (p.startsWith("components/")) start.add(p);
   const resolve = (spec, from) => {
     const base = spec.startsWith("@/") ? join(root, "src", spec.slice(2)) : join(dirname(from), spec);
     for (const ext of ["", ".jsx", ".js", "/index.jsx", "/index.js"]) {

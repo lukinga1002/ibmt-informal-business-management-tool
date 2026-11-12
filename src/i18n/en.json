@@ -1728,5 +1728,16 @@
     "myMandates": "My mandates",
     "myMandatesBody": "A mandate becomes active after the owner signs with a code.",
     "mandateFee": "Commission TZS {amount} (owner) · tenant TZS 0"
+  },
+  "demoBanner": {
+    "text": "DEMO — sample data only. Do not enter real information."
+  },
+  "notRegistered": {
+    "title": "Access restricted",
+    "body": "You are not registered to use this application. Please contact the app administrator to request access.",
+    "ifError": "If you believe this is an error, you can:",
+    "checkAccount": "Check that you are signed in with the correct account",
+    "contact": "Contact the app administrator for access",
+    "relogin": "Sign out and sign in again"
   }
 }

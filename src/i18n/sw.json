@@ -1728,5 +1728,16 @@
     "myMandates": "Mamlaka yangu",
     "myMandatesBody": "Mamlaka yanakuwa hai baada ya mmiliki kusaini kwa namba.",
     "mandateFee": "Kamisheni TZS {amount} (mmiliki) · mpangaji TZS 0"
+  },
+  "demoBanner": {
+    "text": "DEMO — taarifa za majaribio tu. Usiweke taarifa halisi."
+  },
+  "notRegistered": {
+    "title": "Ufikiaji umezuiwa",
+    "body": "Hujasajiliwa kutumia programu hii. Tafadhali wasiliana na msimamizi wa programu kuomba ufikiaji.",
+    "ifError": "Kama unaamini hili ni kosa, unaweza:",
+    "checkAccount": "Hakikisha umeingia kwa akaunti sahihi",
+    "contact": "Wasiliana na msimamizi wa programu kuomba ufikiaji",
+    "relogin": "Toka kisha uingie tena"
   }
 }

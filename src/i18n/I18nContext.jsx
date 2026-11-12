@@ -20,6 +20,9 @@ export function I18nProvider({ children }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = 'ltr';
+    // The browser tab title follows the chosen language too.
+    const full = lookup(RESOURCES[lang], 'brand.full') || lookup(RESOURCES.en, 'brand.full');
+    if (full) document.title = `IBMT — ${full}`;
   }, [lang]);
 
   const t = useCallback(
