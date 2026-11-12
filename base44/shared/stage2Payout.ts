@@ -9,6 +9,26 @@ export async function allRows(entity, filter = {}) {
   }
 }
 
+/**
+ * What withdrawing payment consent does, shown before the owner confirms and
+ * recorded (by version) on the withdrawal.
+ */
+export const WITHDRAWAL_DISCLOSURE = {
+  version: "stage2-withdrawal-1",
+  sw: [
+    "Malipo mapya ya kodi ya jengo hili yatarekodiwa kama Hatua 1: hayapiti kwa mshirika wa malipo, na ada ya halmashauri haikusanywi kupitia IBMT.",
+    "Malipo yaliyoanza kabla ya kuondoa idhini yanakamilishwa; sehemu yako inashikiliwa.",
+    "Kiasi kinachoshikiliwa hakipotei, lakini hakitolewi hadi utoe idhini tena kwa kupendekeza akaunti.",
+    "Rekodi za idhini zinahifadhiwa kwa ukaguzi.",
+  ],
+  en: [
+    "New rent payments for this property will be recorded as Stage 1: they do not go through the payment partner, and no council fee is collected through IBMT.",
+    "Payments that started before you withdraw are completed; your share is held.",
+    "Held amounts are not lost, but they are not released until you give consent again by nominating an account.",
+    "Consent records are kept for audit.",
+  ],
+};
+
 export function accountReady(account, roster, now = Date.now()) {
   if (
     !account ||

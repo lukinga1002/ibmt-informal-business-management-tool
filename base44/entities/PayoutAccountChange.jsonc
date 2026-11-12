@@ -2,6 +2,13 @@
   "name": "PayoutAccountChange",
   "type": "object",
   "properties": {
+    "disclosure_version": {
+      "type": "string",
+      "description": "Version of the withdrawal disclosure the owner confirmed"
+    },
+    "withdrawn_by": {
+      "type": "string"
+    },
     "landlord_id": {
       "type": "string"
     },

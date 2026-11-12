@@ -7,7 +7,7 @@ import {
   getPolicyRules,
 } from "../../shared/moneyOps.ts";
 import { issueChallenge, attemptOtp } from "../../shared/registration.ts";
-import { allRows, payoutFor, walletState } from "../../shared/stage2Payout.ts";
+import { WITHDRAWAL_DISCLOSURE, allRows, payoutFor, walletState } from "../../shared/stage2Payout.ts";
 import { maskPhone } from "../../shared/r7.ts";
 
 export default async function (req) {
@@ -108,6 +108,7 @@ export default async function (req) {
           phone: maskPhone(o.contact_phone),
         })),
         consent: current.consent,
+        withdrawal_disclosure: WITHDRAWAL_DISCLOSURE,
         records: records.map((r) => ({
           id: r.id,
           account_type: r.account_type,
@@ -256,11 +257,18 @@ export default async function (req) {
     }
     if (action === "withdraw") {
       if (!owner) return fail(403, "FORBIDDEN", "Verified owner required");
+      // The owner sees what withdrawal does before it takes effect.
+      if (input.acknowledged !== true)
+        return fail(422, "ACKNOWLEDGEMENT_REQUIRED", "Read what withdrawing consent does, then confirm", {
+          disclosure: WITHDRAWAL_DISCLOSURE,
+        });
       await db.PayoutAccountChange.create({
         property_id: property.id,
         landlord_id: property.landlord_id,
         record_kind: "consent_withdrawal",
         status: "effective",
+        disclosure_version: WITHDRAWAL_DISCLOSURE.version,
+        withdrawn_by: user.id,
         new_phone_masked: "not applicable",
         simulation: true,
       });
@@ -271,7 +279,7 @@ export default async function (req) {
         granted: false,
         withdrawn_at: new Date().toISOString(),
       });
-      return json({ record_only: true, simulation: true });
+      return json({ record_only: true, disclosure: WITHDRAWAL_DISCLOSURE, simulation: true });
     }
     if (action === "releaseHeld") {
       if (!owner || !current.account)
@@ -281,10 +289,12 @@ export default async function (req) {
           "Approve an eligible payout account first",
         );
       const rule = await getPolicyRules(app);
-      const held = await allRows(db.SimSettlement, {
-        property_id: property.id,
-        landlord_state: "held_limit",
-      });
+      // Wallet-limit holds and holds for a missing account or withdrawn
+      // consent are released the same way, to the account eligible now.
+      const held = [
+        ...(await allRows(db.SimSettlement, { property_id: property.id, landlord_state: "held_limit" })),
+        ...(await allRows(db.SimSettlement, { property_id: property.id, landlord_state: "held_account" })),
+      ];
       let released = 0;
       for (const settlement of held) {
         if (
@@ -295,10 +305,15 @@ export default async function (req) {
           ) !== "settled"
         )
           continue;
-        await db.SimSettlement.updateMany(
-          { id: settlement.id, landlord_state: "held_limit" },
-          { $set: { landlord_state: "settled" } },
+        // A reversed payment's share is never released (see docs/STAGE2_REVERSAL_RECOVERY.md).
+        const paid = await db.SimPayment.get(settlement.payment_id).catch(() => null);
+        if (!paid || paid.state === "reversed") continue;
+        // Conditional on the state read, so two release requests release once.
+        const moved = await db.SimSettlement.updateMany(
+          { id: settlement.id, landlord_state: settlement.landlord_state },
+          { $set: { landlord_state: "settled", released_to: current.account.id } },
         );
+        if (!moved || !moved.updated) continue;
         await db.SimPayment.update(settlement.payment_id, {
           payout_state: "settled",
         });

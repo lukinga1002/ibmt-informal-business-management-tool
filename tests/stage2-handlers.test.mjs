@@ -450,3 +450,87 @@ test('SDK outages are not mistaken for successful authentication or signed-out s
   }
 });
 
+
+// Found in review (2026-11-12): a Stage 2 payment started under consent whose
+// callback arrived after the owners withdrew consent was credited in the ledger,
+// then settlement threw, so no settlement existed and the landlord's share was
+// held nowhere.
+test("money collected after consent is withdrawn is settled and held, then released once to an eligible account", async () => {
+  const { recordSettlement } = await import("../base44/shared/stage2Settlement.ts");
+  const f = fixture();
+  f.records.PolicyRule[0] = { id: "policy", partner_rebate_rate: 0.0075, mobile_wallet_limit: 100000000, payout_cooling_off_hours: 24 };
+  f.records.Tenancy = [{ id: "t", unit_id: "u" }];
+  f.records.RentalUnit = [{ id: "u", property_id: "p" }];
+  f.records.CouncilSettlementTerms = [{ id: "v", ibmt_fee_basis: "share_of_rent", ibmt_fee_rate: 0.015, ibmt_contract_status: "signed" }];
+  f.records.PayoutAccountChange.push(
+    { id: "r", property_id: "p", record_kind: "verified_roster", owners: [{ owner_id: "A" }], created_date: "2026-11-01T00:00:00Z" },
+    { id: "n", property_id: "p", record_kind: "nomination", roster_id: "r", consent: true, name_check: "matched",
+      account_type: "bank", status: "cooling_off", cooling_off_ends_at: "2020-01-01", created_date: "2026-11-02T00:00:00Z" },
+    { id: "a", property_id: "p", record_kind: "owner_approval", old_account_id: "n", owner_id: "A", created_date: "2026-11-02T00:00:00Z" },
+    { id: "w", property_id: "p", record_kind: "consent_withdrawal", created_date: "2026-11-09T00:00:00Z" },
+  );
+  const payment = { id: "payment", stage: "stage2_partner", tenancy_id: "t", fee_revision_id: "v", council_id: "c",
+    rent_total: 3000000, council_fee: 90000, partner_charge: 60000, landlord_remainder: 2350000, succeeded_at: "2026-11-10T00:00:00Z" };
+  const row = await recordSettlement(globalThis.stage2TestClient, payment);
+  assert.equal(row.landlord_state, "held_account");
+  assert.equal(row.held_reason, "payment_consent_withdrawn");
+  assert.equal(row.council_amount, 90000, "the council's fee is still recorded, so reconciliation holds");
+  assert.equal(f.records.PaymentAlert.length, 1);
+
+  f.as({ id: "A", role: "user" });
+  let res = await request(payout, { action: "releaseHeld", property_id: "p" });
+  assert.equal(res.status, 409, "no release while consent is withdrawn");
+  assert.equal(f.records.SimSettlement[0].landlord_state, "held_account", "the hold is preserved");
+
+  // The owner consents again (a new nomination records fresh consent); the old
+  // approved bank account is eligible again, so the held share is released once.
+  f.records.PayoutAccountChange.push({ id: "n2", property_id: "p", record_kind: "nomination", roster_id: "r", consent: true,
+    name_check: "mismatch", account_type: "mobile_money", status: "requested", created_date: "2026-11-11T00:00:00Z" });
+  f.records.SimPayment = [{ id: "payment" }];
+  res = await request(payout, { action: "releaseHeld", property_id: "p" });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).released, 1);
+  assert.equal(f.records.SimSettlement[0].landlord_state, "settled");
+  assert.equal(f.records.SimSettlement[0].released_to, "n");
+  res = await request(payout, { action: "releaseHeld", property_id: "p" });
+  assert.equal((await res.json()).released, 0);
+});
+
+test("withdrawing payment consent shows its consequences first and records which disclosure was confirmed", async () => {
+  const f = fixture();
+  f.records.PayoutAccountChange.push({ id: "r", property_id: "p", record_kind: "verified_roster", owners: [{ owner_id: "A" }] });
+  f.as({ id: "A", role: "user" });
+  let res = await request(payout, { action: "withdraw", property_id: "p" });
+  assert.equal(res.status, 422);
+  const body = await res.json();
+  assert.equal(body.code, "ACKNOWLEDGEMENT_REQUIRED");
+  assert.match(JSON.stringify(body), /Stage 1/);
+  assert.match(JSON.stringify(body), /held/);
+  assert.equal(f.records.PayoutAccountChange.filter((r) => r.record_kind === "consent_withdrawal").length, 0, "nothing withdrawn yet");
+  res = await request(payout, { action: "withdraw", property_id: "p", acknowledged: true });
+  assert.equal(res.status, 200);
+  const record = f.records.PayoutAccountChange.find((r) => r.record_kind === "consent_withdrawal");
+  assert.equal(record.disclosure_version, "stage2-withdrawal-1");
+  assert.equal(record.withdrawn_by, "A");
+  assert.equal(f.records.Consent.at(-1).granted, false);
+});
+
+test("a held share of a reversed payment is never released", async () => {
+  const f = fixture();
+  f.records.PolicyRule[0] = { id: "policy", mobile_wallet_limit: 100000000, payout_cooling_off_hours: 24 };
+  f.records.PayoutAccountChange.push(
+    { id: "r", property_id: "p", record_kind: "verified_roster", owners: [{ owner_id: "A" }] },
+    { id: "n", property_id: "p", record_kind: "nomination", roster_id: "r", consent: true, name_check: "matched", account_type: "bank", status: "cooling_off", cooling_off_ends_at: "2020-01-01" },
+    { id: "a", property_id: "p", record_kind: "owner_approval", old_account_id: "n", owner_id: "A" },
+  );
+  f.records.SimSettlement.push(
+    { id: "held-reversed", property_id: "p", payment_id: "pr", landlord_state: "held_limit", landlord_amount: 475000 },
+    { id: "held-live", property_id: "p", payment_id: "pl", landlord_state: "held_limit", landlord_amount: 475000 },
+  );
+  f.records.SimPayment = [{ id: "pr", state: "reversed" }, { id: "pl", state: "succeeded" }];
+  f.as({ id: "A", role: "user" });
+  const res = await request(payout, { action: "releaseHeld", property_id: "p" });
+  assert.equal((await res.json()).released, 1);
+  assert.equal(f.records.SimSettlement.find((s) => s.id === "held-reversed").landlord_state, "held_limit");
+  assert.equal(f.records.SimSettlement.find((s) => s.id === "held-live").landlord_state, "settled");
+});

@@ -23,7 +23,8 @@ export default function Stage2PayoutPanel() {
     [code, setCode] = useState(""),
     [admin, setAdmin] = useState(false),
     [rosterText, setRosterText] = useState(""),
-    [reviewNote, setReviewNote] = useState("");
+    [reviewNote, setReviewNote] = useState(""),
+    [confirmWithdraw, setConfirmWithdraw] = useState(false);
   useEffect(() => {
     callFn("stage2Payout", { action: "properties" })
       .then((p) => {
@@ -196,12 +197,44 @@ export default function Stage2PayoutPanel() {
             </Button>
             <Button
               variant="outline"
-              disabled={busy || !data.roster_id}
-              onClick={() => run("withdraw")}
+              disabled={busy || !data.roster_id || !data.consent}
+              onClick={() => setConfirmWithdraw(true)}
             >
               Ondoa idhini / Withdraw consent
             </Button>
           </div>
+          <p className="text-[13px]">
+            {data.consent
+              ? "Idhini ya malipo: imetolewa / Payment consent: given"
+              : "Idhini ya malipo: imeondolewa. Malipo mapya ni Hatua 1; kiasi kinachoshikiliwa kinabaki kimeshikiliwa. Pendekeza akaunti ili kutoa idhini tena. / Payment consent: withdrawn. New payments are Stage 1; held amounts stay held. Nominate an account to consent again."}
+          </p>
+          {confirmWithdraw && data.withdrawal_disclosure && (
+            <div role="alertdialog" className="border border-destructive p-3 space-y-2 text-[13px]">
+              <p className="font-semibold">Kabla ya kuondoa idhini / Before you withdraw consent</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {data.withdrawal_disclosure.sw.map((line, i) => (
+                  <li key={i}>
+                    {line} / {data.withdrawal_disclosure.en[i]}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={async () => {
+                    await run("withdraw", { acknowledged: true });
+                    setConfirmWithdraw(false);
+                  }}
+                >
+                  Ndiyo, ondoa idhini / Yes, withdraw consent
+                </Button>
+                <Button variant="outline" disabled={busy} onClick={() => setConfirmWithdraw(false)}>
+                  Hapana / Cancel
+                </Button>
+              </div>
+            </div>
+          )}
           <Button disabled={busy} onClick={() => run("releaseHeld")}>
             Toa malipo yaliyoshikiliwa / Release held simulated payouts
           </Button>
