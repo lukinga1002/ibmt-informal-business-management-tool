@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, json } from '../../shared/moneyOps.ts';
 import { RETENTION_DEFAULTS, maskEmail, maskIdNumber, maskPhone } from '../../shared/r7.ts';
 import { trustedMe } from '../../shared/trustedRole.ts';
+import { latestByPurpose } from '../../shared/consentLog.ts';
 
 /**
  * Privacy desk: what a person can do about their own records, and the retention
@@ -53,12 +54,19 @@ export default async function (req) {
     const payload = await req.json().catch(() => ({}));
     const action = cleanText(payload.action) || 'summary';
     const isAdmin = user.role === 'admin';
+    // Consent rows are written only here, by the server, and never edited: each
+    // change is a new row, so the record of what was accepted, in which wording
+    // and language, survives. Every query is pinned to the signed-in subject.
+    const consentLog = base44.asServiceRole.entities.Consent;
+    const myConsents = async () => {
+      const page = await consentLog.filter({ subject_id: user.id }, { sort: '-created_date', limit: 200 });
+      return page.items || page || [];
+    };
 
     if (action === 'summary') {
-      const consentPage = await base44.entities.Consent.filter({ subject_id: user.id }, { limit: 20 });
-      const consentRows = consentPage.items || consentPage;
+      const latest = latestByPurpose(await myConsents());
       const consents = PURPOSES.map((purpose) => {
-        const row = consentRows.find((item) => item.purpose === purpose.key);
+        const row = latest[purpose.key];
         return {
           ...purpose,
           granted: row ? Boolean(row.granted) : Boolean(purpose.required),
@@ -100,26 +108,18 @@ export default async function (req) {
         return fail(409, 'REQUIRED_PURPOSE', 'This purpose is needed for the register to work. Closing your account is the way to withdraw it.');
       }
 
-      const existingPage = await base44.entities.Consent.filter({ subject_id: user.id, purpose }, { limit: 1 });
-      const existing = (existingPage.items || existingPage)[0];
       const now = new Date().toISOString();
       const version = 'consent-2026.1';
-
-      const saved = existing
-        ? await base44.entities.Consent.update(existing.id, {
-            granted: Boolean(payload.granted),
-            granted_at: payload.granted ? now : existing.granted_at || null,
-            withdrawn_at: payload.granted ? null : now,
-            version,
-          })
-        : await base44.entities.Consent.create({
-            subject_id: user.id,
-            purpose,
-            granted: Boolean(payload.granted),
-            granted_at: payload.granted ? now : null,
-            withdrawn_at: payload.granted ? null : now,
-            version,
-          });
+      const saved = await consentLog.create({
+        subject_id: user.id,
+        purpose,
+        granted: Boolean(payload.granted),
+        granted_at: payload.granted ? now : null,
+        withdrawn_at: payload.granted ? null : now,
+        version,
+        // The language the choice was shown in, as accepted.
+        language: ['sw', 'en'].includes(payload.language) ? payload.language : null,
+      });
 
       return json({ consent: saved, separate_choices: true });
     }
@@ -230,9 +230,17 @@ export default async function (req) {
       );
       if (viewings && viewings.updated) anonymisedFields.push(`Viewing.tenant_name (${viewings.updated})`);
 
-      const consents = await base44.entities.Consent.filter({ subject_id: user.id }, { limit: 10 });
-      for (const row of consents.items || consents) {
-        await base44.entities.Consent.update(row.id, { granted: false, withdrawn_at: new Date().toISOString() });
+      const withdrawnAt = new Date().toISOString();
+      for (const row of Object.values(latestByPurpose(await myConsents()))) {
+        if (!row.granted) continue;
+        await consentLog.create({
+          subject_id: user.id,
+          purpose: row.purpose,
+          granted: false,
+          withdrawn_at: withdrawnAt,
+          version: row.version || null,
+          language: row.language || null,
+        });
       }
       anonymisedFields.push('Consent purposes withdrawn');
 

@@ -49,7 +49,7 @@ export default function LeaseDocument({ lease, showQr = false }) {
 
       <div>
         <p className="ibmt-kicker">{t('leaseDoc.standardTerms')}</p>
-        {/* Document text: the clauses exactly as saved with the lease, in both of its languages. */}
+        {/* i18n-document-start: the clauses exactly as saved with the lease, in both of its languages, whatever the screen language */}
         <ol className="mt-2 space-y-3" aria-label={t('leaseNew.documentText')}>
           {clauses.map((clause, index) => (
             <li key={`${index}-${clause.en || index}`} className="grid gap-2 border-b border-border pb-3 last:border-b-0 md:grid-cols-2">
@@ -62,6 +62,7 @@ export default function LeaseDocument({ lease, showQr = false }) {
             </li>
           ))}
         </ol>
+        {/* i18n-document-end */}
       </div>
 
       <div>

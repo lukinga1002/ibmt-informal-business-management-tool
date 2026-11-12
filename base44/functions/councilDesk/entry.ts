@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { ageDays, cleanText, fail, isoNow, json, todayISO } from '../../shared/moneyOps.ts';
 import { hasAnyRole, isAdmin } from '../../shared/r5.ts';
 import { resolveCouncil } from '../../shared/councilScope.ts';
+import { latestBySubject } from '../../shared/consentLog.ts';
 import {
   MIN_CELL,
   SUPPRESSED_LABEL,
@@ -129,12 +130,17 @@ async function buildings(base44, council) {
   const [propertyPage, unitPage, consentPage] = await Promise.all([
     base44.asServiceRole.entities.Property.filter({ district: council.district }, { limit: 300 }).catch(() => ({ items: [] })),
     base44.asServiceRole.entities.RentalUnit.filter({ district: council.district }, { limit: 500 }).catch(() => ({ items: [] })),
-    base44.asServiceRole.entities.Consent.filter({ purpose: 'council_sharing', granted: true }, { limit: 500 }).catch(() => ({ items: [] })),
+    base44.asServiceRole.entities.Consent.filter({ purpose: 'council_sharing' }, { sort: '-created_date', limit: 1000 }).catch(() => ({ items: [] })),
   ]);
 
   const properties = (propertyPage.items || []).filter((row) => row.council_id === council.id || !row.council_id);
   const units = unitPage.items || [];
-  const consenting = new Set((consentPage.items || []).map((row) => row.subject_id));
+  // Only the latest choice counts: a later withdrawal overrides an earlier grant.
+  const consenting = new Set(
+    Object.values(latestBySubject(consentPage.items || []))
+      .filter((row) => row.granted)
+      .map((row) => row.subject_id),
+  );
   const byLaw = activeByLaw(council);
 
   const rows = properties.map((property) => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/I18nContext';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
 import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import { Button } from '@/components/ui/button';
@@ -10,16 +10,16 @@ import { Check, X } from 'lucide-react';
 export default function ConsentPanel({ purposes = [], onChanged }) {
   const { tt, lang } = useT();
   const [busy, setBusy] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const toggle = async (purpose) => {
     setBusy(purpose.key);
-    setError('');
+    setError(null);
     try {
-      await callFn('privacyDesk', { action: 'setConsent', purpose: purpose.key, granted: !purpose.granted });
+      await callFn('privacyDesk', { action: 'setConsent', purpose: purpose.key, granted: !purpose.granted, language: lang });
       onChanged?.();
     } catch (issue) {
-      setError(fnError(issue));
+      setError({ err: issue });
     } finally {
       setBusy('');
     }
@@ -33,7 +33,7 @@ export default function ConsentPanel({ purposes = [], onChanged }) {
         sw: 'Kila lengo ni tofauti. Kuzima moja hakuzimi lingine, na kukataa huandikwa pamoja na tarehe.',
       })}
     >
-      {error && <Notice tone="danger" className="mb-3">{error}</Notice>}
+      {error && <Notice tone="danger" className="mb-3">{errorText(error)}</Notice>}
       <ul className="divide-y divide-border">
         {purposes.map((purpose) => (
           <li key={purpose.key} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">

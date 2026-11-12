@@ -245,3 +245,44 @@ test("nothing in this release can mark a recovery exception resolved", () => {
   assert.equal(schema.rls.update, false);
   assert.equal(schema.rls.delete, false);
 });
+
+// Consent evidence: a change of mind adds a row and never rewrites an earlier one,
+// and the accepted language travels with each row.
+const privacyDesk = (await import("../base44/functions/privacyDesk/entry.ts")).default;
+const { latestBySubject } = await import("../base44/shared/consentLog.ts");
+
+test("consent changes are appended with their language, never edited in place", async () => {
+  const records = { Consent: [], User: [{ id: "L", role: "user", full_name: "SIM Landlord", data: {} }] };
+  const me = as(records, records.User[0]);
+  const grant = await me(privacyDesk, { action: "setConsent", purpose: "council_sharing", granted: true, language: "sw" });
+  assert.equal(grant.status, 200);
+  const first = structuredClone(records.Consent[0]);
+  const withdraw = await me(privacyDesk, { action: "setConsent", purpose: "council_sharing", granted: false, language: "en" });
+  assert.equal(withdraw.status, 200);
+  assert.equal(records.Consent.length, 2, "the withdrawal is a second row");
+  assert.deepEqual(records.Consent[0], first, "the original grant is untouched");
+  assert.equal(records.Consent[0].language, "sw");
+  assert.equal(records.Consent[1].language, "en");
+  const summary = await me(privacyDesk, { action: "summary" });
+  const sharing = summary.body.purposes.find((p) => p.key === "council_sharing");
+  assert.equal(sharing.granted, false, "the latest choice is what counts");
+});
+
+test("a later withdrawal overrides an earlier grant when the council desk decides what to show", () => {
+  const rows = [
+    { subject_id: "L1", purpose: "council_sharing", granted: true, created_date: "2026-11-01T00:00:00Z" },
+    { subject_id: "L1", purpose: "council_sharing", granted: false, created_date: "2026-11-02T00:00:00Z" },
+    { subject_id: "L2", purpose: "council_sharing", granted: true, created_date: "2026-11-02T00:00:00Z" },
+  ];
+  const latest = latestBySubject(rows);
+  assert.equal(latest.L1.granted, false);
+  assert.equal(latest.L2.granted, true);
+});
+
+test("consent rows cannot be written from the browser", () => {
+  const spec = readFileSync(new URL("../base44/entities/Consent.jsonc", import.meta.url), "utf8");
+  assert.match(spec, /"create": false/);
+  assert.match(spec, /"update": false/);
+  const desk = readFileSync(new URL("../base44/functions/privacyDesk/entry.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(desk, /Consent\.update\(/, "the privacy desk never edits a consent row");
+});
