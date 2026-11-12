@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { displayGrade, fail, findBusiness, formatTZS, getActivePolicy, json, monthRange } from '../../shared/moneyOps.ts';
 import { requireModule } from '../../shared/moduleGate.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 const B = (en, sw) => ({ en, sw });
 
@@ -20,7 +21,7 @@ const STATUS_DISPLAY = { verified: 'active', submitted: 'pending', draft: 'pendi
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await trustedMe(base44);
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const blocked = await requireModule(base44, 'operator_module');

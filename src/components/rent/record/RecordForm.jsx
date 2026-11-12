@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import Notice from '@/components/ibmt/Notice';
-import { METHOD_LABEL, callFn, fnError, newKey, thisMonth, todayIso } from '@/lib/r4';
+import { METHOD_LABEL, callFn, errorText, newKey, thisMonth, todayIso } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * Entering a rent record. The entry is recorded, not confirmed: the receipt
  * exists only once the other party confirms it.
  */
 export default function RecordForm({ tenancies = [], role = 'landlord', onSaved }) {
+  const { t } = useT();
   const keyRef = useRef(null);
   const [form, setForm] = useState({
     tenancy_id: tenancies[0]?.id || '',
@@ -20,7 +22,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
     deposit_amount: '',
   });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [saved, setSaved] = useState(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
 
   const submit = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     setSaved(null);
     if (!keyRef.current) keyRef.current = newKey('rent-record');
     try {
@@ -61,7 +63,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
       if (onSaved) onSaved();
     } catch (err) {
       // The key is kept, so pressing the button again cannot record it twice.
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -69,15 +71,15 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
 
   if (!tenancies.length) {
     return (
-      <Notice tone="neutral" title="Hakuna tenancy inayoendelea">
-        Rekodi ya kodi inahitaji tenancy iliyo hai. Mkataba unapoanza, tenancy inaundwa na inaonekana hapa.
+      <Notice tone="neutral" title={t('recordForm.noTenancyTitle')}>
+        {t('recordForm.noTenancyBody')}
       </Notice>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Field label="Nyumba / tenancy" required>
+      <Field label={t('recordForm.tenancy')} required>
         {(props) => (
           <SelectControl {...props} value={form.tenancy_id} onChange={(event) => pickTenancy(event.target.value)}>
             {tenancies.map((tenancy) => (
@@ -90,7 +92,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Kodi iliyolipwa (TZS)" required>
+        <Field label={t('recordForm.rentPaid')} required>
           {(props) => (
             <TextInput
               {...props}
@@ -101,7 +103,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
             />
           )}
         </Field>
-        <Field label="Amana (TZS)" hint="Si lazima. Amana si kodi.">
+        <Field label={t('deposit.amount')} hint={t('recordForm.depositHint')}>
           {(props) => (
             <TextInput
               {...props}
@@ -112,7 +114,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
             />
           )}
         </Field>
-        <Field label="Kipindi (mwezi)" required hint="Mfano 2026-11">
+        <Field label={t('recordForm.period')} required hint={t('recordForm.periodHint')}>
           {(props) => (
             <TextInput
               {...props}
@@ -122,12 +124,12 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
             />
           )}
         </Field>
-        <Field label="Ilipwa tarehe" required>
+        <Field label={t('recordForm.paidOn')} required>
           {(props) => (
             <TextInput {...props} type="date" value={form.paid_on} onChange={(event) => setForm({ ...form, paid_on: event.target.value })} />
           )}
         </Field>
-        <Field label="Njia ya malipo" required>
+        <Field label={t('recordForm.method')} required>
           {(props) => (
             <SelectControl {...props} value={form.method} onChange={(event) => setForm({ ...form, method: event.target.value })}>
               {Object.entries(METHOD_LABEL).map(([value, label]) => (
@@ -139,9 +141,9 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
           )}
         </Field>
         <Field
-          label="Kumbukumbu ya malipo"
+          label={t('recordForm.reference')}
           required={form.method !== 'cash'}
-          hint="Namba ya mobile money au benki kama ilivyoandikwa"
+          hint={t('recordForm.referenceHint')}
         >
           {(props) => (
             <TextInput
@@ -156,13 +158,13 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       {saved && (
-        <Notice tone="positive" title={saved.duplicate ? 'Rekodi hii ilikuwa imeandikwa' : 'Rekodi imeandikwa'}>
-          <span className="ibmt-num">{saved.reference}</span> · inasubiri uthibitisho wa upande wa pili. Hakuna risiti bado.
+        <Notice tone="positive" title={saved.duplicate ? t('recordForm.alreadyRecorded') : t('recordForm.recorded')}>
+          <span className="ibmt-num">{saved.reference}</span> · {t('recordForm.awaitingOther')}
         </Notice>
       )}
 
@@ -172,7 +174,7 @@ export default function RecordForm({ tenancies = [], role = 'landlord', onSaved 
         onClick={submit}
         disabled={busy || !form.tenancy_id}
       >
-        {busy ? 'Inatuma…' : role === 'tenant' ? 'Wasilisha rekodi ya malipo' : 'Andika rekodi ya kodi'}
+        {busy ? t('otpConfirm.sending') : role === 'tenant' ? t('recordForm.submitTenant') : t('recordForm.submitLandlord')}
       </Button>
     </div>
   );

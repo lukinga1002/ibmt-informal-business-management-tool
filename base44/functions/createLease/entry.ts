@@ -6,6 +6,7 @@ import {
   STAMP_DUTY_PLACEHOLDER,
   buildLeaseTerms,
 } from '../../shared/leaseTemplate.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * The standard lease builder.
@@ -22,7 +23,7 @@ import {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -112,7 +113,7 @@ export default async function (req) {
 
     const year = new Date().getFullYear();
     const leaseRef = await nextSerial(base44, 'Lease', `IBMT-LSE-${year}-`, 'lease_ref');
-    const lease = await base44.entities.Lease.create({
+    const lease = await base44.asServiceRole.entities.Lease.create({
       lease_ref: leaseRef,
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
@@ -152,7 +153,7 @@ export default async function (req) {
     } else if (known) {
       tenancyId = known.id;
     } else {
-      const tenancy = await base44.entities.Tenancy.create({
+      const tenancy = await base44.asServiceRole.entities.Tenancy.create({
         unit_id: unit.id,
         unit_ref: unit.unit_ref,
         landlord_id: unit.landlord_id,
@@ -166,7 +167,7 @@ export default async function (req) {
       });
       tenancyId = tenancy.id;
     }
-    if (tenancyId) await base44.entities.Lease.update(lease.id, { tenancy_id: tenancyId });
+    if (tenancyId) await base44.asServiceRole.entities.Lease.update(lease.id, { tenancy_id: tenancyId });
 
     return json({ ...leaseShape({ ...lease, tenancy_id: tenancyId }), duplicate: false });
   } catch (error) {

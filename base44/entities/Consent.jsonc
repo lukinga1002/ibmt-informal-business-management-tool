@@ -2,6 +2,10 @@
   "name": "Consent",
   "type": "object",
   "properties": {
+    "language": {
+      "type": "string",
+      "description": "Language the consent or withdrawal wording was shown in (sw or en)"
+    },
     "subject_id": {
       "type": "string",
       "description": "User id the consent belongs to; always the creator"
@@ -12,7 +16,8 @@
         "core_service",
         "council_sharing",
         "listings",
-        "rent_history_credit"
+        "rent_history_credit",
+        "payments_through_ibmt"
       ],
       "enumColors": [
         "green",
@@ -52,12 +57,8 @@
     "read": {
       "data.subject_id": "{{user.id}}"
     },
-    "create": {
-      "data.subject_id": "{{user.id}}"
-    },
-    "update": {
-      "data.subject_id": "{{user.id}}"
-    },
+    "create": false,
+    "update": false,
     "delete": {
       "user_condition": {
         "role": "admin"

@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -12,6 +12,8 @@ import { DEMO_MODE } from '@/lib/demoMode';
 import DemoBanner from '@/components/ibmt/DemoBanner';
 import ModuleGate from '@/components/gates/ModuleGate';
 import WorkspaceGuard from '@/components/gates/WorkspaceGuard';
+import SignedInGuard from '@/components/gates/SignedInGuard';
+import PayoutOwnerGuard from '@/components/gates/PayoutOwnerGuard';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -159,9 +161,11 @@ const AuthenticatedApp = () => {
         <Route path="/rent/landlord/mandates" element={<WorkspaceGuard allow={['landlord']}><LandlordMandates /></WorkspaceGuard>} />
         <Route path="/rent/landlord/listings" element={<WorkspaceGuard allow={['landlord', 'agent']}><LandlordListings /></WorkspaceGuard>} />
         <Route path="/rent/council/agents" element={<WorkspaceGuard allow={['council_official', 'district_commissioner']}><CouncilAgents /></WorkspaceGuard>} />
-        <Route path="/rent/lease/:leaseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><LeaseDetail /></WorkspaceGuard>} />
+        {/* Lease screens: the server decides who is a party (leaseSignature view/claim). */}
+        <Route path="/rent/lease/:leaseId" element={<SignedInGuard><LeaseDetail /></SignedInGuard>} />
+        <Route path="/rent/leases" element={<SignedInGuard><TenantLease /></SignedInGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
-        <Route path="/rent/landlord/payouts" element={<WorkspaceGuard allow={['landlord']}><LandlordPayouts /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/payouts" element={<PayoutOwnerGuard><LandlordPayouts /></PayoutOwnerGuard>} />
         <Route path="/rent/sim" element={<WorkspaceGuard adminOnly><MoneyEngine /></WorkspaceGuard>} />
         <Route path="/privacy" element={<PrivacyCentre />} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
@@ -172,7 +176,7 @@ const AuthenticatedApp = () => {
         {/* Tenant site parked: the flag decides, and the tenant is recorded by the landlord or agent */}
         <Route path="/rent/tenant" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantDashboard /></WorkspaceGuard></ModuleGate>} />
         <Route path="/rent/tenant/find" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantFind /></WorkspaceGuard></ModuleGate>} />
-        <Route path="/rent/tenant/lease" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantLease /></WorkspaceGuard></ModuleGate>} />
+        <Route path="/rent/tenant/lease" element={<Navigate to="/rent/leases" replace />} />
         <Route path="/rent/tenant/pay" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantPay /></WorkspaceGuard></ModuleGate>} />
         <Route path="/rent/tenant/register" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantRegister /></WorkspaceGuard></ModuleGate>} />
         <Route path="/rent/tenant/cases" element={<ModuleGate flag="tenant_module"><WorkspaceGuard allow={['tenant']}><TenantCases /></WorkspaceGuard></ModuleGate>} />

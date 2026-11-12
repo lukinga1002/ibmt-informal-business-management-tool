@@ -21,7 +21,6 @@ export default function LandingHero() {
           {t('landing.kicker')}
         </p>
         <h1 className="ibmt-hero mt-5 max-w-2xl text-navy">{t('landing.title')}</h1>
-        <p className="mt-3 max-w-2xl font-display text-lg text-navy-soft sm:text-xl">{t('landing.titleEn')}</p>
         <p className="ibmt-lede mt-5 text-[16px]">{t('landing.lede')}</p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link

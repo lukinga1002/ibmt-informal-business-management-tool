@@ -17,7 +17,7 @@ import { DISCLAIMER } from '@/config/r3';
  */
 export default function RegistrationCertificate() {
   const { caseId } = useParams();
-  const { lang } = useT();
+  const { t, tt, lang } = useT();
   const [record, setRecord] = useState(null);
   const [state, setState] = useState('loading');
 
@@ -32,16 +32,16 @@ export default function RegistrationCertificate() {
   }, [caseId]);
 
   if (state === 'loading') {
-    return <p className="ibmt-hint">Inapakia…</p>;
+    return <p className="ibmt-hint">{t('common.loading')}…</p>;
   }
   if (state === 'error' || !record) {
-    return <Notice tone="caution">Cheti hiki hakionekani kwako.</Notice>;
+    return <Notice tone="caution">{t('certOwn.notVisible')}</Notice>;
   }
 
   if (record.status !== 'approved') {
     return (
       <div className="space-y-4">
-        <SectionCard title={`Usajili ${record.unit_ref}`} description={record.case_ref}>
+        <SectionCard title={t('certOwn.registration', { unit: record.unit_ref })} description={record.case_ref}>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={record.status} />
             <span className="text-[12px] text-muted-foreground">
@@ -50,14 +50,14 @@ export default function RegistrationCertificate() {
           </div>
           {record.decision_reason && (
             <div className="mt-4">
-              <p className="ibmt-kicker">Sababu kutoka kwa afisa wa Mtaa</p>
+              <p className="ibmt-kicker">{t('certOwn.officerReason')}</p>
               <p className="mt-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px] leading-relaxed">
-                {record.decision_reason.sw || record.decision_reason.en}
+                {tt(record.decision_reason)}
               </p>
             </div>
           )}
           <Notice tone="policy" className="mt-4">
-            Cheti hutolewa tu baada ya afisa wa Mtaa kuidhinisha. {DISCLAIMER.sw}
+            {t('certOwn.onlyAfterApproval')} {tt(DISCLAIMER)}
           </Notice>
         </SectionCard>
       </div>
@@ -72,12 +72,13 @@ export default function RegistrationCertificate() {
       <div className="ibmt-no-print flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" className="ibmt-tap gap-2" onClick={() => window.print()}>
           <Printer className="h-4 w-4" aria-hidden="true" />
-          Chapisha
+          {t('common.print')}
         </Button>
-        <span className="ibmt-hint">Changanua QR kuthibitisha cheti bila kuonyesha anwani.</span>
+        <span className="ibmt-hint">{t('certOwn.scanHint')}</span>
       </div>
 
-      <article className="ibmt-sheet">
+      {/* i18n-document-start: the certificate keeps its fixed bilingual wording whatever the screen language */}
+      <article className="ibmt-sheet" lang="sw">
         <header className="flex items-start justify-between gap-4 border-b border-border pb-4">
           <div>
             <p className="ibmt-kicker">Jamhuri ya Muungano wa Tanzania</p>
@@ -114,9 +115,10 @@ export default function RegistrationCertificate() {
           </p>
         </footer>
       </article>
+      {/* i18n-document-end */}
 
       <Notice tone="privacy">
-        Cheti hiki kinaonyesha kata na mtaa pekee. Anwani kamili, namba ya mita na kodi hazionyeshwi.
+        {t('certOwn.privacy')}
       </Notice>
     </div>
   );

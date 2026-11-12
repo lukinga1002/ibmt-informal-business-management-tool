@@ -1,4 +1,5 @@
 import Notice from '@/components/ibmt/Notice';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * Amnesty notice — built, deliberately never rendered.
@@ -7,15 +8,10 @@ import Notice from '@/components/ibmt/Notice';
  * that grant is confirmed in writing; see src/config/r3.js.
  */
 export default function AmnestyNotice() {
+  const { t } = useT();
   return (
-    <Notice tone="caution" title="Hakuna msamaha wa kodi kwa sasa · No amnesty in force">
-      <p>
-        Hakuna msamaha wa malimbikizo uliotolewa kwa mtaa huu. Usajili hapa haufuti deni lolote la kodi wala
-        adhabu yoyote.
-      </p>
-      <p className="mt-2">
-        No waiver of arrears applies here. Registering does not cancel any tax debt or penalty.
-      </p>
+    <Notice tone="caution" title={t('parked.amnestyTitle')}>
+      <p>{t('parked.amnestyBody')}</p>
     </Notice>
   );
 }

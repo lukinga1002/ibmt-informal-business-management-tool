@@ -95,14 +95,8 @@
         }
       ]
     },
-    "create": {
-      "created_by_id": "{{user.id}}"
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": false,
+    "update": false,
     "delete": {
       "user_condition": {
         "role": "admin"

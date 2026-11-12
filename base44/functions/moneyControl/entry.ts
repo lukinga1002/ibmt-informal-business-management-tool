@@ -1,3 +1,4 @@
+import { reverseSettlement } from '../../shared/stage2Settlement.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, json } from '../../shared/moneyOps.ts';
 import {
@@ -15,6 +16,7 @@ import {
   wholeTZS,
   withinRateLimit,
 } from '../../shared/r7.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Money controls. Every one of these is a simulated action, because no real
@@ -41,7 +43,7 @@ async function audit(base44, user, action, subjectType, subjectId, outcome, reas
 }
 
 async function ledgerFor(base44, paymentId) {
-  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, { limit: 500 });
+  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, 'created_date', 500);
   return page.items || page;
 }
 
@@ -70,7 +72,7 @@ async function writeGroup(base44, user, paymentId, lines, reason, reversalOf) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -78,8 +80,8 @@ export default async function (req) {
     const isAdmin = user.role === 'admin';
 
     if (action === 'list') {
-      const approvals = await base44.entities.ApprovalRequest.filter({}, { sort: '-created_date', limit: 20 });
-      const payouts = await base44.entities.PayoutAccountChange.filter({}, { sort: '-created_date', limit: 20 });
+      const approvals = await base44.entities.ApprovalRequest.filter({}, '-created_date', 20);
+      const payouts = []; // Account details are available only through the property-owner payout function.
       return json({
         simulation: true,
         approvals: approvals.items || approvals,
@@ -113,7 +115,7 @@ export default async function (req) {
         if (!guard.ok) return fail(409, 'REFUND_TOO_LARGE', guard.reason);
       }
 
-      const request = await base44.entities.ApprovalRequest.create({
+      const request = await base44.asServiceRole.entities.ApprovalRequest.create({
         action: kind,
         payload: {
           payment_id: payment.id,
@@ -141,6 +143,7 @@ export default async function (req) {
       if (!isAdmin) return fail(403, 'FORBIDDEN', 'Only an admin can approve a money action');
       const id = cleanText(payload.id);
       const decision = cleanText(payload.decision) || 'approve';
+      if (!['approve', 'reject'].includes(decision)) return fail(422, 'VALIDATION', 'The decision must be approve or reject');
       const request = await base44.entities.ApprovalRequest.get(id).catch(() => null);
       if (!request) return fail(404, 'NOT_FOUND', 'Unknown approval request');
       if (request.status !== 'pending') return fail(409, 'ALREADY_DECIDED', 'That request is no longer pending');
@@ -148,45 +151,73 @@ export default async function (req) {
         return fail(403, 'SECOND_PERSON_REQUIRED', 'The person who requested it cannot approve it. A second person is required.');
       }
 
+      // Everything that could refuse an approval is checked before the claim,
+      // so a claimed request never stops half-way for a reason known in advance.
+      let payment = null;
+      let refund = null;
+      let reversal = null;
+      if (decision === 'approve') {
+        payment = await base44.asServiceRole.entities.SimPayment.get(request.payload.payment_id).catch(() => null);
+        if (!payment) return fail(404, 'NOT_FOUND', 'The payment behind this request no longer exists');
+        if (request.action === 'refund') {
+          refund = refundGuard({
+            paid: payment.tenant_pays,
+            alreadyRefunded: payment.refunded_amount,
+            requested: request.payload.amount,
+          });
+          if (!refund.ok) return fail(409, 'REFUND_TOO_LARGE', refund.reason);
+        } else {
+          const entries = await ledgerFor(base44, payment.id);
+          if (!entries.length) return fail(409, 'NO_LEDGER', 'That payment has no ledger entries to reverse');
+          const path = statePath(payment.state, 'reversed');
+          if (!path) return fail(409, 'ILLEGAL_TRANSITION', 'That payment cannot be reversed from its current state');
+          reversal = { mirrored: reversingLines(entries), path };
+        }
+      }
+
+      // One decision per request. The conditional write applies only while the
+      // request is still pending, so a second click or a second admin acting at
+      // the same moment matches nothing and executes nothing.
+      const claim = await base44.asServiceRole.entities.ApprovalRequest.updateMany(
+        { id: request.id, status: 'pending' },
+        { $set: { status: decision === 'reject' ? 'rejected' : 'approved' } },
+      );
+      if (!claim || !claim.updated) return fail(409, 'ALREADY_DECIDED', 'That request is no longer pending');
+      const decisionEntry = {
+        by_id: user.id,
+        by_name: cleanText(user.full_name) || 'Admin',
+        at: new Date().toISOString(),
+        note: cleanText(payload.note) || (decision === 'reject' ? 'Rejected' : 'Approved'),
+      };
+
       if (decision === 'reject') {
-        const rejected = await base44.entities.ApprovalRequest.update(request.id, {
-          status: 'rejected',
-          approvals: [
-            ...(request.approvals || []),
-            { by_id: user.id, by_name: cleanText(user.full_name) || 'Admin', at: new Date().toISOString(), note: cleanText(payload.note) || 'Rejected' },
-          ],
+        const rejected = await base44.asServiceRole.entities.ApprovalRequest.update(request.id, {
+          approvals: [...(request.approvals || []), decisionEntry],
         });
         await audit(base44, user, `money.${request.action}.rejected`, 'ApprovalRequest', request.id, 'refused', cleanText(payload.note));
         return json({ request: rejected });
       }
 
-      const payment = await base44.asServiceRole.entities.SimPayment.get(request.payload.payment_id).catch(() => null);
-      if (!payment) return fail(404, 'NOT_FOUND', 'The payment behind this request no longer exists');
-
       if (request.action === 'refund') {
-        const guard = refundGuard({
-          paid: payment.tenant_pays,
-          alreadyRefunded: payment.refunded_amount,
-          requested: request.payload.amount,
-        });
-        if (!guard.ok) return fail(409, 'REFUND_TOO_LARGE', guard.reason);
-
         await writeGroup(
           base44,
           user,
           payment.id,
           [
-            { posting: 50, account: 'refunds', side: 'debit', amount: guard.amount },
-            { posting: 50, account: 'partner_clearing', side: 'credit', amount: guard.amount },
+            { posting: 50, account: 'refunds', side: 'debit', amount: refund.amount },
+            { posting: 50, account: 'partner_clearing', side: 'credit', amount: refund.amount },
           ],
           request.reason,
           payment.id,
         );
 
-        const refundedTotal = wholeTZS(payment.refunded_amount) + guard.amount;
+        const refundedTotal = wholeTZS(payment.refunded_amount) + refund.amount;
         const fullyRefunded = refundedTotal >= wholeTZS(payment.tenant_pays);
         const history = Array.isArray(payment.state_history) ? [...payment.state_history] : [];
         const update = { refunded_amount: refundedTotal };
+        if (payment.stage === 'stage2_partner') {
+          await base44.asServiceRole.entities.PaymentAlert.create({payment_id:payment.id,kind:'amount_mismatch',detail:'Simulation: refund requires manual partner/council reconciliation; no automatic fee allocation',state:'open'});
+        }
         if (fullyRefunded) {
           const path = statePath(payment.state, 'reversed');
           if (path) {
@@ -201,33 +232,24 @@ export default async function (req) {
           }
         }
         await base44.asServiceRole.entities.SimPayment.update(payment.id, update);
-        const updated = await base44.entities.ApprovalRequest.update(request.id, {
+        const updated = await base44.asServiceRole.entities.ApprovalRequest.update(request.id, {
           status: 'executed',
           executed_at: new Date().toISOString(),
-          approvals: [
-            ...(request.approvals || []),
-            { by_id: user.id, by_name: cleanText(user.full_name) || 'Admin', at: new Date().toISOString(), note: cleanText(payload.note) || 'Approved' },
-          ],
-          result: { refunded: guard.amount, refunded_total: refundedTotal, fully_refunded: fullyRefunded },
+          approvals: [...(request.approvals || []), decisionEntry],
+          result: { refunded: refund.amount, refunded_total: refundedTotal, fully_refunded: fullyRefunded },
         });
         await audit(base44, user, 'money.refund.executed', 'SimPayment', payment.id, 'confirmed', request.reason, {
-          amount: guard.amount,
+          amount: refund.amount,
           fully_refunded: fullyRefunded,
         });
-        return json({ request: updated, result: { refunded: guard.amount, fully_refunded: fullyRefunded }, simulation: true });
+        return json({ request: updated, result: { refunded: refund.amount, fully_refunded: fullyRefunded }, simulation: true });
       }
 
       // A reversal mirrors the original posting group; it never edits it.
-      const entries = await ledgerFor(base44, payment.id);
-      if (!entries.length) return fail(409, 'NO_LEDGER', 'That payment has no ledger entries to reverse');
-      const mirrored = reversingLines(entries);
-      await writeGroup(base44, user, payment.id, mirrored, request.reason, payment.id);
-
-      const path = statePath(payment.state, 'reversed');
-      if (!path) return fail(409, 'ILLEGAL_TRANSITION', 'That payment cannot be reversed from its current state');
+      await writeGroup(base44, user, payment.id, reversal.mirrored, request.reason, payment.id);
       const history = Array.isArray(payment.state_history) ? [...payment.state_history] : [];
       let from = payment.state;
-      for (const step of path) {
+      for (const step of reversal.path) {
         history.push({ from, to: step, at: new Date().toISOString(), by: user.id, note: request.reason });
         from = step;
       }
@@ -236,21 +258,20 @@ export default async function (req) {
         reversed_at: new Date().toISOString(),
         state_history: history,
       });
-      const updated = await base44.entities.ApprovalRequest.update(request.id, {
+      const updated = await base44.asServiceRole.entities.ApprovalRequest.update(request.id, {
         status: 'executed',
         executed_at: new Date().toISOString(),
-        approvals: [
-          ...(request.approvals || []),
-          { by_id: user.id, by_name: cleanText(user.full_name) || 'Admin', at: new Date().toISOString(), note: cleanText(payload.note) || 'Approved' },
-        ],
-        result: { reversed_entries: mirrored.length },
+        approvals: [...(request.approvals || []), decisionEntry],
+        result: { reversed_entries: reversal.mirrored.length },
       });
+      await reverseSettlement(base44,payment.id);
       await audit(base44, user, 'money.reverse.executed', 'SimPayment', payment.id, 'confirmed', request.reason, {
-        reversed_entries: mirrored.length,
+        reversed_entries: reversal.mirrored.length,
       });
       return json({ request: updated, simulation: true });
     }
 
+    if (['payoutRequest','payoutVerify','payoutActivate'].includes(action)) return fail(409,'PAYOUT_FLOW_UPDATED','Use property payout nominations and all-owner approvals');
     if (action === 'payoutRequest') {
       const newPhone = cleanText(payload.new_phone);
       const declaredOld = cleanText(payload.old_phone);
@@ -267,7 +288,8 @@ export default async function (req) {
       // Rate limit per person, then per number.
       const recentPage = await base44.asServiceRole.entities.OtpChallenge.filter(
         { subject_id: user.id, purpose: 'payout_change' },
-        { sort: '-created_date', limit: 20 },
+        '-created_date',
+        20,
       );
       const recentRows = recentPage.items || recentPage;
       const perUser = withinRateLimit(recentRows.map((row) => row.issued_at), RATE_LIMIT.otp_per_user_per_hour, 60);
@@ -338,11 +360,9 @@ export default async function (req) {
         : null;
       if (!challenge) return fail(409, 'NO_CHALLENGE', 'The code for that change no longer exists');
 
-      const result = checkOtp({ challenge, code: payload.code });
-      await base44.asServiceRole.entities.OtpChallenge.update(challenge.id, {
-        attempts: result.attempts,
-        locked_until: result.locked_until,
-        consumed_at: result.ok ? new Date().toISOString() : challenge.consumed_at || null,
+      // Counted and consumed atomically (see attemptOtp), with the plain-code rules.
+      const result = await attemptOtp(base44.asServiceRole.entities.OtpChallenge, challenge, payload.code, {
+        check: async (args) => checkOtp(args),
       });
 
       if (!result.ok) {

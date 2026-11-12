@@ -1,0 +1,57 @@
+{
+  "name": "SimCouncilInvoice",
+  "type": "object",
+  "properties": {
+    "council_id": {
+      "type": "string"
+    },
+    "month": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "amount": {
+      "type": "number"
+    },
+    "state": {
+      "type": "string"
+    },
+    "excluded_lines": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "Lines settled while the IBMT-council contract was not signed. Listed for audit, never invoiced."
+    },
+    "excluded_amount": {
+      "type": "number"
+    },
+    "excluded_reason": {
+      "type": "string"
+    },
+    "bill_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "council_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

@@ -6,8 +6,13 @@ import Field, { TextInput, SelectControl } from '@/components/ibmt/Field';
 import Notice from '@/components/ibmt/Notice';
 import { DISCLAIMER, EVIDENCE_OPTIONS, PILOT_COUNCILS, councilForWard } from '@/config/r3';
 import OtpConfirm from './OtpConfirm';
+import { errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
-const STEPS = ['Mahali na nyumba', 'Nyaraka', 'Ridhaa', 'Tuma'];
+/** Version of the registration consent wording below; recorded with the language. */
+const CONSENT_TEXT_VERSION = 'wizard-consent-1';
+
+const STEPS = ['wizard.steps.place', 'wizard.steps.documents', 'wizard.steps.consent', 'wizard.steps.send'];
 
 /**
  * One registration form for every channel: the landlord alone, an authorised
@@ -15,9 +20,10 @@ const STEPS = ['Mahali na nyumba', 'Nyaraka', 'Ridhaa', 'Tuma'];
  * officer decides, and the landlord confirms by code first.
  */
 export default function RegistrationWizard({ channel = 'self', landlordId = '', landlordName = '', onDone }) {
+  const { t, tt, lang } = useT();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [uploads, setUploads] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -35,7 +41,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
     helper_licence: '',
     helper_relation: '',
   });
-  const [consent, setConsent] = useState({ core: false, council_sharing: true });
+  const [consent, setConsent] = useState({ core: false, council_sharing: false });
 
   const council = councilForWard(form.ward);
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));
@@ -44,12 +50,12 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
     const file = event.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    setError('');
+    setError(null);
     try {
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
       setUploads((prev) => [...prev, { kind, uri: file_uri, label: file.name }]);
     } catch (err) {
-      setError(err.message || 'The document could not be uploaded.');
+      setError({ key: 'wizard.uploadFailed' });
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -58,7 +64,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
 
   const submit = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const response = await base44.functions.invoke('registerUnit', {
         channel,
@@ -78,12 +84,12 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
         helper_licence: form.helper_licence,
         helper_relation: form.helper_relation,
         evidence: uploads,
-        consent: { core: consent.core, council_sharing: consent.council_sharing },
+        consent: { core: consent.core, council_sharing: consent.council_sharing, language: lang, text_version: CONSENT_TEXT_VERSION },
       });
       setResult(response.data);
       onDone?.(response.data);
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Registration failed.');
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -96,24 +102,23 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" aria-hidden="true" />
             <div>
-              <h3 className="font-heading text-[15px] font-semibold text-navy">Usajili umepokelewa</h3>
+              <h3 className="font-heading text-[15px] font-semibold text-navy">{t('wizard.received')}</h3>
               <p className="ibmt-num mt-1 text-[13px]">{result.case_ref}</p>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                Unit {result.unit_ref} · inasubiri afisa wa Mtaa. Hakuna uthibitisho wa umiliki unaotolewa hapa.
+                {t('wizard.receivedBody', { unit: result.unit_ref })}
               </p>
             </div>
           </div>
         </div>
 
         {result.duplicate?.flagged && (
-          <Notice tone="caution" title="Taarifa hii imetumwa kwa afisa wa Mtaa">
-            {result.duplicate.note} — Registration is not blocked and not rejected: the Mtaa officer reviews both
-            records.
+          <Notice tone="caution" title={t('wizard.duplicateTitle')}>
+            {t('wizard.duplicateBody')}
           </Notice>
         )}
 
         {result.otp?.required && !result.otp?.code && (
-          <Notice tone="policy">The landlord received a code on their own phone. The helper does not see it.</Notice>
+          <Notice tone="policy">{t('wizard.ownerGotCode')}</Notice>
         )}
 
         {result.otp?.required && (
@@ -125,9 +130,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
           />
         )}
 
-        <Notice tone="privacy">
-          {DISCLAIMER.sw} / {DISCLAIMER.en}
-        </Notice>
+        <Notice tone="privacy">{tt(DISCLAIMER)}</Notice>
       </div>
     );
   }
@@ -142,14 +145,14 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               index === step ? 'border-navy bg-navy text-primary-foreground' : 'border-border text-muted-foreground'
             }`}
           >
-            {index + 1}. {label}
+            {index + 1}. {t(label)}
           </li>
         ))}
       </ol>
 
       {step === 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Kata · Ward">
+          <Field label={t('wizard.ward')}>
             {(props) => (
               <SelectControl {...props} value={form.ward} onChange={(event) => set({ ward: event.target.value })}>
                 {PILOT_COUNCILS.map((item) => (
@@ -164,20 +167,20 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               </SelectControl>
             )}
           </Field>
-          <Field label="Mtaa">
+          <Field label={t('wizard.mtaa')}>
             {(props) => <TextInput {...props} value={form.mtaa} onChange={(event) => set({ mtaa: event.target.value })} />}
           </Field>
-          <Field label="Anwani ya makazi" required>
+          <Field label={t('wizard.address')} required>
             {(props) => (
               <TextInput
                 {...props}
                 value={form.address}
                 onChange={(event) => set({ address: event.target.value })}
-                placeholder="Mtaa, nyumba, alama"
+                placeholder={t('wizard.addressPlaceholder')}
               />
             )}
           </Field>
-          <Field label="Namba ya mita ya TANESCO">
+          <Field label={t('wizard.meter')}>
             {(props) => (
               <TextInput
                 {...props}
@@ -187,17 +190,17 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               />
             )}
           </Field>
-          <Field label="Aina ya nyumba">
+          <Field label={t('wizard.unitType')}>
             {(props) => (
               <SelectControl {...props} value={form.unit_type} onChange={(event) => set({ unit_type: event.target.value })}>
-                <option value="room">Chumba</option>
-                <option value="flat">Fleti</option>
-                <option value="house">Nyumba</option>
-                <option value="shop">Duka</option>
+                <option value="room">{t('leaseNew.unitType.room')}</option>
+                <option value="flat">{t('leaseNew.unitType.flat')}</option>
+                <option value="house">{t('leaseNew.unitType.house')}</option>
+                <option value="shop">{t('leaseNew.unitType.shop')}</option>
               </SelectControl>
             )}
           </Field>
-          <Field label="Kodi ya mwezi (TZS)" required>
+          <Field label={t('joinRent.monthlyRent')} required>
             {(props) => (
               <TextInput
                 {...props}
@@ -210,12 +213,12 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
           </Field>
           {channel !== 'self' && (
             <>
-              <Field label="Jina la mmiliki" required>
+              <Field label={t('wizard.ownerName')} required>
                 {(props) => (
                   <TextInput {...props} value={form.landlord_name} onChange={(event) => set({ landlord_name: event.target.value })} />
                 )}
               </Field>
-              <Field label="Simu ya mmiliki" required hint="Namba ya siri inatumwa hapa">
+              <Field label={t('wizard.ownerPhone')} required hint={t('wizard.ownerPhoneHint')}>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -225,7 +228,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
                   />
                 )}
               </Field>
-              <Field label={channel === 'proxy' ? 'Uhusiano na mmiliki' : 'Namba ya leseni ya wakala'}>
+              <Field label={channel === 'proxy' ? t('wizard.relation') : t('wizard.licence')}>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -250,17 +253,17 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-[13px] font-medium">
-                      {option.sw} <span className="text-muted-foreground">· {option.en}</span>
+                      {tt(option)}
                     </p>
                     {added.length > 0 && (
                       <p className="mt-1 text-[11px] text-success">
-                        {added.length} nyaraka · {added.map((item) => item.label).join(', ')} (stored privately)
+                        {t('wizard.added', { count: added.length, files: added.map((item) => item.label).join(', ') })} {t('parked.storedPrivately')}
                       </p>
                     )}
                   </div>
                   <label className="ibmt-tap inline-flex cursor-pointer items-center gap-2 rounded-md border border-input px-3 text-[12px] font-medium">
                     <FileUp className="h-4 w-4" aria-hidden="true" />
-                    Ongeza
+                    {t('common.add')}
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
@@ -273,7 +276,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               </div>
             );
           })}
-          <p className="ibmt-hint">Angalau hati moja inahitajika. Nyaraka zinahifadhiwa kwa faragha.</p>
+          <p className="ibmt-hint">{t('wizard.oneDocument')}</p>
         </div>
       )}
 
@@ -287,7 +290,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               className="mt-1"
             />
             <span className="text-[13px] leading-relaxed">
-              <strong>Inahitajika kwa huduma:</strong> nakubali taarifa za nyumba hii zihifadhiwe na IBMT kwa ajili ya usajili.
+              <strong>{t('join.consent.requiredLabel')}</strong> {t('wizard.consentCore')}
             </span>
           </label>
           <label className="flex items-start gap-3 rounded-md border border-border px-4 py-3">
@@ -298,27 +301,25 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
               className="mt-1"
             />
             <span className="text-[13px] leading-relaxed">
-              <strong>Hiari:</strong> nakubali halmashauri ya {council.name} ionee taarifa hizi kwa ufuatiliaji.
+              <strong>{t('join.consent.optionalLabel')}</strong> {t('wizard.consentSharing', { council: council.name })}
             </span>
           </label>
-          <Notice tone="privacy">
-            {DISCLAIMER.sw} / {DISCLAIMER.en}
-          </Notice>
+          <Notice tone="privacy">{tt(DISCLAIMER)}</Notice>
         </div>
       )}
 
       {step === 3 && (
         <dl className="divide-y divide-border rounded-md border border-border text-[13px]">
           {[
-            ['Kata', form.ward],
-            ['Mtaa', form.mtaa],
-            ['Anwani', form.address],
-            ['Mita', form.tanesco_meter || '—'],
-            ['Kodi', `${Number(form.rent_amount || 0).toLocaleString('en-US')} TZS`],
-            ['Nyaraka', `${uploads.length}`],
+            ['wizard.summary.ward', form.ward],
+            ['wizard.summary.mtaa', form.mtaa],
+            ['wizard.summary.address', form.address],
+            ['wizard.summary.meter', form.tanesco_meter || '—'],
+            ['wizard.summary.rent', `${Number(form.rent_amount || 0).toLocaleString('en-US')} TZS`],
+            ['wizard.summary.documents', `${uploads.length}`],
           ].map(([label, value]) => (
             <div key={label} className="flex items-baseline justify-between gap-4 px-4 py-2">
-              <dt className="text-muted-foreground">{label}</dt>
+              <dt className="text-muted-foreground">{t(label)}</dt>
               <dd className="ibmt-num text-right">{value}</dd>
             </div>
           ))}
@@ -327,14 +328,14 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <div className="flex flex-wrap items-center gap-2">
         {step > 0 && (
           <Button type="button" variant="outline" className="ibmt-tap" onClick={() => setStep(step - 1)}>
-            Rudi
+            {t('common.back')}
           </Button>
         )}
         {step < 3 && (
@@ -344,7 +345,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
             onClick={() => setStep(step + 1)}
             disabled={step === 1 && uploads.length === 0}
           >
-            Endelea
+            {t('common.continue')}
           </Button>
         )}
         {step === 3 && (
@@ -355,7 +356,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
             disabled={busy || !consent.core}
           >
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            {busy ? 'Inatuma…' : 'Tuma kwa afisa wa Mtaa'}
+            {busy ? t('otpConfirm.sending') : t('wizard.submit')}
           </Button>
         )}
       </div>

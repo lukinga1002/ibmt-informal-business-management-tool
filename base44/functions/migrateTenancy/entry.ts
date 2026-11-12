@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { DISCLAIMER, issuanceAllowed, issueChallenge, reference } from '../../shared/registration.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * An existing tenancy is brought onto the register as it already stands.
@@ -16,7 +17,7 @@ import { DISCLAIMER, issuanceAllowed, issueChallenge, reference } from '../../sh
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -49,7 +50,7 @@ export default async function (req) {
     const gate = await issuanceAllowed(base44, { subjectId: `migration:${unit.id}`, phone: tenantPhone });
     if (!gate.allowed) return fail(429, 'RATE_LIMITED', 'Too many codes requested. Try again in an hour.');
 
-    const tenancy = await base44.entities.Tenancy.create({
+    const tenancy = await base44.asServiceRole.entities.Tenancy.create({
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
       landlord_id: unit.landlord_id,

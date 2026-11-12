@@ -5,7 +5,8 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import Field, { TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 const CHOICE = 'flex items-center gap-3 rounded-md border border-border px-3 py-2 text-[13px]';
 const digits = (value, max) => value.replace(/[^0-9]/g, '').slice(0, max);
@@ -15,14 +16,15 @@ const digits = (value, max) => value.replace(/[^0-9]/g, '').slice(0, max);
  * the long code in the link is the only key, and it points at one unit.
  */
 export default function TenantJoin() {
+  const { t, lang } = useT();
   const { code } = useParams();
   const [unit, setUnit] = useState(null);
   const [landlord, setLandlord] = useState('');
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState('');
+  const [notFound, setNotFound] = useState(null);
   const [form, setForm] = useState({ full_name: '', nida_number: '', rent_amount: '', paid_broker: null, broker_amount: '' });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [done, setDone] = useState(null);
 
   useEffect(() => {
@@ -32,21 +34,21 @@ export default function TenantJoin() {
         setLandlord(data.landlord_name || '');
         if (data.rent_amount) setForm((prev) => ({ ...prev, rent_amount: String(data.rent_amount) }));
       })
-      .catch((err) => setNotFound(fnError(err)))
+      .catch((err) => setNotFound({ err }))
       .finally(() => setLoading(false));
   }, [code]);
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));
 
   const submit = async () => {
-    if (form.full_name.trim().length < 3) return setError('Andika jina lako kamili.');
-    if (form.nida_number.length !== 20) return setError('Namba ya NIDA ina tarakimu 20.');
-    if (Number(form.rent_amount) <= 0) return setError('Andika kodi unayolipa kwa mwezi.');
-    if (form.paid_broker === null) return setError('Chagua kama ulimlipa broker au hukulipa.');
-    if (form.paid_broker && Number(form.broker_amount) <= 0) return setError('Andika kiasi ulichomlipa broker.');
+    if (form.full_name.trim().length < 3) return setError({ key: 'tenantJoin.errors.name' });
+    if (form.nida_number.length !== 20) return setError({ key: 'tenantJoin.errors.nida' });
+    if (Number(form.rent_amount) <= 0) return setError({ key: 'tenantJoin.errors.rent' });
+    if (form.paid_broker === null) return setError({ key: 'tenantJoin.errors.brokerChoice' });
+    if (form.paid_broker && Number(form.broker_amount) <= 0) return setError({ key: 'tenantJoin.errors.brokerAmount' });
 
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const result = await callFn('tenantSelfRegister', {
         action: 'submit',
@@ -59,7 +61,7 @@ export default function TenantJoin() {
       });
       setDone(result);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -76,8 +78,8 @@ export default function TenantJoin() {
   if (notFound) {
     return (
       <div className="ibmt-page max-w-xl">
-        <Notice tone="caution" title="Kiungo hiki hakitumiki">
-          {notFound}
+        <Notice tone="caution" title={t('tenantJoin.badLink')}>
+          {errorText(notFound)}
         </Notice>
       </div>
     );
@@ -86,7 +88,7 @@ export default function TenantJoin() {
   if (done) {
     return (
       <div className="ibmt-page max-w-xl space-y-4">
-        <SectionCard title="Taarifa zimepokelewa">
+        <SectionCard title={t('tenantJoin.received')}>
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" aria-hidden="true" />
             <div className="text-[13px] leading-relaxed">
@@ -94,17 +96,17 @@ export default function TenantJoin() {
               <p className="ibmt-num text-[11px] text-muted-foreground">{done.unit_ref}</p>
               <p className="mt-2">
                 {done.paid_broker
-                  ? `Uliandika kuwa ulimlipa broker ${Number(done.broker_amount).toLocaleString('en-US')} TZS.`
-                  : 'Uliandika kuwa hukulipa broker. Jibu hili limehifadhiwa kwenye rekodi.'}
+                  ? t('tenantJoin.paidBroker', { amount: Number(done.broker_amount).toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-TZ') })
+                  : t('tenantJoin.noBroker')}
               </p>
               <p className="mt-1 text-muted-foreground">
-                Mwenye nyumba na halmashauri wanaona taarifa ulizotuma. Namba yako ya NIDA haionyeshwi hadharani.
+                {t('tenantJoin.whoSees')}
               </p>
             </div>
           </div>
         </SectionCard>
-        <Notice tone="privacy" title="Unachotuma ni tamko lako">
-          Taarifa hizi zimeandikwa na wewe mwenyewe. Mkataba uliosainiwa na mwenye nyumba bado unahitajika.
+        <Notice tone="privacy" title={t('tenantJoin.declarationTitle')}>
+          {t('tenantJoin.declarationBody')}
         </Notice>
       </div>
     );
@@ -113,21 +115,21 @@ export default function TenantJoin() {
   return (
     <div className="ibmt-page max-w-xl space-y-4">
       <header>
-        <p className="ibmt-kicker">Usajili wa mpangaji</p>
+        <p className="ibmt-kicker">{t('tenantJoin.kicker')}</p>
         <h1 className="mt-2 font-heading text-2xl font-semibold tracking-tight text-navy">{unit.unit_name}</h1>
         <p className="mt-1 text-[13px] text-muted-foreground">
-          {[unit.street, unit.house_no && `nyumba ${unit.house_no}`, unit.ward, unit.district].filter(Boolean).join(' · ')}
-          {landlord ? ` · mwenye nyumba ${landlord}` : ''}
+          {[unit.street, unit.house_no && t('tenantJoin.house', { no: unit.house_no }), unit.ward, unit.district].filter(Boolean).join(' · ')}
+          {landlord ? ` · ${t('tenantJoin.landlord', { name: landlord })}` : ''}
         </p>
       </header>
 
-      <SectionCard title="Taarifa zako" description="Jaza kama ulivyo na kama unavyolipa.">
+      <SectionCard title={t('tenantJoin.yourDetails')} description={t('tenantJoin.yourDetailsBody')}>
         <div className="space-y-4">
-          <Field label="Jina lako kamili" required>
+          <Field label={t('tenantJoin.fullName')} required>
             {(props) => <TextInput {...props} value={form.full_name} onChange={(event) => set({ full_name: event.target.value })} />}
           </Field>
 
-          <Field label="Namba ya NIDA" required hint="Tarakimu 20 kutoka kitambulisho chako">
+          <Field label={t('tenantJoin.nida')} required hint={t('tenantJoin.nidaHint')}>
             {(props) => (
               <TextInput
                 {...props}
@@ -139,7 +141,7 @@ export default function TenantJoin() {
             )}
           </Field>
 
-          <Field label="Kodi unayolipa kwa mwezi (TZS)" required>
+          <Field label={t('tenantJoin.rent')} required>
             {(props) => (
               <TextInput
                 {...props}
@@ -152,21 +154,21 @@ export default function TenantJoin() {
           </Field>
 
           <fieldset>
-            <legend className="ibmt-label mb-2">Je, ulimlipa broker wakati unaingia?</legend>
+            <legend className="ibmt-label mb-2">{t('tenantJoin.brokerQ')}</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               <label className={CHOICE}>
                 <input type="radio" name="paidBroker" checked={form.paid_broker === true} onChange={() => set({ paid_broker: true })} />
-                Ndiyo, nilimlipa
+                {t('tenantJoin.brokerYes')}
               </label>
               <label className={CHOICE}>
                 <input type="radio" name="paidBroker" checked={form.paid_broker === false} onChange={() => set({ paid_broker: false, broker_amount: '' })} />
-                Hapana, hakuna aliyelipwa
+                {t('tenantJoin.brokerNo')}
               </label>
             </div>
           </fieldset>
 
           {form.paid_broker === true && (
-            <Field label="Kiasi ulichomlipa broker (TZS)" required>
+            <Field label={t('tenantJoin.brokerAmount')} required>
               {(props) => (
                 <TextInput
                   {...props}
@@ -181,7 +183,7 @@ export default function TenantJoin() {
 
           {error && (
             <p role="alert" className="text-[12px] font-medium text-destructive">
-              {error}
+              {errorText(error)}
             </p>
           )}
 
@@ -192,13 +194,13 @@ export default function TenantJoin() {
             className="ibmt-tap w-full gap-2 bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
           >
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            {busy ? 'Inatuma…' : 'Tuma taarifa'}
+            {busy ? t('otpConfirm.sending') : t('tenantJoin.send')}
           </Button>
         </div>
       </SectionCard>
 
       <Notice tone="privacy">
-        Taarifa zako zinaenda kwa mwenye nyumba na halmashauri pekee. Namba ya NIDA haionyeshwi hadharani.
+        {t('tenantJoin.privacy')}
       </Notice>
     </div>
   );

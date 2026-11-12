@@ -4,7 +4,14 @@
   "properties": {
     "unit_ref": {
       "type": "string",
-      "description": "Serial reference, e.g. IBMT-UNIT-2026-002315"
+      "description": "Serial reference, e.g. IBMT-UNIT-2026-002315",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "unit_name": {
       "type": "string",
@@ -20,11 +27,25 @@
     },
     "property_id": {
       "type": "string",
-      "description": "The building this unit sits in"
+      "description": "The building this unit sits in",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "landlord_id": {
       "type": "string",
-      "description": "User id of the landlord. Access anchor for every unit rule."
+      "description": "User id of the landlord. Access anchor for every unit rule.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "landlord_name": {
       "type": "string"
@@ -39,20 +60,55 @@
     },
     "tenant_id": {
       "type": "string",
-      "description": "Tenant on the active lease. Cleared when the tenancy ends."
+      "description": "Tenant on the active lease. Cleared when the tenancy ends.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "council_id": {
       "type": "string",
-      "description": "Council the unit sits in. Bound in every council-scoped access rule."
+      "description": "Council the unit sits in. Bound in every council-scoped access rule.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "region": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "district": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "ward": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "mtaa": {
       "type": "string",
@@ -117,7 +173,14 @@
         "gray",
         "green"
       ],
-      "default": "vacant"
+      "default": "vacant",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "status": {
       "type": "string",
@@ -134,7 +197,14 @@
         "red"
       ],
       "default": "registered",
-      "description": "Registration state. Distinct from verification_status, which records the ownership decision."
+      "description": "Registration state. Distinct from verification_status, which records the ownership decision.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "verification_status": {
       "type": "string",
@@ -150,7 +220,19 @@
         "green",
         "red"
       ],
-      "default": "unverified"
+      "default": "unverified",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "version": {
       "type": "number",

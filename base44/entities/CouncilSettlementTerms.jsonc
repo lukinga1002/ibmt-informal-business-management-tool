@@ -1,0 +1,76 @@
+{
+  "name": "CouncilSettlementTerms",
+  "type": "object",
+  "properties": {
+    "council_id": {
+      "type": "string"
+    },
+    "council_fee_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "fixed"
+      ],
+      "default": "percent"
+    },
+    "council_fee_rate": {
+      "type": "number",
+      "default": 0.03
+    },
+    "council_fee_fixed_amount": {
+      "type": "number"
+    },
+    "bylaw_reference": {
+      "type": "string"
+    },
+    "legal_opinion_reference": {
+      "type": "string"
+    },
+    "gepg_sp_code": {
+      "type": "string"
+    },
+    "ibmt_contract_reference": {
+      "type": "string"
+    },
+    "ibmt_fee_basis": {
+      "type": "string",
+      "enum": [
+        "share_of_rent",
+        "share_of_council_fee"
+      ],
+      "default": "share_of_rent"
+    },
+    "ibmt_fee_rate": {
+      "type": "number",
+      "default": 0.015
+    },
+    "ibmt_contract_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "signed"
+      ],
+      "default": "draft"
+    },
+    "placeholder_status": {
+      "type": "string",
+      "enum": [
+        "placeholder"
+      ],
+      "default": "placeholder"
+    }
+  },
+  "required": [
+    "council_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

@@ -5,41 +5,24 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Notice from '@/components/ibmt/Notice';
 import Field, { TextArea } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
-const DECISIONS = [
-  { key: 'approve', label: 'Thibitisha', status: 'approved' },
-  { key: 'reject', label: 'Kataa', status: 'rejected' },
-  { key: 'suspend', label: 'Simamisha', status: 'suspended' },
-  { key: 'revoke', label: 'Futa leseni', status: 'revoked' },
-];
-
-const LICENCE_LABEL = {
-  pending: 'Inasubiri',
-  approved: 'Imethibitishwa',
-  rejected: 'Imekataliwa',
-  suspended: 'Imesimamishwa',
-  revoked: 'Imefutwa',
-};
-
-const SCOPE_LABEL = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Zote mbili' };
-
-const SCOPE_FILTERS = [
-  { value: '', label: 'Zote' },
-  { value: 'rental', label: 'Kupangisha' },
-  { value: 'sale', label: 'Mauzo' },
-  { value: 'both', label: 'Zote mbili' },
-];
+const DECISIONS = ['approve', 'reject', 'suspend', 'revoke'];
+const STATUSES = ['pending', 'approved', 'rejected', 'suspended', 'revoked'];
+const SCOPES = ['rental', 'sale', 'both'];
+const SCOPE_FILTERS = ['', 'rental', 'sale', 'both'];
 
 /** Council desk: approve, reject, suspend or revoke a licence with a reason. */
 export default function CouncilAgents() {
+  const { t } = useT();
   const [rows, setRows] = useState(null);
   const [council, setCouncil] = useState(null);
   const [scopeFilter, setScopeFilter] = useState('');
   const [openId, setOpenId] = useState(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -47,7 +30,7 @@ export default function CouncilAgents() {
       setRows(data.rows || []);
       setCouncil(data.council || null);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
       setRows([]);
     }
   }, [scopeFilter]);
@@ -58,14 +41,14 @@ export default function CouncilAgents() {
 
   const decide = async (row, decision) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('agentLicence', { action: 'decide', licence_id: row.licence_id, decision, reason });
       setOpenId(null);
       setReason('');
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -74,38 +57,38 @@ export default function CouncilAgents() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Halmashauri"
-        title="Leseni za mawakala"
-        lede="Broker mmoja ana leseni moja kwa kila halmashauri. Kila uamuzi unahitaji sababu isipokuwa kuidhinisha, na unabaki kwenye historia ya usajili."
-        meta={[{ label: 'Kusimamisha au kufuta kunamaliza mandate hai' }]}
+        kicker={t('entry.role.council')}
+        title={t('agentLicences.title')}
+        lede={t('agentLicences.lede')}
+        meta={[{ label: t('agentLicences.endsMandates') }]}
       />
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <SectionCard
-        title="Maombi na usajili"
-        description={council?.name ? `Zilizowasilishwa katika ${council.name}.` : 'Zilizowasilishwa katika halmashauri yako.'}
-        actions={SCOPE_FILTERS.map((item) => (
+        title={t('agentLicences.queueTitle')}
+        description={council?.name ? t('agentLicences.submittedIn', { council: council.name }) : t('agentLicences.submittedInYours')}
+        actions={SCOPE_FILTERS.map((value) => (
           <Button
-            key={item.value || 'all'}
+            key={value || 'all'}
             type="button"
             size="sm"
-            variant={scopeFilter === item.value ? 'default' : 'outline'}
-            className={scopeFilter === item.value ? 'ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep' : 'ibmt-tap'}
-            onClick={() => setScopeFilter(item.value)}
+            variant={scopeFilter === value ? 'default' : 'outline'}
+            className={scopeFilter === value ? 'ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep' : 'ibmt-tap'}
+            onClick={() => setScopeFilter(value)}
           >
-            {item.label}
+            {value ? t(`agentLicences.scope.${value}`) : t('common.all')}
           </Button>
         ))}
       >
         {rows === null ? (
-          <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+          <p className="text-[13px] text-muted-foreground">{t('common.loading')}…</p>
         ) : rows.length === 0 ? (
-          <Notice tone="neutral">Hakuna ombi la leseni bado.</Notice>
+          <Notice tone="neutral">{t('agentLicences.none')}</Notice>
         ) : (
           <ul className="space-y-3">
             {rows.map((row) => (
@@ -116,43 +99,43 @@ export default function CouncilAgents() {
                       {row.agent_name} · {row.council_name || row.district}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      {row.business_name || 'Broker binafsi'}
+                      {row.business_name || t('agentLicences.individual')}
                       <span className="ibmt-num">{row.agent_phone ? ` · ${row.agent_phone}` : ''}</span>
                       <span className="ibmt-num">{row.nida_number ? ` · NIDA ${row.nida_number}` : ''}</span>
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {SCOPE_LABEL[row.scope] || SCOPE_LABEL.rental}
+                      {t(`agentLicences.scope.${SCOPES.includes(row.scope) ? row.scope : 'rental'}`)}
                       <span className="ibmt-num">
-                        {row.licence_no ? ` · ${row.licence_no}` : ' · Hakuna namba bado'}
+                        {row.licence_no ? ` · ${row.licence_no}` : ` · ${t('agentLicences.noNumber')}`}
                       </span>
                       {row.decision_reason ? ` · ${row.decision_reason}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={row.status} label={LICENCE_LABEL[row.status] || row.status} />
+                    <StatusBadge status={row.status} label={STATUSES.includes(row.status) ? t(`agentLicences.status.${row.status}`) : row.status} />
                     <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => setOpenId(openId === row.licence_id ? null : row.licence_id)}>
-                      Amua
+                      {t('wardVerify.decide')}
                     </Button>
                   </div>
                 </div>
 
                 {openId === row.licence_id && (
                   <div className="mt-3 space-y-3 rounded-md border border-border bg-muted/30 px-3 py-3">
-                    <Field label="Sababu" required hint="Inahitajika kwa kukataa, kusimamisha au kufuta">
+                    <Field label={t('common.reason')} required hint={t('agentLicences.reasonHint')}>
                       {(props) => <TextArea {...props} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} />}
                     </Field>
                     <div className="flex flex-wrap gap-2">
-                      {DECISIONS.map((item) => (
+                      {DECISIONS.map((key) => (
                         <Button
-                          key={item.key}
+                          key={key}
                           type="button"
                           size="sm"
-                          variant={item.key === 'approve' ? 'default' : 'outline'}
-                          className={item.key === 'approve' ? 'ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep' : 'ibmt-tap'}
-                          onClick={() => decide(row, item.key)}
-                          disabled={busy || (item.key !== 'approve' && reason.trim().length < 8)}
+                          variant={key === 'approve' ? 'default' : 'outline'}
+                          className={key === 'approve' ? 'ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep' : 'ibmt-tap'}
+                          onClick={() => decide(row, key)}
+                          disabled={busy || (key !== 'approve' && reason.trim().length < 8)}
                         >
-                          {item.label}
+                          {t(`agentLicences.decision.${key}`)}
                         </Button>
                       ))}
                     </div>

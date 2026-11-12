@@ -1,8 +1,10 @@
+import CouncilTermsPanel from '@/components/sim/CouncilTermsPanel';
+import Stage2CouncilPanel from '@/components/sim/Stage2CouncilPanel';
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useT } from '@/i18n/I18nContext';
 import { useFn } from '@/hooks/useFn';
-import { callFn, fnError, newKey } from '@/lib/r4';
+import { callFn, errorText, newKey } from '@/lib/r4';
 import { SIM_NOTICE } from '@/lib/money';
 import PageHeader from '@/components/ibmt/PageHeader';
 import Notice from '@/components/ibmt/Notice';
@@ -25,16 +27,16 @@ export default function MoneyEngine() {
   const alerts = useFn('simPayment', { action: 'alerts' });
   const tests = useFn('simPayment', { action: 'selfTest' });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const start = async (form) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('simPayment', { action: 'initiate', ...form, idempotency_key: newKey('r7') });
       ledger.reload();
     } catch (issue) {
-      setError(fnError(issue));
+      setError({ err: issue });
     } finally {
       setBusy(false);
     }
@@ -47,7 +49,7 @@ export default function MoneyEngine() {
     <div className="space-y-6">
       <PageHeader
         kicker={tt({ en: 'Money engine', sw: 'Injini ya fedha' })}
-        title={tt({ en: 'Stages 2 and 3 — simulation', sw: 'Hatua 2 na 3 — majaribio' })}
+        title={tt({ en: 'Stage 2 — simulation', sw: 'Hatua 2 — majaribio' })}
         lede={tt({
           en: 'The split, the payment states, the ledger and the callback rules, running end to end with a mock partner.',
           sw: 'Mgawanyo, hali za malipo, daftari na kanuni za taarifa, vikifanya kazi kwa mshirika wa kubuni.',
@@ -62,9 +64,11 @@ export default function MoneyEngine() {
         {tt(SIM_NOTICE)}
       </Notice>
 
-      {error && <Notice tone="danger" className="mt-4">{error}</Notice>}
+      {error && <Notice tone="danger" className="mt-4">{errorText(error)}</Notice>}
 
       <div className="space-y-6">
+        <CouncilTermsPanel admin />
+        <Stage2CouncilPanel admin />
         <SplitPanel onStart={start} busy={busy} />
 
         <AsyncBlock state={ledger}>

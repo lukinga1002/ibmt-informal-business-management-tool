@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { fail, json } from '../../shared/moneyOps.ts';
 import { dueDateOf } from '../../shared/leaseTemplate.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Rent reminders, run once a day by the scheduled workflow.
@@ -14,7 +15,7 @@ import { dueDateOf } from '../../shared/leaseTemplate.ts';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
     if (user.role !== 'admin') return fail(403, 'FORBIDDEN', 'This function runs from the schedule only');
 

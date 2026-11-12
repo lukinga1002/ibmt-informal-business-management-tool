@@ -1,0 +1,40 @@
+{
+  "name": "SimSettlementAdjustment",
+  "type": "object",
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "council_amount": {
+      "type": "number"
+    },
+    "system_fee": {
+      "type": "number"
+    },
+    "partner_rebate": {
+      "type": "number"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "payment_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

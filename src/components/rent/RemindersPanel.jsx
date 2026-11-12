@@ -8,22 +8,20 @@ import { formatDateTime } from '@/lib/format';
  * Until an SMS gateway is connected every copy stays inside the app.
  */
 export default function RemindersPanel({ notifications = [], smsAllowed = true, onToggleSms }) {
-  const { tt, lang } = useT();
+  const { t, tt, lang } = useT();
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-3">
         <div className="min-w-0">
-          <p className="ibmt-label">Kumbukumbu za SMS</p>
-          <p className="ibmt-hint mt-1">
-            Ukiwa na SMS, kumbukumbu inatumwa kama ujumbe mfupi. Bila hivyo, inabaki ndani ya app.
-          </p>
+          <p className="ibmt-label">{t('receipt.smsTitle')}</p>
+          <p className="ibmt-hint mt-1">{t('receipt.smsBody')}</p>
         </div>
-        <Switch checked={smsAllowed} onCheckedChange={onToggleSms} aria-label="Kumbukumbu za SMS" />
+        <Switch checked={smsAllowed} onCheckedChange={onToggleSms} aria-label={t('receipt.smsTitle')} />
       </div>
 
       {notifications.length === 0 ? (
-        <p className="text-[13px] leading-relaxed text-muted-foreground">Hakuna kumbukumbu bado.</p>
+        <p className="text-[13px] leading-relaxed text-muted-foreground">{t('receipt.noReminders')}</p>
       ) : (
         <ul className="space-y-3">
           {notifications.map((row) => (
@@ -34,7 +32,7 @@ export default function RemindersPanel({ notifications = [], smsAllowed = true, 
                   <p className="text-[13px] font-medium">{tt(row.title)}</p>
                   <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{tt(row.body)}</p>
                   <p className="ibmt-num mt-1 text-[11px] text-muted-foreground">
-                    {formatDateTime(row.created_date, lang)} · {row.sent_via === 'sms' ? 'SMS' : 'Ndani ya app'}
+                    {formatDateTime(row.created_date, lang)} · {row.sent_via === 'sms' ? 'SMS' : t('receipt.inApp')}
                   </p>
                 </div>
               </div>

@@ -114,6 +114,53 @@ export async function checkHashedOtp({ challenge, code, now = new Date().toISOSt
 }
 
 /**
+ * Judges one code attempt and records it, safely under concurrency.
+ *
+ * Found on the hosted test app (2026-11-12): five simultaneous approvals with
+ * one single-use code all succeeded, because each read the challenge, judged
+ * it, then wrote it back. The same read-then-write let parallel wrong guesses
+ * all record as one attempt, so the attempt limit did not hold.
+ *
+ * Here the attempt is counted before it is judged, with a compare-and-set on
+ * the attempt counter (hosted updateMany is atomic per record): of several
+ * requests that read the same state, one takes the slot and the rest are
+ * refused without their code ever being compared. A correct code is then
+ * consumed with a second compare-and-set, so it succeeds once.
+ *
+ * `otp` is the OtpChallenge entity handle (service role). `check` is the rule
+ * set to judge with: checkHashedOtp, or r7's plain checkOtp for older flows.
+ */
+export async function attemptOtp(otp, challenge, code, { now = new Date().toISOString(), check = checkHashedOtp } = {}) {
+  const current = challenge || {};
+  const prior = Number(current.attempts) || 0;
+  if (current.consumed_at) return { ok: false, reason: 'already_used', attempts: prior, locked_until: current.locked_until || null };
+  if (current.locked_until && new Date(current.locked_until) > new Date(now)) {
+    return { ok: false, reason: 'locked', attempts: prior, locked_until: current.locked_until };
+  }
+  if (current.expires_at && new Date(current.expires_at) <= new Date(now)) {
+    return { ok: false, reason: 'expired', attempts: prior, locked_until: null };
+  }
+
+  const slot = await otp.updateMany(
+    { id: current.id, attempts: current.attempts === undefined ? null : current.attempts, consumed_at: null },
+    { $set: { attempts: prior + 1 } },
+  );
+  if (!slot || !slot.updated) return { ok: false, reason: 'concurrent_attempt', attempts: prior, locked_until: null };
+
+  const result = await check({ challenge: { ...current, attempts: prior }, code, now });
+  if (result.ok) {
+    const consumed = await otp.updateMany(
+      { id: current.id, attempts: prior + 1, consumed_at: null },
+      { $set: { consumed_at: now } },
+    );
+    if (!consumed || !consumed.updated) return { ok: false, reason: 'concurrent_attempt', attempts: prior + 1, locked_until: null };
+    return result;
+  }
+  if (result.locked_until) await otp.update(current.id, { locked_until: result.locked_until });
+  return result;
+}
+
+/**
  * Issues a code and stores nothing but its salted hash, on the admin-only
  * OtpChallenge row. The code itself leaves this function once, to the party the
  * code was sent to; it is never written to a case record.

@@ -55,7 +55,7 @@ export function monthRange(from = null, to = null) {
  * module, which still reads permit fees and presumptive bands from it.
  */
 export async function getActivePolicy(base44) {
-  const page = await base44.entities.PolicyVersion.filter({ status: 'active' }, { sort: '-effective_from', limit: 1 });
+  const page = await base44.entities.PolicyVersion.filter({ status: 'active' }, '-effective_from', 1);
   const items = page.items || page;
   return Array.isArray(items) && items.length ? items[0] : null;
 }
@@ -65,7 +65,7 @@ export async function getActivePolicy(base44) {
  * an effective_to date. PolicyRule is the single source for rent rates.
  */
 export async function getPolicyRules(base44) {
-  const page = await base44.entities.PolicyRule.filter({}, { sort: '-effective_from', limit: 5 });
+  const page = await base44.entities.PolicyRule.filter({}, '-effective_from', 5);
   const items = page.items || page;
   const open = Array.isArray(items) ? items.filter((row) => !row.effective_to) : [];
   return open[0] || null;
@@ -93,7 +93,7 @@ export function rentRates(rule) {
  * that belongs to someone else.
  */
 export async function findBusiness(base44, user, { provision = true } = {}) {
-  const page = await base44.entities.BusinessProfile.filter({}, { sort: '-created_date', limit: 1 });
+  const page = await base44.entities.BusinessProfile.filter({}, '-created_date', 1);
   const items = page.items || page;
   if (Array.isArray(items) && items.length) return items[0];
   if (!provision) return null;
@@ -111,7 +111,7 @@ export async function findBusiness(base44, user, { provision = true } = {}) {
  * same receipt, so a retried submit can never create a second record.
  */
 export async function findExistingByKey(base44, entity, idempotencyKey) {
-  const page = await base44.entities[entity].filter({ idempotency_key: idempotencyKey }, { limit: 1 });
+  const page = await base44.entities[entity].filter({ idempotency_key: idempotencyKey }, '-created_date', 1);
   const items = page.items || page;
   return Array.isArray(items) && items.length ? items[0] : null;
 }
@@ -147,22 +147,80 @@ export function ageDays(isoDate) {
  * only ever reads or writes its own records.
  */
 export async function nextSerial(base44, entity, prefix, fieldName = 'reference') {
-  const query = { [fieldName]: { $regex: `^${prefix}` } };
-  const existing = await base44.asServiceRole.entities[entity].filter(query, { limit: 500 });
-  const rows = existing.items || existing;
+  try {
+    const [reference] = await reserveSerials(base44, entity, prefix, fieldName, 1);
+    return reference;
+  } catch (error) {
+    if (error && error.code === 'SERIALS_EXHAUSTED') return `${prefix}${Date.now().toString().slice(-8)}`;
+    throw error;
+  }
+}
+
+/** A page from either SDK read form, as a plain array. */
+export function asRows(page) {
+  if (Array.isArray(page)) return page;
+  return (page && Array.isArray(page.items) && page.items) || [];
+}
+
+/**
+ * Reserves `count` unused references before anything is written, so a caller
+ * can validate a whole batch first. Reads use the positional SDK form and a
+ * string range rather than a regular expression: the local `base44 dev` store
+ * implements neither the cursor-page route nor string regular expressions, and forwards unknown
+ * routes to the hosted app. Zero-padded references sort in sequence order.
+ *
+ * Base44 has no unique constraint, so a reservation narrows but does not close
+ * the window for two simultaneous registrations; the re-check per candidate
+ * catches any reference already written.
+ */
+export async function reserveSerials(base44, entity, prefix, fieldName = 'reference', count = 1) {
+  const db = base44.asServiceRole.entities[entity];
+  // '~' sorts after every digit and letter, so the range holds exactly this prefix's references.
+  const top = asRows(await db.filter({ [fieldName]: { $gte: prefix, $lt: `${prefix}~` } }, `-${fieldName}`, 1));
   let highest = 0;
-  for (const row of rows) {
+  for (const row of top) {
     const seq = Number(String(row[fieldName] || '').slice(prefix.length));
     if (Number.isFinite(seq) && seq > highest) highest = seq;
   }
+  const references = [];
   let candidate = highest + 1;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const reference = `${prefix}${String(candidate + attempt).padStart(6, '0')}`;
-    const taken = await base44.asServiceRole.entities[entity].filter({ [fieldName]: reference }, { limit: 1 });
-    const takenRows = taken.items || taken;
-    if (!Array.isArray(takenRows) || !takenRows.length) return reference;
+  for (let attempt = 0; references.length < count && attempt < count + 10; attempt++, candidate++) {
+    const reference = `${prefix}${String(candidate).padStart(6, '0')}`;
+    const taken = asRows(await db.filter({ [fieldName]: reference }, '-created_date', 1));
+    if (!taken.length) references.push(reference);
   }
-  return `${prefix}${Date.now().toString().slice(-8)}`;
+  if (references.length < count) {
+    const error = new Error('Could not reserve unused references');
+    error.code = 'SERIALS_EXHAUSTED';
+    throw error;
+  }
+  return references;
+}
+
+/** Oldest first, with the id as a deterministic tie-break. */
+export function earliestFirst(a, b) {
+  const byDate = String(a.created_date || '').localeCompare(String(b.created_date || ''));
+  return byDate || String(a.id).localeCompare(String(b.id));
+}
+
+/**
+ * Closes the window reserveSerials leaves open. Found on the hosted test app
+ * (2026-11-12): two simultaneous registrations each reserved and wrote
+ * IBMT-UNIT-2026-94777020. After a write, the earliest holder of a reference
+ * keeps it; any later holder takes a fresh reference and checks again.
+ */
+export async function settleUniqueReference(base44, entity, fieldName, row, prefix, rounds = 5) {
+  const db = base44.asServiceRole.entities[entity];
+  let current = row;
+  for (let round = 0; round < rounds; round++) {
+    const holders = asRows(await db.filter({ [fieldName]: current[fieldName] }, 'created_date', 10)).sort(earliestFirst);
+    if (!holders.length || holders[0].id === current.id) return current;
+    const [next] = await reserveSerials(base44, entity, prefix, fieldName, 1);
+    current = { ...current, ...(await db.update(current.id, { [fieldName]: next })), [fieldName]: next };
+  }
+  const error = new Error('Could not settle a unique reference');
+  error.code = 'SERIALS_EXHAUSTED';
+  throw error;
 }
 
 export async function nextReceiptReference(base44) {

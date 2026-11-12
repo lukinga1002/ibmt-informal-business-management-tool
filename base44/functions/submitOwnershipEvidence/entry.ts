@@ -5,6 +5,7 @@ import {
   findExistingByKey,
   json,
 } from '../../shared/moneyOps.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * A landlord files ownership evidence for one of their units. The evidence
@@ -15,7 +16,7 @@ import {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await trustedMe(base44);
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -57,7 +58,7 @@ export default async function (req) {
       idempotency_key: idempotencyKey || null,
     });
 
-    await base44.entities.RentalUnit.update(unit.id, {
+    await base44.asServiceRole.entities.RentalUnit.update(unit.id, {
       status: 'evidence_pending',
       version: (Number(unit.version) || 1) + 1,
     });

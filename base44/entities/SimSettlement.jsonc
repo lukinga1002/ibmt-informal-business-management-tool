@@ -1,0 +1,60 @@
+{
+  "name": "SimSettlement",
+  "type": "object",
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "council_amount": {
+      "type": "number"
+    },
+    "partner_amount": {
+      "type": "number"
+    },
+    "landlord_amount": {
+      "type": "number"
+    },
+    "landlord_state": {
+      "type": "string",
+      "description": "settled, held_limit (wallet limit) or held_account (no eligible payout account, or consent withdrawn after the payment started)"
+    },
+    "held_reason": {
+      "type": "string"
+    },
+    "released_to": {
+      "type": "string",
+      "description": "Payout account record the held share was released to"
+    },
+    "settled_at": {
+      "type": "string"
+    },
+    "income": {
+      "type": "object"
+    },
+    "fee_revision_id": {
+      "type": "string"
+    },
+    "fee_status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "payment_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

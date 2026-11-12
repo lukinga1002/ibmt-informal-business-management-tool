@@ -9,28 +9,27 @@ import Notice from '@/components/ibmt/Notice';
 import Field, { SelectControl, TextArea, TextInput } from '@/components/ibmt/Field';
 import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { labelTable } from '@/i18n/translate';
+import { useT } from '@/i18n/I18nContext';
 import { base44 } from '@/api/base44Client';
 import { REGIONS } from '@/config/r3';
 
-const LICENCE_LABEL = {
-  pending: 'Inasubiri halmashauri',
-  approved: 'Imethibitishwa',
-  rejected: 'Imekataliwa',
-  suspended: 'Imesimamishwa',
-  revoked: 'Imefutwa',
-};
+const LICENCE_LABEL = labelTable({
+  pending: 'agentDash.pendingCouncil',
+  approved: 'agentLicences.status.approved',
+  rejected: 'agentLicences.status.rejected',
+  suspended: 'agentLicences.status.suspended',
+  revoked: 'agentLicences.status.revoked',
+});
 
-const SCOPE_LABEL = { rental: 'Kupangisha', sale: 'Mauzo', both: 'Kupangisha na mauzo' };
-const SCOPES = [
-  { value: 'rental', label: 'Kupangisha' },
-  { value: 'sale', label: 'Mauzo' },
-  { value: 'both', label: 'Zote mbili' },
-];
+const SCOPE_LABEL = labelTable({ rental: 'agentLicences.scope.rental', sale: 'agentLicences.scope.sale', both: 'agentDash.scopeBoth' });
+const SCOPES = ['rental', 'sale', 'both'];
 const OPEN_STATUS = ['pending', 'approved', 'suspended'];
 
 /** The agent's own workspace: licence, mandates and the commission owed to them. */
 export default function AgentDashboard() {
+  const { t, lang } = useT();
   const [licences, setLicences] = useState([]);
   const [councils, setCouncils] = useState([]);
   const [mandates, setMandates] = useState([]);
@@ -48,7 +47,7 @@ export default function AgentDashboard() {
     notes: '',
   });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -74,7 +73,7 @@ export default function AgentDashboard() {
         }));
       }
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setLoading(false);
     }
@@ -87,13 +86,13 @@ export default function AgentDashboard() {
   const districts = REGIONS.find((item) => item.region === form.region)?.districts || REGIONS[0].districts;
 
   const apply = async () => {
-    if (form.agent_name.trim().length < 3) return setError('Andika jina la broker.');
+    if (form.agent_name.trim().length < 3) return setError({ key: 'agentDash.errors.name' });
     if (!/^(0\d{9}|255\d{9})$/.test(form.agent_phone.replace(/\D/g, ''))) {
-      return setError('Namba ya simu inahitajika. Mfano 0712345678.');
+      return setError({ key: 'agentDash.errors.phone' });
     }
-    if (form.nida_number.length !== 20) return setError('Namba ya NIDA ina tarakimu 20.');
+    if (form.nida_number.length !== 20) return setError({ key: 'tenantJoin.errors.nida' });
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('agentLicence', {
         action: 'apply',
@@ -110,7 +109,7 @@ export default function AgentDashboard() {
       });
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -124,10 +123,10 @@ export default function AgentDashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Wakala wa nyumba"
-        title="Wakala"
-        lede="Leseni yako, mandate zilizosainiwa na kamisheni inayodaiwa na mmiliki."
-        meta={[{ label: 'Kamisheni hulipwa na mmiliki' }]}
+        kicker={t('agentDash.kicker')}
+        title={t('entry.role.agent')}
+        lede={t('agentDash.lede')}
+        meta={[{ label: t('agentDash.ownerPays') }]}
         actions={
           <>
             <Link
@@ -135,7 +134,7 @@ export default function AgentDashboard() {
               className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground hover:bg-navy-deep"
             >
               <Link2 className="h-4 w-4" aria-hidden="true" />
-              Pangisha
+              {t('portfolioDemo.rentOut')}
             </Link>
             <TenantFeeNote />
           </>
@@ -144,14 +143,14 @@ export default function AgentDashboard() {
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <SectionCard title="Leseni" description="Halmashauri inaamua; kila uamuzi una sababu na tarehe.">
+        <SectionCard title={t('agentDash.licence')} description={t('agentDash.licenceBody')}>
           {loading ? (
-            <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+            <p className="text-[13px] text-muted-foreground">{t('agentDash.loading')}</p>
           ) : (
             <div className="space-y-4">
               {licences.length > 0 && (
@@ -173,23 +172,23 @@ export default function AgentDashboard() {
               )}
 
               {licences.some((row) => row.status !== 'approved') && (
-                <Notice tone="caution" title="Hauwezi kupendekezwa bila leseni">
-                  Mmiliki hawezi kukutaja kwenye mandate hadi leseni yako katika halmashauri hiyo ithibitishwe.
+                <Notice tone="caution" title={t('agentDash.needLicenceTitle')}>
+                  {t('agentDash.needLicenceBody')}
                 </Notice>
               )}
 
               {openInDistrict ? (
-                <Notice tone="neutral" title="Una ombi au leseni katika wilaya hii">
-                  Kila broker ana leseni moja kwa kila halmashauri. Chagua wilaya nyingine kama unataka kusajiliwa huko.
+                <Notice tone="neutral" title={t('agentDash.openTitle')}>
+                  {t('agentDash.openBody')}
                 </Notice>
               ) : (
                 <>
-                  <Field label="Jina la broker" required>
+                  <Field label={t('agentDash.name')} required>
                     {(props) => (
                       <TextInput {...props} value={form.agent_name} onChange={(event) => setForm({ ...form, agent_name: event.target.value })} />
                     )}
                   </Field>
-                  <Field label="Namba ya simu" required hint="Mfano 0712345678">
+                  <Field label={t('joinForm.phone')} required hint={t('joinForm.phoneHint')}>
                     {(props) => (
                       <TextInput
                         {...props}
@@ -200,7 +199,7 @@ export default function AgentDashboard() {
                       />
                     )}
                   </Field>
-                  <Field label="Barua pepe" hint="Si lazima. Ukiitoa, halmashauri itaitumia kukufikia.">
+                  <Field label={t('joinForm.email')} hint={t('agentDash.emailHint')}>
                     {(props) => (
                       <TextInput
                         {...props}
@@ -210,7 +209,7 @@ export default function AgentDashboard() {
                       />
                     )}
                   </Field>
-                  <Field label="Namba ya NIDA" required hint="Tarakimu 20 kutoka kitambulisho cha broker">
+                  <Field label={t('tenantJoin.nida')} required hint={t('agentDash.nidaHint')}>
                     {(props) => (
                       <TextInput
                         {...props}
@@ -221,12 +220,12 @@ export default function AgentDashboard() {
                       />
                     )}
                   </Field>
-                  <Field label="Jina la biashara" hint="Kama lipo. Broker anaweza kufanya kazi kwa jina lake mwenyewe.">
+                  <Field label={t('agentDash.business')} hint={t('agentDash.businessHint')}>
                     {(props) => (
                       <TextInput {...props} value={form.business_name} onChange={(event) => setForm({ ...form, business_name: event.target.value })} />
                     )}
                   </Field>
-                  <Field label="Mkoa" required>
+                  <Field label={t('joinForm.region')} required>
                     {(props) => (
                       <SelectControl
                         {...props}
@@ -244,7 +243,7 @@ export default function AgentDashboard() {
                       </SelectControl>
                     )}
                   </Field>
-                  <Field label="Wilaya" required>
+                  <Field label={t('agentDash.district')} required>
                     {(props) => (
                       <SelectControl {...props} value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
                         {districts.map((value) => (
@@ -255,32 +254,32 @@ export default function AgentDashboard() {
                       </SelectControl>
                     )}
                   </Field>
-                  <Field label="Aina ya usajili" required hint="Usajili wa mauzo pekee haukupi mandate ya upangishaji">
+                  <Field label={t('agentDash.scope')} required hint={t('agentDash.scopeHint')}>
                     {(props) => (
                       <SelectControl {...props} value={form.scope} onChange={(event) => setForm({ ...form, scope: event.target.value })}>
-                        {SCOPES.map((item) => (
-                          <option key={item.value} value={item.value}>
-                            {item.label}
+                        {SCOPES.map((value) => (
+                          <option key={value} value={value}>
+                            {SCOPE_LABEL[value]}
                           </option>
                         ))}
                       </SelectControl>
                     )}
                   </Field>
                   {enforcedCouncil && (
-                    <Notice tone="policy" title="Usajili wa mawakala ni wa lazima katika halmashauri hii">
+                    <Notice tone="policy" title={t('agentDash.mandatoryTitle')}>
                       {enforcedCouncil.bylaw_reference
-                        ? `Halmashauri inatumia sheria ndogo ${enforcedCouncil.bylaw_reference}.`
-                        : 'Halmashauri imeamua kuwa kila broker asajiliwe kabla ya kufanya kazi.'}
+                        ? t('agentDash.bylaw', { ref: enforcedCouncil.bylaw_reference })
+                        : t('agentDash.mandatoryBody')}
                     </Notice>
                   )}
-                  <Field label="Kata">
+                  <Field label={t('joinForm.ward')}>
                     {(props) => <TextInput {...props} value={form.ward} onChange={(event) => setForm({ ...form, ward: event.target.value })} />}
                   </Field>
-                  <Field label="Maelezo" hint="Uzoefu, eneo unaofanyia kazi">
+                  <Field label={t('pangisha.notes')} hint={t('agentDash.notesHint')}>
                     {(props) => <TextArea {...props} rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />}
                   </Field>
                   <Button type="button" className="ibmt-tap w-full bg-navy font-semibold text-primary-foreground hover:bg-navy-deep" onClick={apply} disabled={busy}>
-                    {busy ? 'Inawasilisha…' : 'Wasilisha ombi la usajili'}
+                    {busy ? t('agentDash.submitting') : t('agentDash.submit')}
                   </Button>
                 </>
               )}
@@ -288,20 +287,20 @@ export default function AgentDashboard() {
           )}
         </SectionCard>
 
-        <SectionCard title="Kamisheni" description="Inadaiwa na mmiliki. Mpangaji halipi kitu.">
+        <SectionCard title={t('agentDash.commission')} description={t('agentDash.commissionBody')}>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
-              <p className="ibmt-kicker">Inadaiwa</p>
+              <p className="ibmt-kicker">{t('agentDash.owed')}</p>
               <Money amount={totals.owed} strong />
             </div>
             <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
-              <p className="ibmt-kicker">Imelipwa</p>
+              <p className="ibmt-kicker">{t('agentDash.paid')}</p>
               <Money amount={totals.paid} strong />
             </div>
             <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
-              <p className="ibmt-kicker">Marudio</p>
+              <p className="ibmt-kicker">{t('agentDash.renewals')}</p>
               <p className="ibmt-num font-heading text-[17px] font-semibold">{totals.renewals}</p>
-              <p className="text-[11px] text-muted-foreground">Kamisheni: TZS 0</p>
+              <p className="text-[11px] text-muted-foreground">{t('agentDash.renewalZero')}</p>
             </div>
           </div>
           <ul className="mt-4 space-y-2">
@@ -309,19 +308,19 @@ export default function AgentDashboard() {
               <li key={row.commission_id} className="flex items-center justify-between gap-3 border-b border-border pb-2 last:border-b-0">
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium">{row.unit_ref || '—'}</p>
-                  <p className="text-[11px] text-muted-foreground">{row.kind === 'renewal' ? 'Marudio · hakuna kamisheni' : 'Tenancy mpya'}</p>
+                  <p className="text-[11px] text-muted-foreground">{row.kind === 'renewal' ? t('agentDash.renewalRow') : t('agentDash.newTenancy')}</p>
                 </div>
                 <Money amount={row.amount} />
               </li>
             ))}
-            {!(commission?.rows || []).length && <p className="text-[13px] text-muted-foreground">Hakuna kamisheni bado.</p>}
+            {!(commission?.rows || []).length && <p className="text-[13px] text-muted-foreground">{t('agentDash.noCommission')}</p>}
           </ul>
         </SectionCard>
       </div>
 
-      <SectionCard title="Mandate zangu" description="Mandate inakuwa hai baada ya mmiliki kusaini kwa namba ya siri.">
+      <SectionCard title={t('agentDash.myMandates')} description={t('agentDash.myMandatesBody')}>
         {mandates.length === 0 ? (
-          <p className="text-[13px] text-muted-foreground">Hakuna mandate bado.</p>
+          <p className="text-[13px] text-muted-foreground">{t('mandates.none')}</p>
         ) : (
           <ul className="space-y-3">
             {mandates.map((row) => (
@@ -331,11 +330,11 @@ export default function AgentDashboard() {
                     {row.unit_ref || row.unit_id} · {row.agent_name}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Kamisheni {Number(row.fee_amount || 0).toLocaleString('en-TZ')} TZS (mmiliki) · mpangaji TZS 0
-                    {row.starts_on ? ` · kuanzia ${row.starts_on}` : ''}
+                    {t('agentDash.mandateFee', { amount: Number(row.fee_amount || 0).toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-TZ') })}
+                    {row.starts_on ? ` · ${t('pangisha.from', { date: row.starts_on })}` : ''}
                   </p>
                 </div>
-                <StatusBadge status={row.status} label={row.status === 'active' ? 'Inafanya kazi' : row.status === 'offered' ? 'Inasubiri sahihi' : 'Imekwisha'} />
+                <StatusBadge status={row.status} label={t(`mandates.status.${row.status === 'active' || row.status === 'offered' ? row.status : 'ended'}`)} />
               </li>
             ))}
           </ul>

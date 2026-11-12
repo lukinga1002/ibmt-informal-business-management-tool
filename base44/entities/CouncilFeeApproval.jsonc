@@ -1,0 +1,28 @@
+{
+  "name": "CouncilFeeApproval",
+  "type": "object",
+  "properties": {
+    "council_id": {
+      "type": "string"
+    },
+    "revision_id": {
+      "type": "string"
+    },
+    "admin_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "council_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

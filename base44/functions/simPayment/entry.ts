@@ -1,3 +1,7 @@
+import { recordSettlement } from '../../shared/stage2Settlement.ts';
+import { leasePayoutGuard } from '../../shared/stage2Payout.ts';
+import { settlementRules } from '../../shared/settlementRules.ts';
+import { feeEvidence } from '../../shared/councilFee.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, getPolicyRules, json, nextSerial, rentRates } from '../../shared/moneyOps.ts';
 import {
@@ -14,6 +18,7 @@ import {
   verifySignature,
   wholeTZS,
 } from '../../shared/r7.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * SIMULATED payment engine. Stages 2 and 3 are simulation only: the partner is
@@ -26,7 +31,7 @@ import {
  *  4. the callback rules a real provider would have to follow
  */
 
-const STAGES = [STAGE.stage1, STAGE.stage2, STAGE.stage3];
+
 
 /**
  * Rates from the active PolicyRule row, the single source. No tax: Stage 1 runs
@@ -36,6 +41,7 @@ const STAGES = [STAGE.stage1, STAGE.stage2, STAGE.stage3];
 function ratesFromRule(rule) {
   const rates = rentRates(rule);
   return {
+    partner_rebate_rate: rule?.partner_rebate_rate,
     tax_rate: 0,
     service_fee_rate: rates.landlord_service_fee_rate,
     commission_share: rates.commission_months,
@@ -53,6 +59,10 @@ function shape(payment) {
     rent_total: wholeTZS(payment.rent_total),
     deposit_amount: wholeTZS(payment.deposit_amount),
     tenant_pays: wholeTZS(payment.tenant_pays),
+    council_fee: wholeTZS(payment.council_fee),
+    partner_charge: wholeTZS(payment.partner_charge),
+    fee_status: payment.fee_status || 'proposed',
+    payout_state: payment.payout_state || null,
     tax: wholeTZS(payment.tax),
     agent_commission: wholeTZS(payment.agent_commission),
     service_fee: wholeTZS(payment.service_fee),
@@ -85,14 +95,14 @@ async function raiseAlert(base44, input) {
 }
 
 async function ledgerFor(base44, paymentId) {
-  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, { limit: 200 });
+  const page = await base44.asServiceRole.entities.LedgerEntry.filter({ payment_id: paymentId }, 'created_date', 200);
   return page.items || page;
 }
 
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -122,10 +132,12 @@ export default async function (req) {
 
     const rule = await getPolicyRules(base44);
     const policyRates = ratesFromRule(rule);
+    const context = ['quote','initiate'].includes(action)
+      ? await settlementRules(base44,user,payload,rule) : null;
 
     if (action === 'quote') {
-      const stage = STAGES.includes(cleanText(payload.stage)) ? cleanText(payload.stage) : STAGE.stage2;
-      const rates = isAdmin && payload.demo_rates ? payload.demo_rates : policyRates;
+      const stage = context.stage;
+      const rates = { ...policyRates, ...context.rates };
       const split = computeSplit({
         rent_total: payload.rent_total,
         monthly_rent: payload.monthly_rent,
@@ -139,21 +151,23 @@ export default async function (req) {
         simulation: true,
         split,
         rates_used: rates,
-        rates_source: isAdmin && payload.demo_rates ? 'explicit test rates' : 'active PolicyRule',
+        fee_status: context.approved ? 'in_force' : 'proposed',
+        rates_source: 'Council / PolicyRule · Simulation / Majaribio',
         policy_version: rule ? rule.version : null,
       });
     }
 
     if (action === 'initiate') {
-      const stage = STAGES.includes(cleanText(payload.stage)) ? cleanText(payload.stage) : STAGE.stage2;
+      const stage = context.stage;
+      if (stage===STAGE.stage2 && !payload.tenancy_id) return fail(422,'TENANCY_REQUIRED','A registered tenancy is required for Stage 2');
       const idempotencyKey = cleanText(payload.idempotency_key);
       if (idempotencyKey) {
-        const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, { limit: 1 });
+        const existing = await base44.entities.SimPayment.filter({ idempotency_key: idempotencyKey }, '-created_date', 1);
         const rows = existing.items || existing;
         if (rows.length) return json({ payment: shape(rows[0]), duplicate: true, simulation: true });
       }
 
-      const rates = isAdmin && payload.demo_rates ? payload.demo_rates : policyRates;
+      const rates = { ...policyRates, ...context.rates };
       const split = computeSplit({
         rent_total: payload.rent_total,
         monthly_rent: payload.monthly_rent,
@@ -169,7 +183,7 @@ export default async function (req) {
       let unitRef = cleanText(payload.unit_ref) || null;
       const tenancyId = cleanText(payload.tenancy_id);
       if (tenancyId) {
-        const tenancy = await base44.entities.Tenancy.get(tenancyId).catch(() => null);
+        const tenancy = await base44.asServiceRole.entities.Tenancy.get(tenancyId).catch(() => null);
         if (tenancy) {
           landlordId = tenancy.landlord_id || landlordId;
           tenantId = tenancy.tenant_id || tenantId;
@@ -178,9 +192,14 @@ export default async function (req) {
       }
 
       const reference = await nextSerial(base44, 'SimPayment', `IBMT-SIM-${new Date().getFullYear()}-`);
-      const created = await base44.entities.SimPayment.create({
+      const created = await base44.asServiceRole.entities.SimPayment.create({
         reference,
         stage,
+        council_id: context.council?.id || null,
+        fee_revision_id: context.terms?.id || null,
+        fee_status: context.approved ? 'in_force' : 'proposed',
+        council_fee: split.council_fee,
+        partner_charge: split.partner_charge,
         tenancy_id: tenancyId || null,
         unit_ref: unitRef,
         landlord_id: landlordId,
@@ -267,7 +286,7 @@ export default async function (req) {
       }
 
       // 2. A provider reference may be used once, by one payment only.
-      const dupPage = await base44.asServiceRole.entities.SimPayment.filter({ provider_reference: providerReference }, { limit: 10 });
+      const dupPage = await base44.asServiceRole.entities.SimPayment.filter({ provider_reference: providerReference }, '-created_date', 10);
       const duplicates = (dupPage.items || dupPage).filter((row) => row.id !== payment.id);
       if (duplicates.length) {
         await raiseAlert(base44, {
@@ -304,6 +323,17 @@ export default async function (req) {
         return fail(409, 'AMOUNT_MISMATCH', 'The callback amount does not match the payment. It was not credited.');
       }
 
+      if (claimedStatus === 'succeeded' && payment.stage === STAGE.stage2) {
+        if (!payment.tenancy_id) return fail(409,'TENANCY_REQUIRED','Select a signed tenancy for Stage 2');
+        const tenancy=await base44.asServiceRole.entities.Tenancy.get(payment.tenancy_id);
+        await leasePayoutGuard(base44,{unit_id:tenancy.unit_id});
+      }
+      if (claimedStatus === 'succeeded' && payment.fee_status === 'in_force') {
+        const council = await base44.entities.Council.get(payment.council_id);
+        const evidence = await feeEvidence(base44.asServiceRole.entities,council);
+        if (!evidence.approved || council.council_fee_status !== 'in_force' || council.fee_revision_id !== payment.fee_revision_id)
+          return fail(409,'TERMS_CHANGED','Council fee approvals changed; obtain a new quote');
+      }
       // 4. One place decides whether the move exists.
       const path = statePath(payment.state, claimedStatus);
       if (!path) {
@@ -400,6 +430,15 @@ export default async function (req) {
       }
 
       const updated = await base44.asServiceRole.entities.SimPayment.get(payment.id);
+      if (claimedStatus === 'succeeded') {
+        try {
+          const settlement=await recordSettlement(base44,{...payment,...update});
+          if(settlement)await base44.asServiceRole.entities.SimPayment.update(payment.id,{payout_state:settlement.landlord_state});
+        } catch {
+          await raiseAlert(base44,{payment_id:payment.id,kind:'state_violation',detail:'Simulation settlement incomplete after callback. Review ledger and retry the same signed callback.'});
+          return fail(409,'SETTLEMENT_REVIEW','Simulated settlement needs review; no real funds moved');
+        }
+      }
       return json({
         payment: shape(updated),
         credits_written: creditsWritten,
@@ -413,8 +452,8 @@ export default async function (req) {
       const paymentId = cleanText(payload.payment_id);
       const query = paymentId ? { id: paymentId } : {};
       const ownPage = isAdmin
-        ? await base44.asServiceRole.entities.SimPayment.filter(query, { sort: '-created_date', limit: 25 })
-        : await base44.entities.SimPayment.filter(query, { sort: '-created_date', limit: 25 });
+        ? await base44.asServiceRole.entities.SimPayment.filter(query, '-created_date', 25)
+        : await base44.entities.SimPayment.filter(query, '-created_date', 25);
       const payments = ownPage.items || ownPage;
       const ids = payments.map((row) => row.id);
       const entries = [];
@@ -440,7 +479,7 @@ export default async function (req) {
 
     if (action === 'alerts') {
       if (!isAdmin) return fail(403, 'FORBIDDEN', 'The alert queue is for the platform admin, so two people see a mismatch');
-      const page = await base44.asServiceRole.entities.PaymentAlert.filter({ state: 'open' }, { sort: '-created_date', limit: 50 });
+      const page = await base44.asServiceRole.entities.PaymentAlert.filter({ state: 'open' }, '-created_date', 50);
       const rows = page.items || page;
       return json({ alerts: rows, count: rows.length });
     }
@@ -459,7 +498,7 @@ export default async function (req) {
     }
 
     if (action === 'list') {
-      const page = await base44.entities.SimPayment.filter({}, { sort: '-created_date', limit: 25 });
+      const page = await base44.entities.SimPayment.filter({}, '-created_date', 25);
       const rows = page.items || page;
       return json({ simulation: true, payments: rows.map(shape) });
     }

@@ -62,7 +62,7 @@ export default function UploadField({ label, hint, purpose, accept = '.pdf,.jpg,
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-success">
           <span>{t('states.successTitle')}</span>
           <span className="ibmt-num text-muted-foreground">{upload.result.file_id}</span>
-          <span className="text-muted-foreground">(stored privately)</span>
+          <span className="text-muted-foreground">{t('parked.storedPrivately')}</span>
           {isMock && <DemoBadge variant="chip" />}
         </div>
       )}

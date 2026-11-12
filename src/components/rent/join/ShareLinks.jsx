@@ -3,6 +3,7 @@ import { Check, Copy } from 'lucide-react';
 import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * The links a landlord shares with tenants who are already in. One unit, one
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
  * against that unit.
  */
 export default function ShareLinks({ units }) {
+  const { t } = useT();
   const [copied, setCopied] = useState('');
   const withTenant = units.filter((unit) => unit.tenant_link_code);
   if (!withTenant.length) return null;
@@ -27,8 +29,8 @@ export default function ShareLinks({ units }) {
 
   return (
     <SectionCard
-      title="Kiungo cha wapangaji waliopo"
-      description="Mtumie mpangaji mmoja kwa uniti yake. Yeye hujaza mwenyewe, taarifa zinakuja kwako."
+      title={t('shareLinks.title')}
+      description={t('shareLinks.description')}
     >
       <ul className="divide-y divide-border">
         {withTenant.map((unit) => {
@@ -43,22 +45,22 @@ export default function ShareLinks({ units }) {
                 </div>
                 <Button type="button" variant="outline" className="ibmt-tap shrink-0 gap-2" onClick={() => copy(unit)}>
                   {copied === unit.unit_id ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
-                  {copied === unit.unit_id ? 'Imenakiliwa' : 'Nakili kiungo'}
+                  {copied === unit.unit_id ? t('shareLinks.copied') : t('shareLinks.copy')}
                 </Button>
               </div>
               <code className="min-w-0 truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-[11px] text-navy">
                 {link}
               </code>
               {manual && (
-                <p className="text-[11px] text-muted-foreground">Nakili kiungo hiki kwa mkono: {link}</p>
+                <p className="text-[11px] text-muted-foreground">{t('shareLinks.copyManually', { link })}</p>
               )}
             </li>
           );
         })}
       </ul>
 
-      <Notice tone="neutral" className="mt-3" title="Kinachotoka kwa mpangaji">
-        Jina kamili, namba ya NIDA, kodi anayolipa, na kama alimlipa broker. Hata kama hakulipa, jibu linahifadhiwa.
+      <Notice tone="neutral" className="mt-3" title={t('shareLinks.whatTitle')}>
+        {t('shareLinks.whatBody')}
       </Notice>
     </SectionCard>
   );

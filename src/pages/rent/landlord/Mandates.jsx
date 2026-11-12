@@ -8,13 +8,15 @@ import Money from '@/components/ibmt/Money';
 import TenantFeeNote from '@/components/rent/TenantFeeNote';
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * The landlord names one licensed agent, at or under the commission cap, and
  * signs with a one-time code. The tenant pays nothing.
  */
 export default function LandlordMandates() {
+  const { t, lang } = useT();
   const [units, setUnits] = useState(null);
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState({ unit_id: '', agent_email: '', fee_amount: '' });
@@ -23,7 +25,7 @@ export default function LandlordMandates() {
   const [code, setCode] = useState('');
   const [mandateId, setMandateId] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     const unitPage = await base44.entities.RentalUnit.filter({}, { sort: '-created_date', limit: 50 }).catch(() => ({ items: [] }));
@@ -34,7 +36,7 @@ export default function LandlordMandates() {
       const data = await callFn('agentMandate', { action: 'list' });
       setRows(data.rows || []);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     }
   }, []);
 
@@ -44,7 +46,7 @@ export default function LandlordMandates() {
 
   const run = async (action) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       if (action === 'check') {
         const data = await callFn('agentMandate', { action: 'check', agent_email: form.agent_email });
@@ -69,7 +71,7 @@ export default function LandlordMandates() {
         await load();
       }
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -77,12 +79,12 @@ export default function LandlordMandates() {
 
   const end = async (row) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('agentMandate', { action: 'end', mandate_id: row.mandate_id, reason: 'landlord_ended' });
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -91,57 +93,57 @@ export default function LandlordMandates() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Wakala"
-        title="Mandate za wakala"
-        lede="Mmiliki huchagua wakala mmoja aliye na leseni, kamisheni isiyozidi kikomo cha sera, na husaini kwa namba ya siri."
-        meta={[{ label: 'Wakala asiye na leseni hawezi kuchaguliwa' }]}
+        kicker={t('entry.role.agent')}
+        title={t('mandates.title')}
+        lede={t('mandates.lede')}
+        meta={[{ label: t('mandates.licensedOnly') }]}
         actions={<TenantFeeNote />}
       />
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-        <SectionCard title="Mpe wakala mandate" description="Anza kwa kuangalia leseni ya wakala.">
+        <SectionCard title={t('mandates.giveTitle')} description={t('mandates.giveBody')}>
           {units === null ? (
-            <p className="text-[13px] text-muted-foreground">Inapakia nyumba…</p>
+            <p className="text-[13px] text-muted-foreground">{t('leaseNew.loading')}</p>
           ) : units.length === 0 ? (
-            <Notice tone="neutral">Hakuna nyumba bado. Sajili nyumba kwanza.</Notice>
+            <Notice tone="neutral">{t('mandates.noUnits')}</Notice>
           ) : (
             <div className="space-y-4">
-              <Field label="Nyumba" required>
+              <Field label={t('leaseNew.unit')} required>
                 {(props) => (
                   <SelectControl {...props} value={form.unit_id} onChange={(event) => setForm({ ...form, unit_id: event.target.value })}>
                     {units.map((unit) => (
                       <option key={unit.id} value={unit.id}>
-                        {unit.unit_ref} · {unit.ward} · {Number(unit.rent_amount || 0).toLocaleString('en-TZ')} TZS
+                        {unit.unit_ref} · {unit.ward} · {Number(unit.rent_amount || 0).toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-TZ')} TZS
                       </option>
                     ))}
                   </SelectControl>
                 )}
               </Field>
-              <Field label="Barua pepe ya wakala" required hint="Barua pepe aliyotumia kujisajili IBMT">
+              <Field label={t('mandates.agentEmail')} required hint={t('mandates.agentEmailHint')}>
                 {(props) => (
                   <TextInput {...props} type="email" value={form.agent_email} onChange={(event) => setForm({ ...form, agent_email: event.target.value })} />
                 )}
               </Field>
 
               <Button type="button" variant="outline" className="ibmt-tap" onClick={() => run('check')} disabled={busy || !form.agent_email}>
-                Angalia leseni
+                {t('mandates.checkLicence')}
               </Button>
 
               {check && (
-                <Notice tone={check.licensed ? 'positive' : 'danger'} title={check.licensed ? 'Wakala ana leseni' : 'Wakala hana leseni'}>
+                <Notice tone={check.licensed ? 'positive' : 'danger'} title={check.licensed ? t('mandates.licensed') : t('mandates.notLicensed')}>
                   {check.licensed
                     ? `${check.agent_name || ''} · ${check.licence_no || ''}`
-                    : 'Halmashauri haijathibitisha leseni ya akaunti hii. Hauruhusiwi kumtaja.'}
+                    : t('mandates.notLicensedBody')}
                 </Notice>
               )}
 
-              <Field label="Kamisheni (TZS)" required hint="Hulipwa na mmiliki. Mpangaji halipi kitu.">
+              <Field label={t('mandates.commission')} required hint={t('mandates.commissionHint')}>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -160,13 +162,13 @@ export default function LandlordMandates() {
                   onClick={() => run('offer')}
                   disabled={busy || !check?.licensed || !form.fee_amount}
                 >
-                  {busy ? 'Inatuma…' : 'Pendekeza na tuma namba'}
+                  {busy ? t('otpConfirm.sending') : t('mandates.offer')}
                 </Button>
               ) : (
                 <div className="space-y-3 rounded-md border border-border bg-muted/40 px-3 py-3">
-                  <p className="ibmt-kicker">Namba ya kusaini</p>
+                  <p className="ibmt-kicker">{t('leaseSign.yourCode')}</p>
                   <p className="ibmt-num font-heading text-xl font-semibold text-navy">{otp.code}</p>
-                  <Field label="Weka namba" required>
+                  <Field label={t('condition.enterCode')} required>
                     {(props) => (
                       <TextInput
                         {...props}
@@ -183,7 +185,7 @@ export default function LandlordMandates() {
                     onClick={() => run('sign')}
                     disabled={busy || code.length !== 6}
                   >
-                    Saini mandate
+                    {t('mandates.sign')}
                   </Button>
                 </div>
               )}
@@ -191,9 +193,9 @@ export default function LandlordMandates() {
           )}
         </SectionCard>
 
-        <SectionCard title="Mandate zilizopo" description="Mandate inayofanya kazi inampa wakala ufikiaji wa nyumba hiyo.">
+        <SectionCard title={t('mandates.existing')} description={t('mandates.existingBody')}>
           {rows.length === 0 ? (
-            <p className="text-[13px] text-muted-foreground">Hakuna mandate bado.</p>
+            <p className="text-[13px] text-muted-foreground">{t('mandates.none')}</p>
           ) : (
             <ul className="space-y-3">
               {rows.map((row) => (
@@ -202,20 +204,20 @@ export default function LandlordMandates() {
                     <div className="min-w-0">
                       <p className="text-[13px] font-medium">{row.unit_ref || row.unit_id}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {row.agent_name} · {row.licence_no || 'leseni haijaonyeshwa'}
+                        {row.agent_name} · {row.licence_no || t('mandates.licenceHidden')}
                       </p>
                       <div className="mt-1">
-                        <Money amount={row.fee_amount} note="Mmiliki hulipa · mpangaji TZS 0" />
+                        <Money amount={row.fee_amount} note={t('mandates.whoPays')} />
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <StatusBadge
                         status={row.status}
-                        label={row.status === 'active' ? 'Inafanya kazi' : row.status === 'offered' ? 'Inasubiri sahihi' : 'Imekwisha'}
+                        label={t(`mandates.status.${row.status === 'active' || row.status === 'offered' ? row.status : 'ended'}`)}
                       />
                       {row.status !== 'ended' && (
                         <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => end(row)} disabled={busy}>
-                          Maliza
+                          {t('mandates.end')}
                         </Button>
                       )}
                     </div>

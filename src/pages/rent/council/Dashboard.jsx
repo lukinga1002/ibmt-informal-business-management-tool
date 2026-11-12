@@ -1,3 +1,5 @@
+import CouncilTermsPanel from '@/components/sim/CouncilTermsPanel';
+import Stage2CouncilPanel from '@/components/sim/Stage2CouncilPanel';
 import { useState } from 'react';
 import { Building2, KeyRound, Scale, Settings2 } from 'lucide-react';
 import PageHeader from '@/components/ibmt/PageHeader';
@@ -50,6 +52,8 @@ export default function RentCouncilDashboard() {
         <MetaChip Icon={Scale}>{tt({ en: 'Small cells under 5 units suppressed', sw: 'Seli ndogo chini ya vitengo 5 zimefichwa' })}</MetaChip>
       </PageHeader>
 
+      {council?.id && <CouncilTermsPanel councilId={council.id} />}
+      {council?.id && <Stage2CouncilPanel councilId={council.id} />}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="ibmt-no-print h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
           <TabsTrigger value="register" className={TAB_TRIGGER}>

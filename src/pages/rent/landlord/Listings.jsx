@@ -6,17 +6,19 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Notice from '@/components/ibmt/Notice';
 import Money from '@/components/ibmt/Money';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * Only a verified unit can be listed, and the listing carries the area, never
  * the address. The address unlocks for a tenant when they book a viewing.
  */
 export default function LandlordListings() {
+  const { t, tt } = useT();
   const [units, setUnits] = useState(null);
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -25,7 +27,7 @@ export default function LandlordListings() {
       const data = await callFn('listingBoard', { action: 'mine' });
       setRows(data.rows || []);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
       setUnits([]);
     }
   }, []);
@@ -36,12 +38,12 @@ export default function LandlordListings() {
 
   const publish = async (unit) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('listingBoard', { action: 'publish', unit_id: unit.id });
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -49,12 +51,12 @@ export default function LandlordListings() {
 
   const setStatus = async (row, status) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('listingBoard', { action: 'status', listing_id: row.listing_id, status });
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -66,24 +68,24 @@ export default function LandlordListings() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Matangazo"
-        title="Matangazo ya nyumba"
-        lede="Tangaza nyumba iliyothibitishwa. Umma unaona kata na mtaa pekee; anwani inafunguka baada ya miadi."
-        meta={[{ label: 'Hakuna ada ya kuona: mpangaji TZS 0' }]}
+        kicker={t('nav.listings')}
+        title={t('listings.title')}
+        lede={t('listings.lede')}
+        meta={[{ label: t('listings.noViewingFee') }]}
       />
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <SectionCard title="Nyumba zilizothibitishwa" description="Nyumba isiyothibitishwa haiwezi kutangazwa.">
+        <SectionCard title={t('listings.verifiedTitle')} description={t('listings.verifiedBody')}>
           {units === null ? (
-            <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+            <p className="text-[13px] text-muted-foreground">{t('common.loading')}…</p>
           ) : available.length === 0 ? (
-            <Notice tone="neutral">Hakuna nyumba iliyothibitishwa inayosubiri kutangazwa.</Notice>
+            <Notice tone="neutral">{t('listings.noneWaiting')}</Notice>
           ) : (
             <ul className="space-y-3">
               {available.map((unit) => (
@@ -92,13 +94,13 @@ export default function LandlordListings() {
                     <p className="text-[13px] font-medium">{unit.unit_ref}</p>
                     <p className="text-[11px] text-muted-foreground">
                       {unit.ward}
-                      {unit.mtaa ? ` · ${unit.mtaa}` : ''} · {unit.unit_type}
+                      {unit.mtaa ? ` · ${unit.mtaa}` : ''} · {t(`leaseNew.unitType.${['room', 'flat', 'house', 'shop'].includes(unit.unit_type) ? unit.unit_type : 'room'}`)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Money amount={unit.rent_amount} />
                     <Button type="button" size="sm" className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep" onClick={() => publish(unit)} disabled={busy}>
-                      Tangaza
+                      {t('listings.publish')}
                     </Button>
                   </div>
                 </li>
@@ -107,40 +109,40 @@ export default function LandlordListings() {
           )}
         </SectionCard>
 
-        <SectionCard title="Matangazo yangu" description="Nini kinaonekana kwa umma.">
+        <SectionCard title={t('listings.mine')} description={t('listings.mineBody')}>
           {rows.length === 0 ? (
-            <p className="text-[13px] text-muted-foreground">Hakuna tangazo bado.</p>
+            <p className="text-[13px] text-muted-foreground">{t('listings.none')}</p>
           ) : (
             <ul className="space-y-3">
               {rows.map((row) => (
                 <li key={row.listing_id} className="border-b border-border pb-3 last:border-b-0">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium">{row.headline?.sw || row.unit_ref}</p>
+                      <p className="text-[13px] font-medium">{row.headline ? tt(row.headline) : row.unit_ref}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {row.ward}
-                        {row.mtaa ? ` · ${row.mtaa}` : ''} · umma hauoni anwani
+                        {row.mtaa ? ` · ${row.mtaa}` : ''} · {t('listings.addressHidden')}
                       </p>
                     </div>
                     <StatusBadge
                       status={row.status}
-                      label={row.status === 'listed' ? 'Linatangazwa' : row.status === 'paused' ? 'Limesimamishwa' : row.status === 'let' ? 'Limepangwa' : 'Rasimu'}
+                      label={t(`listings.status.${['listed', 'paused', 'let'].includes(row.status) ? row.status : 'draft'}`)}
                     />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {row.status === 'listed' && (
                       <>
                         <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => setStatus(row, 'paused')} disabled={busy}>
-                          Simamisha
+                          {t('listings.pause')}
                         </Button>
                         <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => setStatus(row, 'let')} disabled={busy}>
-                          Limepangwa
+                          {t('listings.markLet')}
                         </Button>
                       </>
                     )}
                     {row.status !== 'listed' && (
                       <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => setStatus(row, 'listed')} disabled={busy}>
-                        Tangaza tena
+                        {t('listings.republish')}
                       </Button>
                     )}
                   </div>

@@ -5,7 +5,8 @@ import RecordForm from './RecordForm';
 import RecordList from './RecordList';
 import ArrearsPanel from './ArrearsPanel';
 import RemindersPanel from '@/components/rent/RemindersPanel';
-import { callFn } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 /**
  * The rent workspace shared by the landlord and the tenant: enter a record,
@@ -13,6 +14,7 @@ import { callFn } from '@/lib/r4';
  * decides what each side may see; this screen only renders it.
  */
 export default function RentWorkspace({ role = 'landlord', footer = null }) {
+  const { t } = useT();
   const [state, setState] = useState({
     loading: true,
     tenancies: [],
@@ -21,7 +23,7 @@ export default function RentWorkspace({ role = 'landlord', footer = null }) {
     notifications: [],
     me: null,
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -49,7 +51,7 @@ export default function RentWorkspace({ role = 'landlord', footer = null }) {
         me,
       });
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Data haikupatikana.');
+      setError({ err });
       setState((prev) => ({ ...prev, loading: false }));
     }
   }, []);
@@ -66,29 +68,29 @@ export default function RentWorkspace({ role = 'landlord', footer = null }) {
   };
 
   if (state.loading) {
-    return <p className="text-[13px] text-muted-foreground">Inapakia…</p>;
+    return <p className="text-[13px] text-muted-foreground">{t('common.loading')}…</p>;
   }
 
   return (
     <div className="space-y-6">
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <div className="space-y-6">
           <SectionCard
-            title={role === 'tenant' ? 'Wasilisha malipo yako' : 'Andika rekodi ya kodi'}
-            description="Rekodi inaingizwa na upande mmoja; upande wa pili unathibitisha. Risiti inatoka baada ya uthibitisho."
+            title={role === 'tenant' ? t('rentWorkspace.tenantTitle') : t('recordForm.submitLandlord')}
+            description={t('rentWorkspace.enterBody')}
           >
             <RecordForm tenancies={state.tenancies} role={role} onSaved={load} />
           </SectionCard>
 
           <SectionCard
-            title="Rekodi za kodi"
-            description="Kila rekodi ina hali yake. Risiti inatolewa pale uthibitisho unapofanyika."
+            title={t('rentWorkspace.recordsTitle')}
+            description={t('rentWorkspace.recordsBody')}
           >
             <RecordList rows={state.records} myId={state.me?.id} onChanged={load} />
           </SectionCard>
@@ -97,11 +99,11 @@ export default function RentWorkspace({ role = 'landlord', footer = null }) {
         </div>
 
         <div className="space-y-6">
-          <SectionCard title="Deni la kodi" description="Vipindi sita vya karibuni">
+          <SectionCard title={t('rentWorkspace.arrearsTitle')} description={t('rentWorkspace.arrearsBody')}>
             <ArrearsPanel arrears={state.arrears} />
           </SectionCard>
 
-          <SectionCard title="Kumbukumbu" description="Siku 7 na siku 1 kabla ya kodi inayostahili">
+          <SectionCard title={t('rentWorkspace.remindersTitle')} description={t('rentWorkspace.remindersBody')}>
             <RemindersPanel notifications={state.notifications} smsAllowed={smsAllowed} onToggleSms={toggleSms} />
           </SectionCard>
         </div>

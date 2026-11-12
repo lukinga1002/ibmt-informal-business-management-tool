@@ -35,7 +35,7 @@ export default function PublicFooter() {
         </nav>
       </div>
       <div className="border-t border-border px-4 py-4 text-center text-[11px] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:px-10">
-        {t('brand.name')} · {t('brand.events')} · {t('brand.rent')} ({t('brand.rentLocal')})
+        {t('brand.name')} · {t('brand.events')} · {t('brand.rent')}
       </div>
     </footer>
   );

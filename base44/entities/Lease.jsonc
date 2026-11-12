@@ -93,7 +93,7 @@
     },
     "template_label": {
       "type": "object",
-      "description": "The wording shown on the lease itself, e.g. DRAFT \u2014 pending legal review"
+      "description": "The wording shown on the lease itself, e.g. DRAFT — pending legal review"
     },
     "stamp_duty": {
       "type": "object",
@@ -109,7 +109,28 @@
     },
     "otp": {
       "type": "object",
-      "description": "One signing challenge at a time: the party, the code and its expiry"
+      "description": "Retired. Signing codes live only as salted hashes on the admin-only OtpChallenge; leaseSignature always writes null here.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "signing_lock": {
+      "type": "string",
+      "description": "Token of the signature currently being written. Null when free. Written only by the leaseSignature function.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "signing_lock_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current signing claim was taken.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
     },
     "lease_version": {
       "type": "number",
@@ -193,24 +214,8 @@
         }
       ]
     },
-    "create": {
-      "data.landlord_id": "{{user.id}}"
-    },
-    "update": {
-      "$or": [
-        {
-          "data.landlord_id": "{{user.id}}"
-        },
-        {
-          "data.tenant_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": false,
+    "update": false,
     "delete": {
       "user_condition": {
         "role": "admin"

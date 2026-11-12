@@ -1,0 +1,49 @@
+{
+  "name": "SimCouncilBill",
+  "type": "object",
+  "properties": {
+    "council_id": {
+      "type": "string"
+    },
+    "day": {
+      "type": "string"
+    },
+    "control_number": {
+      "type": "string"
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "amount": {
+      "type": "number"
+    },
+    "state": {
+      "type": "string"
+    },
+    "settled_at": {
+      "type": "string"
+    },
+    "revision_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "council_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

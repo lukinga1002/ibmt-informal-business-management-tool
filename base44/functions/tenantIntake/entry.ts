@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { hasAnyRole, isAdmin } from '../../shared/r5.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Pangisha: a landlord, or a licensed agent under an active mandate, records the
@@ -17,7 +18,7 @@ const PHONE = /^(?:\+?255|0)([67]\d{8})$/;
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const role = String((user.data && user.data.ibmt_role) || '');

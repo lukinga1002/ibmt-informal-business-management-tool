@@ -95,7 +95,7 @@ export default function DocumentSheet({ doc, lang, className }) {
                 <dd className="ibmt-num mt-1 text-[13px]">{formatDate(doc.issued_on, lang)}</dd>
               </div>
               <div>
-                <dt className="ibmt-kicker">Valid until</dt>
+                <dt className="ibmt-kicker">{t('parked.validUntil')}</dt>
                 <dd className="ibmt-num mt-1 text-[13px]">{formatDate(doc.valid_until, lang)}</dd>
               </div>
             </dl>

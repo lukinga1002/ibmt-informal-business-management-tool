@@ -1,6 +1,13 @@
+import { leasePayoutGuard } from '../../shared/stage2Payout.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { LEASE_TEMPLATE_LABEL, STAMP_DUTY_PLACEHOLDER, buildLeaseTerms } from '../../shared/leaseTemplate.ts';
+import { attemptOtp, issuanceAllowed, issueChallenge } from '../../shared/registration.ts';
+import { OTP_POLICY } from '../../shared/r7.ts';
+import { ClaimBusyError, withRecordClaim } from '../../shared/recordClaim.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
+
+const LEASE_PURPOSE = 'lease_signature';
 
 /**
  * Reviewing and signing a lease.
@@ -10,13 +17,23 @@ import { LEASE_TEMPLATE_LABEL, STAMP_DUTY_PLACEHOLDER, buildLeaseTerms } from '.
  * becomes signed only when both signatures are present, and only then does the
  * tenancy behind it become active.
  *
+ * Signing codes (hardened 2026-11-12). The code used to sit in plain text on the
+ * Lease record, which both parties can read, with no attempt limit and from
+ * Math.random; a second party's request also overwrote the first party's code.
+ * Now each request issues its own challenge through shared/registration.ts: a
+ * random code, only its salted hash stored on the admin-only OtpChallenge row,
+ * bound to this user, this lease and this party, five minutes, five attempts
+ * then a fifteen-minute lockout, hourly send limits, and attempts counted and
+ * consumed atomically (attemptOtp). The signature itself is written under the
+ * lease's signing claim, so two parties signing at once both land.
+ *
  * The public check (`action: 'public'`) answers with the long verify code from
  * the QR and shows no names, street or meter.
  */
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     const payload = await req.json().catch(() => ({}));
     const action = cleanText(payload.action) || 'view';
 
@@ -71,64 +88,136 @@ export default async function (req) {
     if (action === 'request') {
       if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
       if (lease.status === 'terminated') return fail(409, 'LEASE_CLOSED', 'This lease is closed');
-      // A party may only ask for their own code; an admin may request either,
-      // which is how a walkthrough of both phones is done.
-      const party = isAdmin && cleanText(payload.party) ? cleanText(payload.party) : myParty;
+      // Each party authenticates and signs for themselves. Nobody, the platform
+      // admin included, may request a code or sign for the other party.
+      const party = myParty;
       if (party !== 'landlord' && party !== 'tenant') {
         return fail(403, 'FORBIDDEN', 'Only a party to this lease can request a signing code');
       }
       const already = (lease.signatures || []).some((row) => row.party === party);
       if (already) return fail(409, 'ALREADY_SIGNED', 'This party has already signed');
 
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      await base44.entities.Lease.update(lease.id, {
-        otp: { party, code, issued_at: isoNow(), expires_at: expiresAt },
+      const phone = user.data && user.data.phone ? String(user.data.phone) : '';
+      const allowed = await issuanceAllowed(base44, { subjectId: user.id, phone: phone || null });
+      if (!allowed.allowed) {
+        return fail(429, 'RATE_LIMITED', 'Too many signing codes were requested. Try again within the hour.');
+      }
+      const issued = await issueChallenge(base44, {
+        subjectId: user.id,
+        subjectRef: `${lease.id}:${party}`,
+        purpose: LEASE_PURPOSE,
+        phone,
       });
+      // Codes never live on the lease. Clear any code an older version stored there.
+      if (lease.otp) await base44.asServiceRole.entities.Lease.update(lease.id, { otp: null });
       return json({
         lease_id: lease.id,
         party,
-        otp: { required: true, channel: 'in-app (demo)', expires_at: expiresAt, code },
+        challenge_id: issued.challenge.id,
+        otp: {
+          required: true,
+          channel: 'in-app (demo)',
+          expires_at: issued.expires_at,
+          max_attempts: OTP_POLICY.max_attempts,
+          // Simulation only: a real deployment sends this by SMS and never returns it.
+          code: issued.code,
+        },
         note: 'The code is shown to this party only. SMS delivery starts once the notification gateway is connected.',
       });
     }
 
     if (action === 'sign') {
-      const otp = lease.otp || null;
-      if (!otp || !otp.code) return fail(409, 'NO_CHALLENGE', 'Request a signing code first');
-      if (new Date(otp.expires_at).getTime() < Date.now()) return fail(409, 'OTP_EXPIRED', 'That code has expired');
-      if (!myParty && !isAdmin) return fail(403, 'FORBIDDEN', 'Only a party to this lease can sign it');
-      if (leakSafeCode(cleanText(payload.code)) !== otp.code) {
-        return fail(422, 'OTP_MISMATCH', 'That code is not correct', { code: 'Check the code and try again.' });
+      if (!myParty) return fail(403, 'FORBIDDEN', 'Only a party to this lease can sign it');
+      const challengeId = cleanText(payload.challenge_id);
+      if (!challengeId) return fail(409, 'NO_CHALLENGE', 'Request a signing code first');
+      const svc = base44.asServiceRole.entities;
+      const challenge = await svc.OtpChallenge.get(challengeId).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
+      const [challengeLease, signingParty] = String((challenge && challenge.subject_ref) || '').split(':');
+      // The code belongs to the user, lease and party it was issued to; nobody
+      // signs in another party's place.
+      if (!challenge || challenge.purpose !== LEASE_PURPOSE || challenge.subject_id !== user.id || challengeLease !== lease.id) {
+        return fail(403, 'WRONG_CHALLENGE', 'That code was not issued to you for this lease');
       }
-      // The code belongs to the party it was issued to; nobody signs in another
-      // party's place except the platform admin walking through both phones.
-      if (otp.party !== myParty && !isAdmin) return fail(403, 'WRONG_PARTY', 'That code was issued to the other party');
-      const signingParty = otp.party;
-
-      const signatures = [...(lease.signatures || []).filter((row) => row.party !== signingParty), {
-        party: signingParty,
-        method: 'otp_in_app',
-        signed_at: isoNow(),
-      }];
-      const both = ['landlord', 'tenant'].every((party) => signatures.some((row) => row.party === party));
-      const updated = await base44.entities.Lease.update(lease.id, {
-        signatures,
-        otp: null,
-        status: both ? 'signed' : 'awaiting_signature',
-        signed_at: both ? isoNow() : lease.signed_at || null,
-      });
-
-      let activated = false;
-      if (both) {
-        activated = await activateTenancy(base44, updated);
+      if (signingParty !== 'landlord' && signingParty !== 'tenant') return fail(403, 'WRONG_CHALLENGE', 'That code was not issued to you for this lease');
+      if (signingParty !== myParty) return fail(403, 'WRONG_PARTY', 'That code was issued to the other party');
+      if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
+      if ((lease.signatures || []).some((row) => row.party === signingParty)) {
+        return fail(409, 'ALREADY_SIGNED', 'This party has already signed');
       }
-      return json({ ...viewShape(updated, myParty, isAdmin), activated });
+
+      // If this signature completes the lease, check the payout rule before the
+      // code is spent, so a refusal does not cost the party their code.
+      const otherParty = signingParty === 'landlord' ? 'tenant' : 'landlord';
+      if ((lease.signatures || []).some((row) => row.party === otherParty)) {
+        const blocked = await payoutBlock(base44, lease);
+        if (blocked) return blocked;
+      }
+
+      const result = await attemptOtp(svc.OtpChallenge, challenge, leakSafeCode(cleanText(payload.code)));
+      if (!result.ok) return otpRefusal(result);
+
+      const outcome = await withRecordClaim(
+        svc.Lease,
+        lease.id,
+        { lock: 'signing_lock', at: 'signing_lock_at' },
+        async () => {
+          const current = await svc.Lease.get(lease.id);
+          const signatures = [...(current.signatures || []).filter((row) => row.party !== signingParty), {
+            party: signingParty,
+            method: 'otp_in_app',
+            challenge_id: challenge.id,
+            signed_at: isoNow(),
+          }];
+          const both = ['landlord', 'tenant'].every((party) => signatures.some((row) => row.party === party));
+          if (both) {
+            const blocked = await payoutBlock(base44, current);
+            if (blocked) return { blocked };
+          }
+          const updated = await svc.Lease.update(current.id, {
+            signatures,
+            otp: null,
+            status: both ? 'signed' : 'awaiting_signature',
+            signed_at: both ? isoNow() : current.signed_at || null,
+          });
+          return { updated: { ...current, ...updated, signatures }, activated: both ? await activateTenancy(base44, { ...current, ...updated }) : false };
+        },
+        { busy: () => new ClaimBusyError('Another signature on this lease is being saved. Try again.', 'SIGNING_BUSY') },
+      );
+      if (outcome.blocked) return outcome.blocked;
+      return json({ ...viewShape(outcome.updated, myParty, isAdmin), activated: outcome.activated });
     }
 
     return fail(422, 'VALIDATION', 'Unknown lease action');
   } catch (error) {
+    if (error instanceof ClaimBusyError) return fail(409, error.code, error.message);
     return fail(500, 'SERVER', error && error.message ? error.message : 'Unexpected error');
+  }
+}
+
+async function payoutBlock(base44, lease) {
+  try {
+    await leasePayoutGuard(base44, lease);
+    return null;
+  } catch (error) {
+    return fail(409, 'PAYOUT_ACCOUNT_REQUIRED', error && error.message ? error.message : 'Approve a payout account first');
+  }
+}
+
+function otpRefusal(result) {
+  switch (result.reason) {
+    case 'mismatch':
+      return fail(422, 'OTP_MISMATCH', 'That code is not correct', {
+        code: `Check the code and try again. Attempts left: ${Math.max(0, OTP_POLICY.max_attempts - result.attempts)}.`,
+      });
+    case 'too_many_attempts':
+    case 'locked':
+      return fail(423, 'OTP_LOCKED', `Too many wrong codes. Request a new code after ${OTP_POLICY.lockout_minutes} minutes.`);
+    case 'expired':
+      return fail(409, 'OTP_EXPIRED', 'That code has expired. Request a new one.');
+    case 'already_used':
+      return fail(409, 'OTP_USED', 'That code has already been used. Request a new one.');
+    default:
+      return fail(409, 'OTP_BUSY', 'Another attempt with this code is in progress. Try again.');
   }
 }
 
@@ -146,6 +235,8 @@ async function claim(base44, user, code) {
     return fail(409, 'ALREADY_CLAIMED', 'This lease has already been claimed by another account');
   }
   if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
+  // One account cannot be both parties, so the landlord cannot sign both sides.
+  if (lease.landlord_id === user.id) return fail(409, 'SAME_PARTY', 'The landlord cannot claim their own lease as the tenant');
 
   const landlord = await base44.asServiceRole.entities.User.get(lease.landlord_id).catch(() => null);
   const previous = lease.terms || {};
@@ -175,6 +266,13 @@ async function claim(base44, user, code) {
     terms,
     lease_version: (lease.lease_version || 1) + 1,
   });
+
+  // The tenant role is self-service: a person who claims a lease is its
+  // tenant. Set it only when the profile has no role yet; never overwrite.
+  const profile = user.data || {};
+  if (!profile.ibmt_role) {
+    await base44.asServiceRole.entities.User.update(user.id, { data: { ...profile, ibmt_role: 'tenant' } }).catch(() => null);
+  }
 
   let tenancyId = lease.tenancy_id || null;
   if (!tenancyId) {

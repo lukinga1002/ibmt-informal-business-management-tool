@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/I18nContext';
-import { callFn, fnError } from '@/lib/r4';
-import { STATE_LABEL } from '@/lib/money';
+import { callFn, errorText } from '@/lib/r4';
+import { STATE_LABEL, SPLIT_LABEL } from '@/lib/money';
 import SectionCard from '@/components/ibmt/SectionCard';
 import Money from '@/components/ibmt/Money';
 import Notice from '@/components/ibmt/Notice';
@@ -9,21 +9,21 @@ import { Button } from '@/components/ui/button';
 
 /** Simulated payments and the callbacks a real provider would send. */
 export default function PaymentTable({ payments = [], onChanged, onCorrect }) {
-  const { tt, lang } = useT();
+  const { t, tt, lang } = useT();
   const [busy, setBusy] = useState('');
   const [check, setCheck] = useState({});
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const act = async (payment, payload) => {
     const key = `${payment.id}:${payload.action}:${payload.outcome || ''}`;
     setBusy(key);
-    setError('');
+    setError(null);
     try {
       const result = await callFn('simPayment', { ...payload, payment_id: payment.id });
       if (payload.action === 'status') setCheck((previous) => ({ ...previous, [payment.id]: result }));
       onChanged?.();
     } catch (issue) {
-      setError(fnError(issue));
+      setError({ err: issue });
     } finally {
       setBusy('');
     }
@@ -38,7 +38,7 @@ export default function PaymentTable({ payments = [], onChanged, onCorrect }) {
       })}
     >
       {error && (
-        <Notice tone="danger" className="mb-4">{error}</Notice>
+        <Notice tone="danger" className="mb-4">{errorText(error)}</Notice>
       )}
 
       {payments.length === 0 ? (
@@ -64,11 +64,14 @@ export default function PaymentTable({ payments = [], onChanged, onCorrect }) {
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-2 text-[12px] text-muted-foreground sm:grid-cols-4">
-                <span>{tt({ en: 'Tax', sw: 'Kodi' })}: <span className="ibmt-num text-foreground">{payment.tax.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Agent', sw: 'Wakala' })}: <span className="ibmt-num text-foreground">{payment.agent_commission.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Fee', sw: 'Ada' })}: <span className="ibmt-num text-foreground">{payment.service_fee.toLocaleString('en-US')}</span></span>
-                <span>{tt({ en: 'Landlord', sw: 'Mmiliki' })}: <span className="ibmt-num text-foreground">{payment.landlord_remainder == null ? '—' : payment.landlord_remainder.toLocaleString('en-US')}</span></span>
+              <div className="mt-3 space-y-2 text-[13px]">
+                <p>{t('councilMoney.simulation')}</p>
+                {payment.payout_state==='held_limit'&&<p role="status">{t('payments.heldLimit')}</p>}
+                {payment.payout_state==='held_account'&&<p role="status">{t('payments.heldAccount')}</p>}
+                {payment.payout_state==='cancelled_by_reversal'&&<p role="status">{t('payments.cancelledByReversal')}</p>}
+                {payment.fee_status !== 'in_force' && payment.stage==='stage2_partner' && <p>{t('councilMoney.proposedFee')}</p>}
+                {(payment.split_lines||[]).filter(line=>line.key!=='service_fee'||line.amount>0).map(line=><p key={line.key}>{tt(SPLIT_LABEL[line.key] || {sw:line.key,en:line.key})} · TZS {line.amount.toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-TZ')}</p>)}
+                <p>{t('councilMoney.notATax')}</p>
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">

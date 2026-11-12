@@ -10,6 +10,7 @@ import {
   normaliseMeter,
   reference,
 } from '../../shared/registration.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Landlord registration, self or through an authorised helper.
@@ -26,7 +27,7 @@ import {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));
@@ -55,6 +56,10 @@ export default async function (req) {
     if (evidence.length === 0) return fail(422, 'VALIDATION', 'At least one ownership document is required', { evidence: 'Attach at least one document.' });
     if (channel !== 'self' && !landlordId) {
       return fail(422, 'VALIDATION', 'Assisted registration needs the landlord the claim is for', { landlord_id: 'Choose the landlord.' });
+    }
+    // Self-registration is only ever for the signed-in landlord's own unit.
+    if (channel === 'self' && landlordId !== user.id) {
+      return fail(403, 'FORBIDDEN', 'Self-registration is for your own unit only');
     }
 
     // The tenant-initiated route stays closed until the council is in
@@ -98,11 +103,11 @@ export default async function (req) {
     const duplicateKind = duplicateKinds.length === 2 ? 'meter_and_address' : duplicateKinds[0] || null;
     const duplicateOf = (sameMeter || sameAddress || {}).unit_ref || null;
 
-    // A helper files the claim for the landlord. The unit belongs to the
-    // landlord, so the ownership anchor cannot be set under the helper's own
-    // token; the elevation is limited to this one validated create.
-    const unitClient = channel === 'self' ? base44.entities.RentalUnit : base44.asServiceRole.entities.RentalUnit;
-    const unit = await unitClient.create({
+    // The unit starts as `pending` verification, a field no user may set
+    // directly, so this one validated create runs under the service role for
+    // every channel. Ownership was checked above: self means the signed-in
+    // landlord, and a helper files for an existing landlord account.
+    const unit = await base44.asServiceRole.entities.RentalUnit.create({
       unit_ref: reference('UNIT'),
       landlord_id: landlordId,
       landlord_name: landlordName,
@@ -153,6 +158,9 @@ export default async function (req) {
         council_sharing: consent.council_sharing === true,
         granted_at: isoNow(),
         policy_version: '2026.1-stage1',
+        // The wording version and the language it was shown in, as accepted.
+        text_version: cleanText(consent.text_version) || null,
+        language: ['sw', 'en'].includes(consent.language) ? consent.language : null,
       },
       council_id: councilId,
       region: cleanText(payload.region) || 'Dar es Salaam',
