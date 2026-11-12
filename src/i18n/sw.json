@@ -1058,9 +1058,9 @@
     "evidence": {
       "title_deed": "Hati ya umiliki",
       "residential_licence": "Leseni ya makazi",
-      "offer_letter": "Barua ya toleo",
+      "offer_letter": "Barua ya mgao",
       "mtaa_letter": "Barua ya Mtaa",
-      "inheritance_letter": "Barua ya mirathi",
+      "inheritance_letter": "Barua ya urithi",
       "other": "Nyaraka nyingine"
     },
     "reason": "Sababu: {reason}",
@@ -1132,5 +1132,86 @@
     "tenantFee": "Ada ya mpangaji: TZS 0",
     "amnestyTitle": "Hakuna msamaha wa kodi kwa sasa",
     "amnestyBody": "Hakuna msamaha wa malimbikizo unaotumika hapa. Usajili haufuti deni lolote la kodi wala adhabu yoyote."
+  },
+  "otpConfirm": {
+    "notAccepted": "Namba haikukubaliwa.",
+    "tenantTitle": "Mpangaji anathibitisha kwa namba",
+    "ownerTitle": "Mmiliki anathibitisha kwa namba",
+    "tenantBody": "Namba imetumwa kwa simu ya mpangaji. Mpangaji aiingize hapa kuthibitisha kwamba taarifa ni zake.",
+    "ownerBody": "Namba imetumwa kwa simu ya mmiliki. Mmiliki aiingize hapa; msaidizi hapati namba hii.",
+    "demoTitle": "Majaribio pekee",
+    "demoBody": "Namba ya majaribio; SMS bado haitumwi.",
+    "code": "Namba ya uthibitisho",
+    "sending": "Inatuma…"
+  },
+  "wizard": {
+    "steps": {
+      "place": "Mahali na nyumba",
+      "documents": "Nyaraka",
+      "consent": "Ridhaa",
+      "send": "Tuma"
+    },
+    "uploadFailed": "Hati haikuweza kupakiwa.",
+    "received": "Usajili umepokelewa",
+    "receivedBody": "Uniti {unit} · inasubiri afisa wa Mtaa. Hakuna uthibitisho wa umiliki unaotolewa hapa.",
+    "duplicateTitle": "Taarifa hii imetumwa kwa afisa wa Mtaa",
+    "duplicateBody": "Uniti nyingine katika kata hii ina anwani au mita ileile. Usajili haujazuiwa wala kukataliwa: afisa wa Mtaa anakagua kumbukumbu zote mbili.",
+    "ownerGotCode": "Mwenye nyumba amepokea namba kwenye simu yake mwenyewe. Msaidizi haioni.",
+    "ward": "Kata",
+    "mtaa": "Mtaa",
+    "address": "Anwani ya makazi",
+    "addressPlaceholder": "Mtaa, nyumba, alama",
+    "meter": "Namba ya mita ya TANESCO",
+    "unitType": "Aina ya nyumba",
+    "ownerName": "Jina la mmiliki",
+    "ownerPhone": "Simu ya mmiliki",
+    "ownerPhoneHint": "Namba ya uthibitisho inatumwa hapa",
+    "relation": "Uhusiano na mmiliki",
+    "licence": "Namba ya leseni ya wakala",
+    "added": "Nyaraka {count} · {files}",
+    "oneDocument": "Angalau hati moja inahitajika. Nyaraka zinahifadhiwa kwa faragha.",
+    "consentCore": "Nakubali IBMT ihifadhi taarifa za nyumba hii kwa ajili ya usajili.",
+    "consentSharing": "Nakubali halmashauri ya {council} ione taarifa hizi kwa ufuatiliaji.",
+    "summary": {
+      "ward": "Kata",
+      "mtaa": "Mtaa",
+      "address": "Anwani",
+      "meter": "Mita",
+      "rent": "Kodi",
+      "documents": "Nyaraka"
+    },
+    "submit": "Tuma kwa afisa wa Mtaa"
+  },
+  "registerPage": {
+    "kicker": "Usajili wa nyumba",
+    "title": "Sajili nyumba na vyumba",
+    "lede": "Taarifa zinaenda kwa afisa wa Mtaa wa eneo lako. Usajili unathibitisha kuwa nyumba imesajiliwa, si kwamba wewe ndiye mmiliki.",
+    "fourSteps": "Hatua 4",
+    "newTitle": "Usajili mpya",
+    "privateDocs": "Nyaraka zote zinahifadhiwa kwa faragha.",
+    "rentedTitle": "Nyumba uliyokwishaipangisha",
+    "rentedDesc": "Mpangaji anathibitisha kwa namba.",
+    "rentedBody": "Kama nyumba ina mpangaji sasa, usianzishe mkataba mpya. Ingiza taarifa zilizopo; masharti yanabaki kama yalivyo.",
+    "registerExisting": "Sajili upangaji uliopo",
+    "addressBody": "Anwani kamili na namba ya mita hazionyeshwi kwa umma. Zinaonekana kwa afisa wa Mtaa pekee.",
+    "helperTitle": "Msaidizi",
+    "helperBody": "Wakala aliyeidhinishwa anaweza kusajili kwa niaba yako; wewe unathibitisha kwa namba.",
+    "assistedKicker": "Usajili kwa msaada",
+    "proxyKicker": "Usajili kwa mwakilishi",
+    "assistedTitle": "Msaidie mmiliki kusajili",
+    "proxyTitle": "Sajili kwa niaba ya mmiliki",
+    "assistedLede": "Wewe unajaza; mmiliki anathibitisha kwa namba kwenye simu yake. Hatuwezi kuidhinisha usajili kwa niaba yake.",
+    "ownerDetails": "Taarifa za mmiliki",
+    "houseDetails": "Taarifa za nyumba",
+    "codeTitle": "Namba ya uthibitisho",
+    "codeBody": "Namba inatumwa kwa simu ya mmiliki. Msaidizi haipati na hawezi kuidhinisha mwenyewe.",
+    "proxyTitleNote": "Wakili au mtu wa familia",
+    "proxyBody": "Kama unafanya hivi kwa niaba ya mmiliki aliye mbali au aliyefariki, tumia njia ya mwakilishi na uweke barua ya uthibitisho."
+  },
+  "payments": {
+    "heldLimit": "Malipo yameshikiliwa kwa kikomo cha pochi: ongeza akaunti ya benki.",
+    "heldAccount": "Malipo yameshikiliwa: hakuna akaunti ya malipo inayostahili, au idhini ya malipo iliondolewa. Yanabaki yameshikiliwa hadi idhini itolewe tena na akaunti iidhinishwe.",
+    "cancelledByReversal": "Malipo haya yalirejeshwa; malipo yaliyoshikiliwa yamefutwa na hayatatolewa.",
+    "alertReviewed": "Imekaguliwa kwenye skrini ya majaribio"
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/I18nContext';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
 import SectionCard from '@/components/ibmt/SectionCard';
 import AsyncBlock from '@/components/gov/AsyncBlock';
 import Notice from '@/components/ibmt/Notice';
@@ -9,18 +9,18 @@ import { Button } from '@/components/ui/button';
 
 /** Anything that did not match goes here, and a person clears it. */
 export default function AlertQueue({ state, onCleared }) {
-  const { tt, lang } = useT();
+  const { t, tt, lang } = useT();
   const [busy, setBusy] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const clear = async (alert) => {
     setBusy(alert.id);
-    setError('');
+    setError(null);
     try {
-      await callFn('simPayment', { action: 'clearAlert', id: alert.id, note: 'Reviewed in the simulation screen' });
+      await callFn('simPayment', { action: 'clearAlert', id: alert.id, note: t('payments.alertReviewed') });
       onCleared?.();
     } catch (issue) {
-      setError(fnError(issue));
+      setError({ err: issue });
     } finally {
       setBusy('');
     }
@@ -37,7 +37,7 @@ export default function AlertQueue({ state, onCleared }) {
       <AsyncBlock state={state}>
         {(data) => (
           <div>
-            {error && <Notice tone="danger" className="mb-3">{error}</Notice>}
+            {error && <Notice tone="danger" className="mb-3">{errorText(error)}</Notice>}
             {data.count === 0 ? (
               <Notice tone="positive">{tt({ en: 'No open alert.', sw: 'Hakuna tahadhari iliyo wazi.' })}</Notice>
             ) : (

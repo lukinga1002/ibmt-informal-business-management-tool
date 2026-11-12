@@ -158,6 +158,9 @@ export default async function (req) {
         council_sharing: consent.council_sharing === true,
         granted_at: isoNow(),
         policy_version: '2026.1-stage1',
+        // The wording version and the language it was shown in, as accepted.
+        text_version: cleanText(consent.text_version) || null,
+        language: ['sw', 'en'].includes(consent.language) ? consent.language : null,
       },
       council_id: councilId,
       region: cleanText(payload.region) || 'Dar es Salaam',

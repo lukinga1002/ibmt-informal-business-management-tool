@@ -1058,7 +1058,7 @@
     "evidence": {
       "title_deed": "Title deed",
       "residential_licence": "Residential licence",
-      "offer_letter": "Letter of offer",
+      "offer_letter": "Offer letter",
       "mtaa_letter": "Mtaa letter",
       "inheritance_letter": "Inheritance letter",
       "other": "Other document"
@@ -1132,5 +1132,86 @@
     "tenantFee": "Tenant fee: TZS 0",
     "amnestyTitle": "No amnesty in force",
     "amnestyBody": "No waiver of arrears applies here. Registering does not cancel any tax debt or penalty."
+  },
+  "otpConfirm": {
+    "notAccepted": "The code was not accepted.",
+    "tenantTitle": "The tenant confirms with a code",
+    "ownerTitle": "The owner confirms with a code",
+    "tenantBody": "A code has been sent to the tenant's phone. The tenant enters it here to confirm the details are theirs.",
+    "ownerBody": "A code has been sent to the owner's phone. The owner enters it here; the helper does not receive it.",
+    "demoTitle": "Simulated — demo only",
+    "demoBody": "Demo code; no SMS is sent yet.",
+    "code": "Confirmation code",
+    "sending": "Sending…"
+  },
+  "wizard": {
+    "steps": {
+      "place": "Place and house",
+      "documents": "Documents",
+      "consent": "Consent",
+      "send": "Submit"
+    },
+    "uploadFailed": "The document could not be uploaded.",
+    "received": "Registration received",
+    "receivedBody": "Unit {unit} · waiting for the Mtaa officer. No proof of ownership is issued here.",
+    "duplicateTitle": "This has been sent to the Mtaa officer",
+    "duplicateBody": "Another unit in this ward has the same address or meter. Registration is not blocked and not rejected: the Mtaa officer reviews both records.",
+    "ownerGotCode": "The landlord received a code on their own phone. The helper does not see it.",
+    "ward": "Ward",
+    "mtaa": "Mtaa",
+    "address": "Home address",
+    "addressPlaceholder": "Street, house, landmark",
+    "meter": "TANESCO meter number",
+    "unitType": "Type of unit",
+    "ownerName": "Owner's name",
+    "ownerPhone": "Owner's phone",
+    "ownerPhoneHint": "The confirmation code is sent here",
+    "relation": "Relationship to the owner",
+    "licence": "Agent licence number",
+    "added": "{count} document(s) · {files}",
+    "oneDocument": "At least one document is required. Documents are stored privately.",
+    "consentCore": "I agree that IBMT stores this property's details for registration.",
+    "consentSharing": "I agree that {council} council may see these details for follow-up.",
+    "summary": {
+      "ward": "Ward",
+      "mtaa": "Mtaa",
+      "address": "Address",
+      "meter": "Meter",
+      "rent": "Rent",
+      "documents": "Documents"
+    },
+    "submit": "Send to the Mtaa officer"
+  },
+  "registerPage": {
+    "kicker": "Property registration",
+    "title": "Register a house and its rooms",
+    "lede": "The details go to the Mtaa officer for your area. Registration confirms that the house is registered, not that you are its owner.",
+    "fourSteps": "4 steps",
+    "newTitle": "New registration",
+    "privateDocs": "All documents are stored privately.",
+    "rentedTitle": "A house you already rent out",
+    "rentedDesc": "The tenant confirms with a code.",
+    "rentedBody": "If the house has a tenant now, do not start a new lease. Enter the existing details; the terms stay as they are.",
+    "registerExisting": "Register an existing tenancy",
+    "addressBody": "The full address and meter number are not shown to the public. Only the Mtaa officer can see them.",
+    "helperTitle": "Helper",
+    "helperBody": "An approved agent can register on your behalf; you confirm with a code.",
+    "assistedKicker": "Assisted registration",
+    "proxyKicker": "Registration by a representative",
+    "assistedTitle": "Help an owner register",
+    "proxyTitle": "Register on the owner's behalf",
+    "assistedLede": "You fill in the form; the owner confirms with a code on their own phone. We cannot approve a registration on their behalf.",
+    "ownerDetails": "Owner's details",
+    "houseDetails": "House details",
+    "codeTitle": "Confirmation code",
+    "codeBody": "The code is sent to the owner's phone. The helper does not get it and cannot approve on their own.",
+    "proxyTitleNote": "Lawyer or family member",
+    "proxyBody": "If you are acting for an owner who is far away or has died, use the representative route and attach a confirmation letter."
+  },
+  "payments": {
+    "heldLimit": "Payout held by the wallet limit: add a bank account.",
+    "heldAccount": "Payout held: there is no eligible payout account, or payment consent was withdrawn. It stays held until consent is given again and an account is approved.",
+    "cancelledByReversal": "This payment was reversed; the held payout is cancelled and will not be released.",
+    "alertReviewed": "Reviewed in the simulation screen"
   }
 }

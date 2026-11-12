@@ -158,7 +158,7 @@ test("every translation key used on a release screen exists", () => {
 
 // Ratchet while the translation pass is in progress: the number of untranslated
 // strings on release screens may only go down. The release requires 0.
-const UNTRANSLATED_BUDGET = 645;
+const UNTRANSLATED_BUDGET = 552;
 
 test("release screens carry no more hard-coded or combined-language text than the budget", () => {
   const problems = [];
