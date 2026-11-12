@@ -56,6 +56,10 @@ export default async function (req) {
     if (channel !== 'self' && !landlordId) {
       return fail(422, 'VALIDATION', 'Assisted registration needs the landlord the claim is for', { landlord_id: 'Choose the landlord.' });
     }
+    // Self-registration is only ever for the signed-in landlord's own unit.
+    if (channel === 'self' && landlordId !== user.id) {
+      return fail(403, 'FORBIDDEN', 'Self-registration is for your own unit only');
+    }
 
     // The tenant-initiated route stays closed until the council is in
     // compulsory mode: only a landlord registers their own unit.
@@ -98,11 +102,11 @@ export default async function (req) {
     const duplicateKind = duplicateKinds.length === 2 ? 'meter_and_address' : duplicateKinds[0] || null;
     const duplicateOf = (sameMeter || sameAddress || {}).unit_ref || null;
 
-    // A helper files the claim for the landlord. The unit belongs to the
-    // landlord, so the ownership anchor cannot be set under the helper's own
-    // token; the elevation is limited to this one validated create.
-    const unitClient = channel === 'self' ? base44.entities.RentalUnit : base44.asServiceRole.entities.RentalUnit;
-    const unit = await unitClient.create({
+    // The unit starts as `pending` verification, a field no user may set
+    // directly, so this one validated create runs under the service role for
+    // every channel. Ownership was checked above: self means the signed-in
+    // landlord, and a helper files for an existing landlord account.
+    const unit = await base44.asServiceRole.entities.RentalUnit.create({
       unit_ref: reference('UNIT'),
       landlord_id: landlordId,
       landlord_name: landlordName,

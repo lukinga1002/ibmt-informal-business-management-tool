@@ -65,6 +65,27 @@ test("functions write protected records only through the service role", () => {
   assert.deepEqual(offenders, []);
 });
 
+test("no user-scoped handle to a protected entity is aliased, and no user-scoped unit create sets verification", () => {
+  // Found live: registerUnit picked `base44.entities.RentalUnit` through an
+  // alias and set verification_status on create, which the field rule refuses.
+  const aliased = /(?<!asServiceRole\.)entities\.(LedgerEntry|ApprovalRequest|SimPayment|Tenancy|Lease|RentalUnit)\s*[:;,)]/;
+  const offenders = [];
+  const root = new URL("../base44/functions/", import.meta.url);
+  for (const name of readdirSync(root)) {
+    const source = readFileSync(new URL(`${name}/entry.ts`, root), "utf8");
+    source.split("\n").forEach((line, index) => {
+      if (aliased.test(line)) offenders.push(`${name}:${index + 1} aliases a user-scoped handle`);
+    });
+    const createAt = /(?<!asServiceRole\.)entities\.RentalUnit\.create\(\{/g;
+    let match;
+    while ((match = createAt.exec(source))) {
+      const body = source.slice(match.index, source.indexOf("});", match.index));
+      if (/verification_status/.test(body)) offenders.push(`${name} sets verification_status in a user-scoped create`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+});
+
 /** A store whose updateMany applies only to rows that still match, like the hosted platform. */
 function world() {
   const records = {
