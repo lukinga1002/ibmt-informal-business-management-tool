@@ -97,7 +97,7 @@ export default function Stage2PayoutPanel() {
             value={legacyUnits}
             onChange={(e) => setLegacyUnits(e.target.value)}
           />
-          <Button
+          <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
             disabled={busy}
             onClick={async () => {
               setBusy(true);
@@ -134,7 +134,7 @@ export default function Stage2PayoutPanel() {
                 value={rosterText}
                 onChange={(e) => setRosterText(e.target.value)}
               />
-              <Button
+              <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                 disabled={busy}
                 onClick={() =>
                   run("verifyOwners", {
@@ -189,13 +189,13 @@ export default function Stage2PayoutPanel() {
             payments through IBMT (simulation), version 1.
           </label>
           <div className="flex flex-wrap gap-3">
-            <Button
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
               disabled={busy || !data.roster_id}
               onClick={() => run("nominate", form)}
             >
               Pendekeza akaunti / Nominate
             </Button>
-            <Button
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
               variant="outline"
               disabled={busy || !data.roster_id || !data.consent}
               onClick={() => setConfirmWithdraw(true)}
@@ -219,7 +219,7 @@ export default function Stage2PayoutPanel() {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                <Button
+                <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                   variant="destructive"
                   disabled={busy}
                   onClick={async () => {
@@ -229,13 +229,13 @@ export default function Stage2PayoutPanel() {
                 >
                   Ndiyo, ondoa idhini / Yes, withdraw consent
                 </Button>
-                <Button variant="outline" disabled={busy} onClick={() => setConfirmWithdraw(false)}>
+                <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left" variant="outline" disabled={busy} onClick={() => setConfirmWithdraw(false)}>
                   Hapana / Cancel
                 </Button>
               </div>
             </div>
           )}
-          <Button disabled={busy} onClick={() => run("releaseHeld")}>
+          <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left" disabled={busy} onClick={() => run("releaseHeld")}>
             Toa malipo yaliyoshikiliwa / Release held simulated payouts
           </Button>
           {data.records.map((r) => (
@@ -262,7 +262,7 @@ export default function Stage2PayoutPanel() {
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                   />
-                  <Button
+                  <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                     disabled={busy}
                     onClick={() =>
                       run("reviewName", { id: r.id, note: reviewNote })
@@ -272,7 +272,7 @@ export default function Stage2PayoutPanel() {
                   </Button>
                 </div>
               )}
-              <Button
+              <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                 disabled={busy}
                 onClick={() => run("requestOtp", { id: r.id })}
               >
@@ -289,7 +289,7 @@ export default function Stage2PayoutPanel() {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                   />
-                  <Button
+                  <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                     disabled={busy}
                     onClick={() =>
                       run("approve", {

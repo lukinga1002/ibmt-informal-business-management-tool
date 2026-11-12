@@ -11,3 +11,10 @@ test("the payout property picker is limited to its container width", () => {
   assert.ok(select, "property picker found");
   for (const cls of ["w-full", "max-w-full", "min-w-0"]) assert.ok(select[1].split(/\s+/).includes(cls), cls);
 });
+
+test("long bilingual payout buttons wrap instead of widening the page", () => {
+  const source = readFileSync(new URL("../src/components/money/Stage2PayoutPanel.jsx", import.meta.url), "utf8");
+  const buttons = source.match(/<Button[^>]*>/g) || [];
+  assert.ok(buttons.length > 0);
+  for (const tag of buttons) assert.match(tag, /whitespace-normal/, tag);
+});
