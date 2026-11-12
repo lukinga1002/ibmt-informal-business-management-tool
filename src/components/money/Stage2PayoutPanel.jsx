@@ -73,7 +73,7 @@ export default function Stage2PayoutPanel() {
       <label className="block py-3">
         Jengo / Property{" "}
         <select
-          className="min-h-11 border p-2"
+          className="min-h-11 w-full max-w-full min-w-0 truncate border p-2"
           value={id}
           onChange={(e) => setId(e.target.value)}
         >
