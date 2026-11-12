@@ -951,5 +951,86 @@
     "none": "Hakuna mkataba uliofunguliwa bado.",
     "legalTitle": "Ukaguzi wa kisheria",
     "legalBody": "Maneno ya mkataba ni template ya kawaida ya awali. Yanasubiri ukaguzi wa kisheria kabla ya kutumika kama mkataba rasmi wa kisheria."
+  },
+  "payoutsPage": {
+    "kicker": "Fedha",
+    "title": "Taarifa za malipo",
+    "lede": "Kila mmiliki anaidhinisha akaunti inayolipwa kodi. Akaunti mpya inasubiri kipindi cha utulivu kabla ya kutumika.",
+    "simulationOnly": "Majaribio pekee",
+    "noProvider": "Hakuna mtoa huduma wa malipo aliyeunganishwa. Akaunti za malipo huhifadhiwa kwa majaribio na hazitumiki kutuma fedha."
+  },
+  "councilMoney": {
+    "title": "Ada, bili na ankara za halmashauri",
+    "simulation": "Majaribio",
+    "notATax": "Ada ya huduma ya halmashauri si kodi ya majengo wala kodi ya mapato.",
+    "settlementDate": "Tarehe ya malipo",
+    "batch": "Unda bili ya siku",
+    "invoiceMonth": "Mwezi wa ankara",
+    "invoice": "Ankara",
+    "reconcile": "Linganisha",
+    "proposedFee": "Ada inayopendekezwa (majaribio)",
+    "feesByProperty": "Ada kwa jengo na siku",
+    "partnerRebate": "Punguzo la mshirika",
+    "bills": "Bili",
+    "invoices": "Ankara",
+    "state": {
+      "settled": "Imelipwa",
+      "issued": "Imetolewa",
+      "non_payable_preview": "Onyesho (hailipiki)",
+      "pending": "Inasubiri"
+    },
+    "excluded": "Mstari {count} haulipishwi ({amount}): ulilipwa kabla mkataba haujasainiwa",
+    "reconcileLine": "Leja {ledger} · Mshirika {partner} · SIM-GePG {gepg}",
+    "matched": "Inalingana",
+    "difference": "Kuna tofauti",
+    "recoveryOpen": "Malipo {count} ya mwenye nyumba hayajarejeshwa ({amount})",
+    "recoveryTitle": "Malipo ya wenye nyumba yasiyorejeshwa",
+    "recoveryBody": "Malipo haya yalirejeshwa baada ya sehemu ya mwenye nyumba kulipwa. Fedha hazijarejeshwa. Yanabaki wazi hadi mtu ayatatue kwa sera iliyoidhinishwa.",
+    "recoveryState": "Wazi"
+  },
+  "councilTerms": {
+    "title": "Masharti ya halmashauri",
+    "description": "Majaribio · Thamani za mfano",
+    "approved": "Imeidhinishwa",
+    "field": {
+      "council_fee_type": "Aina ya ada",
+      "council_fee_rate": "Kiwango cha ada",
+      "council_fee_fixed_amount": "Ada maalumu (TZS)",
+      "bylaw_reference": "Rejea ya sheria ndogo",
+      "legal_opinion_reference": "Rejea ya maoni ya kisheria",
+      "gepg_sp_code": "Namba ya SP ya majaribio",
+      "ibmt_fee_basis": "Msingi wa ankara",
+      "ibmt_fee_rate": "Kiwango cha IBMT",
+      "ibmt_contract_reference": "Rejea ya mkataba",
+      "ibmt_contract_status": "Hali ya mkataba"
+    },
+    "option": {
+      "percent": "Asilimia",
+      "fixed": "Kiasi maalumu",
+      "share_of_rent": "Sehemu ya kodi",
+      "share_of_council_fee": "Sehemu ya ada ya halmashauri",
+      "draft": "Rasimu",
+      "signed": "Imesainiwa"
+    },
+    "approvals": "Idhini {done} kati ya {total}",
+    "propose": "Wasilisha marekebisho",
+    "approve": "Idhinisha marekebisho",
+    "stage": "Hatua",
+    "stage1": "Hatua 1",
+    "stage2": "Hatua 2 (majaribio)",
+    "config": {
+      "partner_charge_rate": "Kiwango cha gharama ya mshirika",
+      "partner_rebate_rate": "Kiwango cha punguzo la mshirika",
+      "payout_cooling_off_hours": "Kipindi cha utulivu cha malipo (saa)",
+      "mobile_wallet_limit": "Kikomo cha pochi (cha mfano; pata halisi kutoka kwa mshirika)"
+    },
+    "coolingOffNote": "Kipindi cha utulivu: saa 24 kwenye majaribio; saa 72 zinapendekezwa kwa matumizi halisi.",
+    "saveConfig": "Hifadhi mipangilio ya majaribio"
+  },
+  "split": {
+    "councilsFailed": "Imeshindikana kupakia halmashauri.",
+    "recordOnly": "Hatua 1 (kumbukumbu tu)",
+    "tenancyId": "Namba ya upangaji uliosajiliwa",
+    "partnerRate": "Mshirika {rate}%"
   }
 }

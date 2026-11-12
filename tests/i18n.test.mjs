@@ -50,10 +50,21 @@ const NEUTRAL = /^(IBMT|IBMT KODI|TZS|SMS|OTP|QR|USSD|GePG|SIM|PDPA|PDF|OK|EN|SW
 export function literalText(source) {
   const found = [];
   const lines = source.split("\n");
-  const code = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/^\s*\/\/.*$/gm, "");
+  // An inline pair { en: '…', sw: '…' } (rendered with tt()) is translated text,
+  // but only when both languages are present: a lone en or sw value stays flagged.
+  const EN_SW = /\{\s*en:\s*(['"`])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*sw:\s*(['"`])(?:(?!\2)[^\\\n]|\\.)*\2\s*,?\s*\}/g;
+  const SW_EN = /\{\s*sw:\s*(['"`])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*en:\s*(['"`])(?:(?!\2)[^\\\n]|\\.)*\2\s*,?\s*\}/g;
+  const blank = (m) => m.replace(/[^\n]/g, " ");
+  const code = source
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(EN_SW, blank)
+    .replace(SW_EN, blank);
   const lineOf = (index) => code.slice(0, index).split("\n").length;
   // JSX text between tags.
-  for (const m of code.matchAll(/>([^<>{}]*[A-Za-zÀ-ÿ][^<>{}]*)</g)) {
+  // JSX text runs from a tag's ">" to the next tag or {expression}; the ">" of
+  // an arrow function (=>) or a comparison is not a tag.
+  for (const m of code.matchAll(/(?<![=\-])>([^<>{}]*[A-Za-zÀ-ÿ][^<>{}]*)(?=<|\{)/g)) {
     const text = m[1].trim();
     if (!text || NEUTRAL.test(text)) continue;
     if (/^[\w.]+\s*=>|&&|\?\s|=>|\(\)/.test(text)) continue; // code fragments, not text
@@ -74,8 +85,18 @@ export function literalText(source) {
     .replace(/className=(?:"[^"]*"|\{`[^`]*`\}|\{[^}]*\})/g, "")
     .replace(/\b(?:cn|clsx|cva)\([^)]*\)/g, "")
     .replace(/^import .*$/gm, "");
+  // Code inside ${…} is not text: remove it (balanced) before judging a template string.
+  const withoutExpressions = (value) => {
+    let out = "";
+    for (let i = 0, depth = 0; i < value.length; i++) {
+      if (value[i] === "$" && value[i + 1] === "{" && depth === 0) { depth = 1; i++; continue; }
+      if (depth) { if (value[i] === "{") depth++; else if (value[i] === "}") depth--; continue; }
+      out += value[i];
+    }
+    return out;
+  };
   for (const m of stripped.matchAll(/(['"`])((?:(?!\1)[^\n\\])*)\1/g)) {
-    const text = m[2];
+    const text = m[1] === "`" ? withoutExpressions(m[2]) : m[2];
     if (!/[A-Za-zÀ-ÿ]/.test(text) || /^(\/|@\/|https?:|mailto:|#|\.\.?\/)/.test(text)) continue;
     if (/^[a-z][a-zA-Z0-9_.]*$/.test(text)) continue; // keys, identifiers, statuses
     const words = text.split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ]{2,}[.,!?…:;)]*$/.test(w));
@@ -130,7 +151,7 @@ test("every translation key used on a release screen exists", () => {
 
 // Ratchet while the translation pass is in progress: the number of untranslated
 // strings on release screens may only go down. The release requires 0.
-const UNTRANSLATED_BUDGET = 1163;
+const UNTRANSLATED_BUDGET = 734;
 
 test("release screens carry no more hard-coded or combined-language text than the budget", () => {
   const problems = [];

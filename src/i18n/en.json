@@ -951,5 +951,86 @@
     "none": "No lease has been opened yet.",
     "legalTitle": "Legal review",
     "legalBody": "The lease wording is an early standard template. It is awaiting legal review before use as a formal legal contract."
+  },
+  "payoutsPage": {
+    "kicker": "Money",
+    "title": "Payout details",
+    "lede": "Every owner approves the account the rent is paid to. A new account waits out a cooling-off period before it is used.",
+    "simulationOnly": "Simulation only",
+    "noProvider": "No payment provider is connected. Payout accounts are recorded for the simulation and never used to send money."
+  },
+  "councilMoney": {
+    "title": "Council fees, bills and invoices",
+    "simulation": "Simulation",
+    "notATax": "The council service fee is not property rate and not income tax.",
+    "settlementDate": "Settlement date",
+    "batch": "Create daily bill",
+    "invoiceMonth": "Invoice month",
+    "invoice": "Invoice",
+    "reconcile": "Reconcile",
+    "proposedFee": "Proposed fee (simulation)",
+    "feesByProperty": "Fees by property and day",
+    "partnerRebate": "Partner rebate",
+    "bills": "Bills",
+    "invoices": "Invoices",
+    "state": {
+      "settled": "Settled",
+      "issued": "Issued",
+      "non_payable_preview": "Preview (not payable)",
+      "pending": "Pending"
+    },
+    "excluded": "{count} line(s) not invoiceable ({amount}): settled before the contract was signed",
+    "reconcileLine": "Ledger {ledger} · Partner {partner} · SIM-GePG {gepg}",
+    "matched": "Matched",
+    "difference": "Difference",
+    "recoveryOpen": "{count} unrecovered payout(s) open ({amount})",
+    "recoveryTitle": "Unrecovered landlord payouts",
+    "recoveryBody": "These payments were reversed after the landlord's share was paid out. The money has not been recovered. They stay open until a person resolves them under an approved policy.",
+    "recoveryState": "Open"
+  },
+  "councilTerms": {
+    "title": "Council terms",
+    "description": "Simulation · Placeholder values",
+    "approved": "Approved",
+    "field": {
+      "council_fee_type": "Fee type",
+      "council_fee_rate": "Fee rate",
+      "council_fee_fixed_amount": "Fixed fee (TZS)",
+      "bylaw_reference": "By-law reference",
+      "legal_opinion_reference": "Legal opinion reference",
+      "gepg_sp_code": "SIM SP code",
+      "ibmt_fee_basis": "Invoice basis",
+      "ibmt_fee_rate": "IBMT rate",
+      "ibmt_contract_reference": "Contract reference",
+      "ibmt_contract_status": "Contract status"
+    },
+    "option": {
+      "percent": "Percentage",
+      "fixed": "Fixed amount",
+      "share_of_rent": "Share of rent",
+      "share_of_council_fee": "Share of the council fee",
+      "draft": "Draft",
+      "signed": "Signed"
+    },
+    "approvals": "Approvals {done} of {total}",
+    "propose": "Propose revision",
+    "approve": "Approve revision",
+    "stage": "Stage",
+    "stage1": "Stage 1",
+    "stage2": "Stage 2 (simulation)",
+    "config": {
+      "partner_charge_rate": "Partner charge rate",
+      "partner_rebate_rate": "Partner rebate rate",
+      "payout_cooling_off_hours": "Payout cooling-off (hours)",
+      "mobile_wallet_limit": "Wallet limit (synthetic; get the real one from the partner)"
+    },
+    "coolingOffNote": "Cooling-off: 24 hours in the simulation; 72 hours recommended for live use.",
+    "saveConfig": "Save simulation settings"
+  },
+  "split": {
+    "councilsFailed": "Could not load the councils.",
+    "recordOnly": "Stage 1 (record only)",
+    "tenancyId": "Registered tenancy ID",
+    "partnerRate": "Partner {rate}%"
   }
 }

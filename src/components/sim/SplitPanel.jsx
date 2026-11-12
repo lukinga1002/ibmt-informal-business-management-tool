@@ -13,7 +13,7 @@ import { SPLIT_LABEL } from '@/lib/money';
 
 /** The split, computed on the server from rates, never in the browser. */
 export default function SplitPanel({ onStart, busy = false }) {
-  const { tt } = useT();
+  const { t, tt } = useT();
   const [rentTotal, setRentTotal] = useState(3000000);
   const [months, setMonths] = useState(6);
   const [monthlyRent, setMonthlyRent] = useState(500000);
@@ -22,10 +22,10 @@ export default function SplitPanel({ onStart, busy = false }) {
   const [tenancyId,setTenancyId]=useState('');
   const [councils,setCouncils] = useState([]);
   const [councilId,setCouncilId] = useState('');
-  const [error,setError] = useState('');
+  const [error,setError] = useState(null);
   useEffect(()=>{
     base44.entities.Council.list('name',500).then(page=>setCouncils(Array.isArray(page)?page:page.items || []))
-      .catch(()=>setError('Imeshindikana kupakia halmashauri / Could not load councils'));
+      .catch(()=>setError('split.councilsFailed'));
   },[]);
 
   const quote = useFn('simPayment', {
@@ -55,12 +55,12 @@ export default function SplitPanel({ onStart, busy = false }) {
         <Field label={tt({ en: 'Deposit on the first payment (TZS)', sw: 'Amana kwenye malipo ya kwanza (TZS)' })} type="number" min="0" value={deposit} onChange={(event) => setDeposit(Number(event.target.value))} hint={tt({ en: 'Ignored on a renewal.', sw: 'Haizingatiwi kwenye upya.' })} />
         <Field label={tt({en:'Council',sw:'Halmashauri'})}>
           {props=><SelectControl {...props} value={councilId} onChange={e=>setCouncilId(e.target.value)}>
-            <option value="">Hatua 1 / Record only</option>
+            <option value="">{t('split.recordOnly')}</option>
             {councils.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
           </SelectControl>}
         </Field>
-        <Field label="Rejea ya tenancy / Registered tenancy ID" value={tenancyId} onChange={e=>setTenancyId(e.target.value)} />
-        {error && <p role="alert">{error}</p>}
+        <Field label={t('split.tenancyId')} value={tenancyId} onChange={e=>setTenancyId(e.target.value)} />
+        {error && <p role="alert">{t(error)}</p>}
         <div className="flex flex-col justify-end gap-2 pb-1">
           <label className="flex items-center gap-2 text-[13px]">
             <input type="checkbox" checked={newTenancy} onChange={(event) => setNewTenancy(event.target.checked)} className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function SplitPanel({ onStart, busy = false }) {
           {(data) => (
             <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
               <div className="rounded-md border border-border">
-                {data.split.runs && data.fee_status === 'proposed' && <p>Ada inayopendekezwa (majaribio) / Proposed fee (simulation)</p>}
+                {data.split.runs && data.fee_status === 'proposed' && <p>{t('councilMoney.proposedFee')}</p>}
                 {!data.split.runs && (
                   <p className="border-b border-border bg-muted/40 px-4 py-3 text-[12px] text-muted-foreground">
                     {tt(data.split.note)}
@@ -113,7 +113,7 @@ export default function SplitPanel({ onStart, busy = false }) {
                 <Notice tone="privacy">
                   {tt({ en: 'Rates used:', sw: 'Viwango vilivyotumika:' })}{' '}
                   <span className="ibmt-num">
-                    Partner / Mshirika {((data.rates_used.partner_charge_rate || 0) * 100).toFixed(2)}%
+                    {t('split.partnerRate', { rate: ((data.rates_used.partner_charge_rate || 0) * 100).toFixed(2) })}
                   </span>
                   <span className="mt-1 block text-[11px]">{data.rates_source} · {data.policy_version || '—'}</span>
                 </Notice>
