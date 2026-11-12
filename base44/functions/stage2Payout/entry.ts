@@ -6,7 +6,7 @@ import {
   json,
   getPolicyRules,
 } from "../../shared/moneyOps.ts";
-import { issueChallenge, checkHashedOtp } from "../../shared/registration.ts";
+import { issueChallenge, attemptOtp } from "../../shared/registration.ts";
 import { allRows, payoutFor, walletState } from "../../shared/stage2Payout.ts";
 import { maskPhone } from "../../shared/r7.ts";
 
@@ -373,14 +373,13 @@ export default async function (req) {
       challenge.purpose !== "joint_payout"
     )
       return fail(403, "FORBIDDEN", "Code belongs to another owner");
-    const checked = await checkHashedOtp({ challenge, code: input.code });
-    await db.OtpChallenge.update(challenge.id, {
-      attempts: checked.attempts,
-      locked_until: checked.locked_until,
-      consumed_at:
-        challenge.consumed_at || (checked.ok ? new Date().toISOString() : null),
-    });
-    if (!checked.ok) return fail(422, "OTP_INVALID", checked.reason);
+    // Counted and consumed atomically: one code approves once, and parallel
+    // guesses cannot share one attempt.
+    const checked = await attemptOtp(db.OtpChallenge, challenge, input.code);
+    if (!checked.ok)
+      return checked.reason === "concurrent_attempt"
+        ? fail(409, "OTP_BUSY", "Another attempt with this code is in progress")
+        : fail(422, "OTP_INVALID", checked.reason);
     // Approval is one row per owner, so concurrent owners never overwrite each other's decision.
     await db.PayoutAccountChange.create({
       property_id: property.id,

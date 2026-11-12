@@ -359,11 +359,9 @@ export default async function (req) {
         : null;
       if (!challenge) return fail(409, 'NO_CHALLENGE', 'The code for that change no longer exists');
 
-      const result = checkOtp({ challenge, code: payload.code });
-      await base44.asServiceRole.entities.OtpChallenge.update(challenge.id, {
-        attempts: result.attempts,
-        locked_until: result.locked_until,
-        consumed_at: result.ok ? new Date().toISOString() : challenge.consumed_at || null,
+      // Counted and consumed atomically (see attemptOtp), with the plain-code rules.
+      const result = await attemptOtp(base44.asServiceRole.entities.OtpChallenge, challenge, payload.code, {
+        check: async (args) => checkOtp(args),
       });
 
       if (!result.ok) {

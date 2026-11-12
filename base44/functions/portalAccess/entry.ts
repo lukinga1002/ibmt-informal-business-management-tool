@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
-import { checkHashedOtp, issueChallenge, issuanceAllowed } from '../../shared/registration.ts';
+import { attemptOtp, issueChallenge, issuanceAllowed } from '../../shared/registration.ts';
 import { maskEmail, maskPhone } from '../../shared/r7.ts';
 
 /**
@@ -78,13 +78,8 @@ export default async function (req) {
       }
 
       const now = isoNow();
-      const result = await checkHashedOtp({ challenge, code, now });
-
-      await base44.asServiceRole.entities.OtpChallenge.update(challenge.id, {
-        attempts: result.attempts,
-        locked_until: result.locked_until,
-        consumed_at: result.ok ? now : challenge.consumed_at || null,
-      });
+      // Counted and consumed atomically (see attemptOtp).
+      const result = await attemptOtp(base44.asServiceRole.entities.OtpChallenge, challenge, code, { now });
 
       if (!result.ok) return json({ ok: false, reason: String(result.reason) });
 
