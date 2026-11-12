@@ -1485,5 +1485,25 @@
       "both": "Kupangisha na mauzo"
     },
     "rateLimited": "Ukaguzi umepunguzwa kasi kuzuia uvunaji wa kumbukumbu."
+  },
+  "entry": {
+    "back": "Rudi kwenye lango la upangishaji",
+    "unknown": "Lango hili halipo. Chagua njia ya kuingia kwenye ukurasa wa upangishaji.",
+    "kicker": "Njia ya kuingia",
+    "role": {
+      "landlord": "Mwenye nyumba",
+      "tenant": "Mpangaji",
+      "agent": "Wakala",
+      "mtaa_officer": "Afisa wa Mtaa",
+      "council": "Halmashauri",
+      "verify": "Hakiki"
+    },
+    "lede": "Andika namba ya uthibitisho inayotumwa kwenye namba ya simu au barua pepe iliyo kwenye akaunti yako. Kila namba hutumika mara moja tu.",
+    "notOpen": "Haijafunguliwa bado"
+  },
+  "portfolioDemo": {
+    "licenceActive": "leseni hai",
+    "licenceExpired": "leseni imeisha",
+    "rentOut": "Pangisha"
   }
 }

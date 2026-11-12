@@ -74,7 +74,7 @@ export function literalText(source) {
   // an arrow function (=>) or a comparison is not a tag.
   for (const m of code.matchAll(/(?<![=\-])>([^<>{}]*[A-Za-zÀ-ÿ][^<>{}]*)(?=<|\{)/g)) {
     const text = m[1].trim();
-    if (!text || NEUTRAL.test(text)) continue;
+    if (!text || NEUTRAL.test(text) || text.length === 1) continue; // a single character (logo monogram) is not language
     if (/^[\w.]+\s*=>|&&|\?\s|=>|\(\)/.test(text)) continue; // code fragments, not text
     if (/^[\w$]*[.$_][\w$.]*$/.test(text)) continue; // an identifier from code such as `a.length < 2` (single words are text)
     if (/===|!==|\)\);|\breturn \(/.test(text)) continue; // spans of code between `=>` and `<`
@@ -161,7 +161,7 @@ test("every translation key used on a release screen exists", () => {
 
 // Ratchet while the translation pass is in progress: the number of untranslated
 // strings on release screens may only go down. The release requires 0.
-const UNTRANSLATED_BUDGET = 312;
+const UNTRANSLATED_BUDGET = 302;
 
 test("release screens carry no more hard-coded or combined-language text than the budget", () => {
   const problems = [];

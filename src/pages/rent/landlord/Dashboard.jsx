@@ -32,7 +32,7 @@ export default function LandlordDashboard() {
             className="ibmt-tap inline-flex items-center gap-2 rounded-md bg-navy px-4 text-[13px] font-semibold text-primary-foreground hover:bg-navy-deep"
           >
             <Link2 className="h-4 w-4" aria-hidden="true" />
-            Pangisha
+            {t('portfolioDemo.rentOut')}
           </Link>
         }
       />

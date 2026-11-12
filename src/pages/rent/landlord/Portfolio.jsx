@@ -16,11 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/format';
+import { DEMO_AGENTS } from '@/config/demoAgents';
 
-const DEMO_AGENTS = [
-  { id: 'IBMT-AGT-2026-000044', label: 'Bahari Properties Ltd — licence active' },
-  { id: 'IBMT-AGT-2026-000051', label: 'Msimbazi Agency — licence expired' },
-];
+
 
 export default function LandlordPortfolio() {
   const { t, tt, lang } = useT();
@@ -289,7 +287,7 @@ export default function LandlordPortfolio() {
                   <SelectControl {...props} value={mandateState.agent_id} onChange={(event) => setMandateState({ agent_id: event.target.value })}>
                     {DEMO_AGENTS.map((agent) => (
                       <option key={agent.id} value={agent.id}>
-                        {agent.label}
+                        {agent.name} — {agent.active ? t('portfolioDemo.licenceActive') : t('portfolioDemo.licenceExpired')}
                       </option>
                     ))}
                   </SelectControl>

@@ -1485,5 +1485,25 @@
       "both": "Rentals and sales"
     },
     "rateLimited": "Checks are rate-limited to prevent scraping of records."
+  },
+  "entry": {
+    "back": "Back to the rental gateway",
+    "unknown": "This entry does not exist. Choose a way into the rental site.",
+    "kicker": "Way in",
+    "role": {
+      "landlord": "Landlord",
+      "tenant": "Tenant",
+      "agent": "Agent",
+      "mtaa_officer": "Mtaa officer",
+      "council": "Council",
+      "verify": "Verify"
+    },
+    "lede": "Enter the confirmation code sent to the phone number or email address on your account. Each code works once only.",
+    "notOpen": "Not open yet"
+  },
+  "portfolioDemo": {
+    "licenceActive": "licence active",
+    "licenceExpired": "licence expired",
+    "rentOut": "Rent out"
   }
 }
