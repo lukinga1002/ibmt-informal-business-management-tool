@@ -88,9 +88,9 @@ export default async function (req) {
     if (action === 'request') {
       if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
       if (lease.status === 'terminated') return fail(409, 'LEASE_CLOSED', 'This lease is closed');
-      // A party may only ask for their own code; an admin may request either,
-      // which is how a walkthrough of both phones is done.
-      const party = isAdmin && cleanText(payload.party) ? cleanText(payload.party) : myParty;
+      // Each party authenticates and signs for themselves. Nobody, the platform
+      // admin included, may request a code or sign for the other party.
+      const party = myParty;
       if (party !== 'landlord' && party !== 'tenant') {
         return fail(403, 'FORBIDDEN', 'Only a party to this lease can request a signing code');
       }
@@ -127,20 +127,19 @@ export default async function (req) {
     }
 
     if (action === 'sign') {
-      if (!myParty && !isAdmin) return fail(403, 'FORBIDDEN', 'Only a party to this lease can sign it');
+      if (!myParty) return fail(403, 'FORBIDDEN', 'Only a party to this lease can sign it');
       const challengeId = cleanText(payload.challenge_id);
       if (!challengeId) return fail(409, 'NO_CHALLENGE', 'Request a signing code first');
       const svc = base44.asServiceRole.entities;
       const challenge = await svc.OtpChallenge.get(challengeId).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       const [challengeLease, signingParty] = String((challenge && challenge.subject_ref) || '').split(':');
       // The code belongs to the user, lease and party it was issued to; nobody
-      // signs in another party's place except the platform admin walking
-      // through both phones, and even then only with a code issued to the admin.
+      // signs in another party's place.
       if (!challenge || challenge.purpose !== LEASE_PURPOSE || challenge.subject_id !== user.id || challengeLease !== lease.id) {
         return fail(403, 'WRONG_CHALLENGE', 'That code was not issued to you for this lease');
       }
       if (signingParty !== 'landlord' && signingParty !== 'tenant') return fail(403, 'WRONG_CHALLENGE', 'That code was not issued to you for this lease');
-      if (signingParty !== myParty && !isAdmin) return fail(403, 'WRONG_PARTY', 'That code was issued to the other party');
+      if (signingParty !== myParty) return fail(403, 'WRONG_PARTY', 'That code was issued to the other party');
       if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
       if ((lease.signatures || []).some((row) => row.party === signingParty)) {
         return fail(409, 'ALREADY_SIGNED', 'This party has already signed');
@@ -236,6 +235,8 @@ async function claim(base44, user, code) {
     return fail(409, 'ALREADY_CLAIMED', 'This lease has already been claimed by another account');
   }
   if (lease.status === 'signed') return fail(409, 'LEASE_SIGNED', 'This lease is already signed by both parties');
+  // One account cannot be both parties, so the landlord cannot sign both sides.
+  if (lease.landlord_id === user.id) return fail(409, 'SAME_PARTY', 'The landlord cannot claim their own lease as the tenant');
 
   const landlord = await base44.asServiceRole.entities.User.get(lease.landlord_id).catch(() => null);
   const previous = lease.terms || {};
@@ -265,6 +266,13 @@ async function claim(base44, user, code) {
     terms,
     lease_version: (lease.lease_version || 1) + 1,
   });
+
+  // The tenant role is self-service: a person who claims a lease is its
+  // tenant. Set it only when the profile has no role yet; never overwrite.
+  const profile = user.data || {};
+  if (!profile.ibmt_role) {
+    await base44.asServiceRole.entities.User.update(user.id, { data: { ...profile, ibmt_role: 'tenant' } }).catch(() => null);
+  }
 
   let tenancyId = lease.tenancy_id || null;
   if (!tenancyId) {
