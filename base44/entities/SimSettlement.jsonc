@@ -21,7 +21,15 @@
       "type": "number"
     },
     "landlord_state": {
+      "type": "string",
+      "description": "settled, held_limit (wallet limit) or held_account (no eligible payout account, or consent withdrawn after the payment started)"
+    },
+    "held_reason": {
       "type": "string"
+    },
+    "released_to": {
+      "type": "string",
+      "description": "Payout account record the held share was released to"
     },
     "settled_at": {
       "type": "string"
@@ -41,25 +49,9 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "data.ibmt_role": "council_official"
-              }
-            },
-            {
-              "data.council_id": "{{user.data.council_id}}"
-            }
-          ]
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": false,
     "update": false,
