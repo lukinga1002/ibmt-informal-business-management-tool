@@ -1,0 +1,90 @@
+{
+  "name": "RoleGrant",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "The user this privileged role is granted to"
+    },
+    "ibmt_role": {
+      "type": "string",
+      "enum": [
+        "council_official",
+        "mtaa_officer",
+        "district_commissioner",
+        "regional_commissioner",
+        "district_official",
+        "tra_admin",
+        "ward_reporter",
+        "agent",
+        "operator",
+        "super_admin"
+      ]
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "ward_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "district": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why the role was granted or revoked"
+    },
+    "granted_by": {
+      "type": "string"
+    },
+    "granted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revoked_by": {
+      "type": "string"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "subject_id",
+    "ibmt_role",
+    "status"
+  ],
+  // The only source of privileged roles (shared/trustedRole.ts). A user's own
+  // profile cannot grant one: users can rewrite their own `data` object.
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.subject_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

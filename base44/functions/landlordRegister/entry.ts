@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { asRows, cleanText, earliestFirst, fail, json, reserveSerials, settleUniqueReference } from '../../shared/moneyOps.ts';
 import { ClaimBusyError, withRecordClaim } from '../../shared/recordClaim.ts';
 import { DISCLAIMER, reference } from '../../shared/registration.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 const CONSENT_VERSION = '2026.1-stage1';
 
@@ -44,7 +45,7 @@ export default async function (req) {
   let progress = null;
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (statusOf(e) === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (statusOf(e) === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     // A platform administrator is never also the landlord of record: that would

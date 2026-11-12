@@ -13,6 +13,7 @@ import {
   wardList,
   writeAudit,
 } from '../../shared/r6.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 const MODES = ['voluntary', 'registration_window', 'compulsory'];
 
@@ -37,7 +38,7 @@ export default async function (req) {
     const payload = await req.json().catch(() => ({}));
     const action = cleanText(payload.action) || 'register';
 
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const resolved = await resolveCouncil(base44, user, payload);

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, isoNow, json } from '../../shared/moneyOps.ts';
 import { ZERO_FEE, isAdmin, notify } from '../../shared/r5.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Listings and viewings.
@@ -17,7 +18,7 @@ export default async function (req) {
 
     if (action === 'public') return await publicBoard(base44);
 
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     if (action === 'detail') return await detail(base44, user, payload);

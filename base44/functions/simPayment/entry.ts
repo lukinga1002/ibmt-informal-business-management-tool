@@ -18,6 +18,7 @@ import {
   verifySignature,
   wholeTZS,
 } from '../../shared/r7.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * SIMULATED payment engine. Stages 2 and 3 are simulation only: the partner is
@@ -101,7 +102,7 @@ async function ledgerFor(base44, paymentId) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));

@@ -5,6 +5,7 @@ import { LEASE_TEMPLATE_LABEL, STAMP_DUTY_PLACEHOLDER, buildLeaseTerms } from '.
 import { attemptOtp, issuanceAllowed, issueChallenge } from '../../shared/registration.ts';
 import { OTP_POLICY } from '../../shared/r7.ts';
 import { ClaimBusyError, withRecordClaim } from '../../shared/recordClaim.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 const LEASE_PURPOSE = 'lease_signature';
 
@@ -32,7 +33,7 @@ const LEASE_PURPOSE = 'lease_signature';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     const payload = await req.json().catch(() => ({}));
     const action = cleanText(payload.action) || 'view';
 

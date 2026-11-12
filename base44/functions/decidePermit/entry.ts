@@ -8,6 +8,7 @@ import {
   json,
 } from '../../shared/moneyOps.ts';
 import { requireModule } from '../../shared/moduleGate.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * A district official records a permit decision. The reason is mandatory
@@ -17,7 +18,7 @@ import { requireModule } from '../../shared/moduleGate.ts';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await trustedMe(base44);
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const blocked = await requireModule(base44, 'permits_module');

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, getActivePolicy, isoNow, json } from '../../shared/moneyOps.ts';
 import { requireModule } from '../../shared/moduleGate.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Issues a receipt draft so the buyer can confirm it. The confirmation window
@@ -11,7 +12,7 @@ import { requireModule } from '../../shared/moduleGate.ts';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await trustedMe(base44);
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const blocked = await requireModule(base44, 'operator_module');

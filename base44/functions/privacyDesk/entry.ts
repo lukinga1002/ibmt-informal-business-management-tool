@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, json } from '../../shared/moneyOps.ts';
 import { RETENTION_DEFAULTS, maskEmail, maskIdNumber, maskPhone } from '../../shared/r7.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Privacy desk: what a person can do about their own records, and the retention
@@ -46,7 +47,7 @@ async function retentionPeriods(base44) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));

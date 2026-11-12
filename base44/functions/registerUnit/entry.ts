@@ -10,6 +10,7 @@ import {
   normaliseMeter,
   reference,
 } from '../../shared/registration.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Landlord registration, self or through an authorised helper.
@@ -26,7 +27,7 @@ import {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const user = await trustedMe(base44).catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));

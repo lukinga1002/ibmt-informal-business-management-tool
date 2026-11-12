@@ -14,6 +14,7 @@ import {
   wardList,
   writeAudit,
 } from '../../shared/r6.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 const EXPORT_COLUMNS = [
   'district',
@@ -46,7 +47,7 @@ export default async function (req) {
     const payload = await req.json().catch(() => ({}));
     const action = cleanText(payload.action) || 'district';
 
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const data = await loadData(base44);

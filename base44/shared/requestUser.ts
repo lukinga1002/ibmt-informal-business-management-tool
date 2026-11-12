@@ -1,9 +1,10 @@
+import { trustedMe } from './trustedRole.ts';
 // SDK me() rejects anonymous requests instead of returning null.
 // Only an authentication rejection becomes a missing session; service failures
 // still propagate so callers do not mistake an outage for a signed-out user.
 export async function requestUser(app) {
   try {
-    return await app.auth.me();
+    return await trustedMe(app);
   } catch (error) {
     const status = error?.status ?? error?.response?.status;
     const data = error?.data ?? error?.response?.data;

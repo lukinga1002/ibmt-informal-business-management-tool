@@ -7,6 +7,7 @@ import {
   json,
   todayISO,
 } from '../../shared/moneyOps.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Read-only portfolio summary for a landlord: units, occupancy, rent due
@@ -17,7 +18,7 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     // A missing or expired session is a 401 from the platform, not a server fault.
-    const user = await base44.auth.me().catch((error) => (isUnauthenticated(error) ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (isUnauthenticated(error) ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const today = todayISO();

@@ -392,6 +392,7 @@ test('A landlord cannot act as the ownership reviewer or nominate before review'
 
 test('Council staff can read their own fees but cannot bill, invoice or edit terms', async () => {
   const f = fixture();
+  f.records.RoleGrant = [{ id: 'g', subject_id: 'staff', ibmt_role: 'council_official', council_id: 'c', status: 'active' }];
   f.as({ id: 'staff', role: 'user', data: { ibmt_role: 'council_official', council_id: 'c' } });
   f.records.SimSettlement.push({ id: 's', property_id: 'p', council_id: 'c', council_amount: 90000,
     account_number: 'PRIVATE-ACCOUNT', landlord_amount: 2850000, settled_at: '2026-11-10T00:00:00Z',

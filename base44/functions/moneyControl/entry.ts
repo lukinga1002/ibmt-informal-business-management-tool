@@ -16,6 +16,7 @@ import {
   wholeTZS,
   withinRateLimit,
 } from '../../shared/r7.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * Money controls. Every one of these is a simulated action, because no real
@@ -71,7 +72,7 @@ async function writeGroup(base44, user, paymentId, lines, reason, reversalOf) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
+    const user = await trustedMe(base44).catch((error) => (error && error.status === 401 ? null : Promise.reject(error)));
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
 
     const payload = await req.json().catch(() => ({}));

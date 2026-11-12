@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { cleanText, fail, hasIbmtRole, json } from '../../shared/moneyOps.ts';
 import { applyRegistrationDecision } from '../../shared/verification.ts';
+import { trustedMe } from '../../shared/trustedRole.ts';
 
 /**
  * RETIRED. decideRegistration is the decision path; this endpoint stays only
@@ -14,7 +15,7 @@ import { applyRegistrationDecision } from '../../shared/verification.ts';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await trustedMe(base44);
     if (!user) return fail(401, 'SESSION_EXPIRED', 'Sign in required');
     if (!hasIbmtRole(user, 'mtaa_officer')) {
       return fail(403, 'FORBIDDEN', 'Only a mtaa officer can verify ownership evidence');
