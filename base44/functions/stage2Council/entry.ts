@@ -2,7 +2,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
 import { requestUser } from "../../shared/requestUser.ts";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { allRows } from "../../shared/stage2Payout.ts";
-import { invoiceEligibility, invoiceLines, reconciliation } from "../../shared/stage2Settlement.ts";
+import { invoiceEligibility, invoiceLines, reconciliation, recordReversalLandlordState, recoverySummary } from "../../shared/stage2Settlement.ts";
 import { BillingBusyError, withCouncilBillingClaim } from "../../shared/billingClaim.ts";
 
 export default async function (req) {
@@ -34,6 +34,14 @@ export default async function (req) {
         simulation: true,
         ...(admin
           ? {
+              recovery_exceptions: (await allRows(db.SimRecoveryException, { council_id: id })).map((e) => ({
+                id: e.id,
+                payment_id: e.payment_id,
+                settlement_id: e.settlement_id,
+                amount: e.amount,
+                state: e.state,
+                recorded_at: e.recorded_at,
+              })),
               partner_rebate_report:
                 settlements.reduce(
                   (v, s) => v + (s.income.partner_rebate || 0),
@@ -175,6 +183,18 @@ export default async function (req) {
       return json({ invoice, simulation: true });
       });
     }
+    if (input.action === "recordReversalExceptions") {
+      // Applies the reversal rules to payments reversed before they existed.
+      const reversed = new Set();
+      for (const s of settlements) {
+        const payment = await db.SimPayment.get(s.payment_id).catch(() => null);
+        if (payment && payment.state === "reversed") reversed.add(payment.id);
+      }
+      const results = [];
+      for (const paymentId of reversed)
+        results.push({ payment_id: paymentId, ...(await recordReversalLandlordState(app, paymentId)) });
+      return json({ results, simulation: true });
+    }
     if (input.action === "reconcile") {
       const ledger = [];
       for (const paymentId of new Set(settlements.map((s) => s.payment_id)))
@@ -184,7 +204,19 @@ export default async function (req) {
       const adjusted = settlements.concat(
         adjustments.map((a) => ({ council_amount: a.council_amount })),
       );
-      const result = reconciliation(adjusted, ledger, bills);
+      const result = {
+        ...reconciliation(adjusted, ledger, bills),
+        // Unrecovered landlord payouts after reversal: an open exception, never
+        // netted away. Shown so it stays visible until a person resolves it.
+        recovery: recoverySummary(await allRows(db.SimRecoveryException, { council_id: id }), ledger),
+      };
+      if (!result.recovery.matched)
+        await db.PaymentAlert.create({
+          kind: "amount_mismatch",
+          detail: "Simulation: recovery exceptions do not match the ledger receivable",
+          state: "open",
+          observed: result.recovery,
+        });
       if (!result.balanced)
         await db.PaymentAlert.create({
           kind: "amount_mismatch",

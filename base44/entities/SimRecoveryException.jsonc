@@ -1,0 +1,61 @@
+{
+  "name": "SimRecoveryException",
+  "type": "object",
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "settlement_id": {
+      "type": "string",
+      "description": "The settlement whose landlord share had already been paid out when the payment was reversed"
+    },
+    "council_id": {
+      "type": "string"
+    },
+    "property_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Landlord share paid out and not recovered (TZS, whole shillings)"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "open"
+      ],
+      "description": "Only 'open' exists in this release: nothing here marks money recovered. Resolution needs a founder-approved policy (docs/STAGE2_REVERSAL_RECOVERY.md)."
+    },
+    "ledger_group_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "simulation": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "payment_id",
+    "settlement_id",
+    "amount",
+    "state"
+  ],
+  // Landlord-and-partner matter: admins only; councils never see it.
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

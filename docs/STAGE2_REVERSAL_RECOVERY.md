@@ -1,6 +1,6 @@
 # Stage 2 reversals: the landlord-payout gap and a proposed recovery workflow
 
-**Status:** proposal for the founder. Nothing in this document is implemented. It does **not** decide any clawback, set-off or deduction policy; those need the founder, the licensed partner and a Tanzanian lawyer.
+**Status:** the *recording* part is implemented in the simulation (section "Implemented"). The *resolution* part is still a proposal. It does **not** decide any clawback, set-off or deduction policy; those need the founder, the licensed partner and a Tanzanian lawyer.
 
 ## What happens today
 
@@ -58,3 +58,18 @@ A Stage 2 reversal (`moneyControl`) goes through two-admin approval. When it exe
 - **Notification:** the landlord must be told (transparency).
 - **Retention:** keep the case for the financial-records period the lawyer confirms, then dispose securely.
 - **Need legal confirmation:** whether any set-off is lawful, and whether it needs the partner's licence terms.
+
+## Implemented in the simulation (recording only)
+
+When a reversal executes (`moneyControl`, two-admin approval), `recordReversalLandlordState` runs for each settlement of the payment:
+
+- **Share still held:** the hold becomes `cancelled_by_reversal` and can never be released.
+- **Share already paid out:** the amount is recorded as **unrecovered**:
+  - an open `SimRecoveryException` (admin-only; councils never see it), and
+  - a ledger group, `landlord_recovery_receivable` (debit) against `partner_clearing` (credit), for the landlord amount.
+
+  The settlement itself is not rewritten. Nothing marks the money recovered: the exception has a single state, `open`, and no update path. Nothing is deducted from any later payout.
+- **Reconciliation:** `stage2Council reconcile` reports a `recovery` line (open exceptions, amount, ledger receivable, matched). A mismatch raises an alert.
+- **Earlier reversals:** `stage2Council recordReversalExceptions` (admin) applies the same rules to payments reversed before this existed. It is idempotent.
+
+Resolution (steps 4–6 above) still needs a founder-approved policy, after legal and partner advice.

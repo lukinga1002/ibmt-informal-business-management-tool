@@ -150,6 +150,78 @@ export function invoiceEligibility(lines) {
   return { payable, excluded, amount: sum(payable), excluded_amount: sum(excluded) };
 }
 
+/**
+ * What a reversal means for the landlord's share (docs/STAGE2_REVERSAL_RECOVERY.md).
+ *
+ * - Share still held: the hold is cancelled, so it can never be released.
+ * - Share already paid out: the money is not recovered, and nothing here
+ *   pretends it is. An open SimRecoveryException records it, with a ledger group
+ *   that makes it visible in the books: landlord_recovery_receivable (debit)
+ *   against partner_clearing (credit). No deduction, set-off or clawback.
+ *
+ * Idempotent: a repeat finds the exception and its ledger group by settlement.
+ */
+export async function recordReversalLandlordState(app, paymentId) {
+  const db = app.asServiceRole.entities;
+  const out = { cancelled: 0, exceptions: 0 };
+  for (const row of await allRows(db.SimSettlement, { payment_id: paymentId })) {
+    if (row.landlord_state === "held_limit" || row.landlord_state === "held_account") {
+      const moved = await db.SimSettlement.updateMany(
+        { id: row.id, landlord_state: row.landlord_state },
+        { $set: { landlord_state: "cancelled_by_reversal" } },
+      );
+      if (moved && moved.updated) out.cancelled++;
+      continue;
+    }
+    if (row.landlord_state !== "settled") continue;
+    if ((await allRows(db.SimRecoveryException, { settlement_id: row.id })).length) continue;
+    const groupId = `${row.id}-unrecovered-payout`;
+    const now = new Date().toISOString();
+    if (!(await allRows(db.LedgerEntry, { group_id: groupId })).length) {
+      await db.LedgerEntry.bulkCreate(
+        [
+          { account: "landlord_recovery_receivable", side: "debit" },
+          { account: "partner_clearing", side: "credit" },
+        ].map((line) => ({
+          ...line,
+          payment_id: paymentId,
+          group_id: groupId,
+          posting: 90,
+          amount: row.landlord_amount,
+          currency: "TZS",
+          actor_role: "payment_engine",
+          simulation: true,
+          recorded_at: now,
+        })),
+      );
+    }
+    await db.SimRecoveryException.create({
+      payment_id: paymentId,
+      settlement_id: row.id,
+      council_id: row.council_id,
+      property_id: row.property_id,
+      amount: row.landlord_amount,
+      state: "open",
+      ledger_group_id: groupId,
+      reason: "Payment reversed after the landlord share was paid out; not recovered",
+      recorded_at: now,
+      simulation: true,
+    });
+    out.exceptions++;
+  }
+  return out;
+}
+
+/** Open recovery exceptions against the ledger's receivable, for reconciliation. */
+export function recoverySummary(exceptions, ledger) {
+  const open = exceptions.filter((e) => e.state === "open");
+  const amount = open.reduce((s, e) => s + e.amount, 0);
+  const receivable = ledger
+    .filter((r) => r.account === "landlord_recovery_receivable")
+    .reduce((s, r) => s + (r.side === "debit" ? r.amount : -r.amount), 0);
+  return { open: open.length, amount, ledger_receivable: receivable, matched: amount === receivable };
+}
+
 export async function reverseSettlement(app, paymentId) {
   const db = app.asServiceRole.entities;
   const originals = await allRows(db.SimSettlement, { payment_id: paymentId });
@@ -168,4 +240,5 @@ export async function reverseSettlement(app, paymentId) {
       created_at: new Date().toISOString(),
     });
   }
+  return recordReversalLandlordState(app, paymentId);
 }
