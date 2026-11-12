@@ -6,7 +6,7 @@ import { feeEvidence } from "./councilFee.ts";
 export async function settlementRules(app, user, input, policy) {
   let councilId = String(input.council_id || "");
   if (input.tenancy_id) {
-    const tenancy = await app.entities.Tenancy.get(input.tenancy_id);
+    const tenancy = await app.asServiceRole.entities.Tenancy.get(input.tenancy_id);
     if (
       user.role !== "admin" &&
       tenancy.landlord_id !== user.id &&

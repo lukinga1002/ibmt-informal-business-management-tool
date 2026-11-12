@@ -182,7 +182,7 @@ export default async function (req) {
       let unitRef = cleanText(payload.unit_ref) || null;
       const tenancyId = cleanText(payload.tenancy_id);
       if (tenancyId) {
-        const tenancy = await base44.entities.Tenancy.get(tenancyId).catch(() => null);
+        const tenancy = await base44.asServiceRole.entities.Tenancy.get(tenancyId).catch(() => null);
         if (tenancy) {
           landlordId = tenancy.landlord_id || landlordId;
           tenantId = tenancy.tenant_id || tenantId;
@@ -324,7 +324,7 @@ export default async function (req) {
 
       if (claimedStatus === 'succeeded' && payment.stage === STAGE.stage2) {
         if (!payment.tenancy_id) return fail(409,'TENANCY_REQUIRED','Select a signed tenancy for Stage 2');
-        const tenancy=await base44.entities.Tenancy.get(payment.tenancy_id);
+        const tenancy=await base44.asServiceRole.entities.Tenancy.get(payment.tenancy_id);
         await leasePayoutGuard(base44,{unit_id:tenancy.unit_id});
       }
       if (claimedStatus === 'succeeded' && payment.fee_status === 'in_force') {
