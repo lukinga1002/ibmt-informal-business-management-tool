@@ -14,7 +14,9 @@ test("the payout property picker is limited to its container width", () => {
 
 test("long bilingual payout buttons wrap instead of widening the page", () => {
   const source = readFileSync(new URL("../src/components/money/Stage2PayoutPanel.jsx", import.meta.url), "utf8");
-  const buttons = source.match(/<Button[^>]*>/g) || [];
+  // Opening tags only, up to the first attribute line break or ">".
+  const buttons = source.match(/<Button\s+className="[^"]*"/g) || [];
+  assert.equal(buttons.length, (source.match(/<Button\b/g) || []).length, "every Button carries a className");
   assert.ok(buttons.length > 0);
   for (const tag of buttons) assert.match(tag, /whitespace-normal/, tag);
 });
