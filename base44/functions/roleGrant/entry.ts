@@ -36,6 +36,59 @@ export default async function (req) {
       return json({ grants: Array.isArray(page) ? page : page.items || [] });
     }
 
+    // Migration from profile roles. A profile role may itself be the result of
+    // a self-edit, so nothing is granted automatically: the dry run lists the
+    // candidates and the admin names each user to grant, with a reason.
+    if (action === "migrateProfiles") {
+      const users = [];
+      for (let skip = 0; ; skip += 100) {
+        const page = await db.User.filter({}, "created_date", 100, skip);
+        const rows = Array.isArray(page) ? page : page.items || [];
+        users.push(...rows);
+        if (rows.length < 100) break;
+      }
+      const active = await db.RoleGrant.filter({ status: "active" }, "-created_date", 500);
+      const granted = new Set((Array.isArray(active) ? active : active.items || []).map((g) => g.subject_id));
+      const candidates = users
+        .filter((u) => GRANTED_ROLES.includes(u.data?.ibmt_role) && !granted.has(u.id))
+        .map((u) => ({
+          subject_id: u.id,
+          email: u.email,
+          profile_role: u.data.ibmt_role,
+          council_id: u.data.council_id || null,
+          ward_ids: Array.isArray(u.data.ward_ids) ? u.data.ward_ids : [],
+          district: u.data.district || null,
+          region: u.data.region || null,
+        }));
+      const chosen = Array.isArray(input.subject_ids) ? input.subject_ids.map(cleanText) : [];
+      if (!chosen.length) return json({ dry_run: true, candidates });
+      const why = cleanText(input.reason);
+      if (why.length < 10) return fail(422, "VALIDATION", "Record the reason (at least 10 characters)");
+      const results = [];
+      for (const subjectId of chosen) {
+        const c = candidates.find((row) => row.subject_id === subjectId);
+        if (!c) { results.push({ subject_id: subjectId, result: "not_a_candidate" }); continue; }
+        if (c.subject_id === user.id) { results.push({ subject_id: subjectId, result: "self_grant_refused" }); continue; }
+        if (c.profile_role === "council_official" && !c.council_id) { results.push({ subject_id: subjectId, result: "needs_council" }); continue; }
+        if (c.profile_role === "mtaa_officer" && !c.ward_ids.length) { results.push({ subject_id: subjectId, result: "needs_wards" }); continue; }
+        const grant = await db.RoleGrant.create({
+          subject_id: c.subject_id,
+          ibmt_role: c.profile_role,
+          council_id: c.council_id,
+          ward_ids: c.ward_ids,
+          district: c.district,
+          region: c.region,
+          status: "active",
+          reason: `Migrated from profile: ${why}`,
+          granted_by: user.id,
+          granted_at: new Date().toISOString(),
+        });
+        await audit("role.migrated", grant.id, why, { subject_id: c.subject_id, ibmt_role: c.profile_role });
+        results.push({ subject_id: subjectId, result: "granted", grant_id: grant.id });
+      }
+      return json({ dry_run: false, results });
+    }
+
     const reason = cleanText(input.reason);
     if (reason.length < 10) return fail(422, "VALIDATION", "Record the reason (at least 10 characters)");
 

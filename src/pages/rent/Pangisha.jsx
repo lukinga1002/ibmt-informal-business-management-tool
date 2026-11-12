@@ -38,7 +38,9 @@ export default function Pangisha() {
 
   const load = useCallback(async () => {
     const me = await base44.auth.me();
-    const isAgent = (me?.data?.ibmt_role || '') === 'agent';
+    // The agent role comes from the server's trusted view, never the profile copy.
+    const access = await callFn('whoami', {}).catch(() => null);
+    const isAgent = access?.role === 'agent';
     setRole(isAgent ? 'agent' : 'landlord');
 
     const unitRows = isAgent

@@ -642,18 +642,24 @@ async function session() {
       demonstration: false,
     };
   }
-  const data = user.data || {};
+  // Screens use the server's trusted role and jurisdiction (whoami), never the
+  // profile copy a user can rewrite. If the server cannot answer, fail closed.
+  let access = null;
+  try {
+    access = await invokeFunction('whoami', {});
+  } catch {
+    access = null;
+  }
   return {
     subject_id: user.id,
     display_name: user.full_name || user.email,
-    // The platform admin role (founder) is not an IBMT role value: it is shown
-    // as `admin` so navigation and guards can open every workspace. Every admin
-    // action is written to the audit log by the backend.
-    role: data.ibmt_role || (user.role === 'admin' ? 'admin' : 'public'),
+    role: access?.role || 'public',
+    role_source: access?.role_source || 'none',
     jurisdiction: {
-      wards: data.ward_ids || [],
-      district: data.district || null,
-      region: data.region || null,
+      wards: access?.jurisdiction?.wards || [],
+      district: access?.jurisdiction?.district || null,
+      region: access?.jurisdiction?.region || null,
+      council_id: access?.jurisdiction?.council_id || null,
     },
     policy_version: null,
     demonstration: false,
