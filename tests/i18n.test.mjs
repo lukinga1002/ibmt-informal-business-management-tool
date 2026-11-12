@@ -58,6 +58,9 @@ export function literalText(source) {
   // A file may opt out only with a stated reason: `// i18n-ignore-file: <why>`.
   if (/\/\/\s*i18n-ignore-file:\s*\S{5,}/.test(source)) return [];
   source = source
+    // A document (certificate, lease text) keeps its own fixed wording whatever
+    // the screen language; it must be marked as such, start and end.
+    .replace(/\{\/\*\s*i18n-document-start:[^*]*\*\/\}[\s\S]*?\{\/\*\s*i18n-document-end\s*\*\/\}/g, blank)
     .replace(/\bconsole\.\w+\([^\n]*\)/g, blank) // developer diagnostics, never shown
     .replace(/\bthrow new Error\((['"`])[^\n]*?\1\)/g, blank); // programming errors (misused hooks), never shown
   const code = source
@@ -158,7 +161,7 @@ test("every translation key used on a release screen exists", () => {
 
 // Ratchet while the translation pass is in progress: the number of untranslated
 // strings on release screens may only go down. The release requires 0.
-const UNTRANSLATED_BUDGET = 387;
+const UNTRANSLATED_BUDGET = 312;
 
 test("release screens carry no more hard-coded or combined-language text than the budget", () => {
   const problems = [];

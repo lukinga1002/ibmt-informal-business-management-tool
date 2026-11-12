@@ -1383,5 +1383,107 @@
     "taxStatement": "Taarifa ya kodi",
     "receiptTitle": "Risiti inatokana na uthibitisho",
     "receiptBody": "Huwezi kuthibitisha kumbukumbu uliyoiandika mwenyewe. Risiti inatolewa pale mpangaji anapothibitisha, na namba ya risiti inatolewa wakati huohuo."
+  },
+  "leasePublic": {
+    "searching": "Inatafuta mkataba…",
+    "noMatch": "Namba hii hailingani na mkataba wowote. Angalia namba au skani QR tena.",
+    "home": "Rudi ukurasa wa mwanzo",
+    "kicker": "Uthibitisho wa mkataba",
+    "rent": "Kodi",
+    "landlordSigned": "Mwenye nyumba amesaini",
+    "tenantSigned": "Mpangaji amesaini",
+    "notYet": "Bado",
+    "stampBody": "Ushuru wa stempu wa mkataba utathibitishwa. Hakuna kiasi kinachodaiwa hapa.",
+    "notOwnershipTitle": "Ukurasa huu hauthibitishi umiliki",
+    "notOwnershipBody": "Hakuna jina, anwani, namba ya nyumba wala namba ya mita inayoonyeshwa hapa. Ukurasa unathibitisha tu kuwa mkataba wenye namba hii umesajiliwa katika IBMT Rent."
+  },
+  "certPublic": {
+    "kicker": "Uthibitisho wa cheti",
+    "title": "Hakiki cheti cha usajili",
+    "lede": "Ukurasa huu unathibitisha kuwa cheti kilitolewa na IBMT. Hauonyeshi anwani ya nyumba wala namba ya mita.",
+    "searching": "Inatafuta…",
+    "noAnswerTitle": "Hakuna jibu",
+    "noAnswerBody": "Uthibitisho haupatikani kwa sasa. Jaribu tena baadaye.",
+    "notFound": "Cheti hakijapatikana",
+    "notFoundBody": "Hakuna cheti kilichoidhinishwa kwa namba hii. Cheti halali hutolewa tu baada ya afisa wa Mtaa kuidhinisha usajili.",
+    "valid": "Cheti halali",
+    "unit": "Namba ya uniti",
+    "ward": "Kata",
+    "mtaa": "Mtaa",
+    "district": "Wilaya",
+    "owner": "Mmiliki aliyesajiliwa",
+    "verifiedOn": "Ilithibitishwa",
+    "shownTitle": "Kinachoonekana hapa",
+    "shownBody": "Kata, mtaa, wilaya, namba ya uniti, tarehe na jina la mmiliki kwa ufupi. Anwani, mita na kodi hazionyeshwi kamwe."
+  },
+  "certOwn": {
+    "notVisible": "Cheti hiki hakionekani kwako.",
+    "registration": "Usajili {unit}",
+    "officerReason": "Sababu kutoka kwa afisa wa Mtaa",
+    "onlyAfterApproval": "Cheti hutolewa tu baada ya afisa wa Mtaa kuidhinisha.",
+    "scanHint": "Skani QR kuthibitisha cheti bila kuonyesha anwani.",
+    "privacy": "Cheti hiki kinaonyesha kata na mtaa pekee. Anwani kamili, namba ya mita na kodi hazionyeshwi."
+  },
+  "verifyPublic": {
+    "kicker": "Ukaguzi wa umma",
+    "title": "Thibitisha kumbukumbu",
+    "lede": "Angalia mkataba, risiti, leseni ya wakala au usajili wa uniti. Unapata hali pekee: hakuna jina, anwani wala namba ya simu.",
+    "kind": {
+      "lease": "Mkataba",
+      "receipt": "Risiti",
+      "agent": "Wakala",
+      "unit": "Uniti"
+    },
+    "number": {
+      "lease": "Namba ya mkataba",
+      "receipt": "Namba ya risiti",
+      "agent": "Namba ya leseni ya wakala",
+      "unit": "Namba ya usajili wa uniti"
+    },
+    "hint": {
+      "lease": "Namba ya mkataba au namba ya QR",
+      "receipt": "Namba ya risiti, mfano IBMT-RCT-2026-000021",
+      "agent": "Namba ya leseni, mfano IBMT-AGL-2026-0014",
+      "unit": "Namba ya uniti, mfano IBMT-UNIT-2026-002315"
+    },
+    "checking": "Inaangalia…",
+    "check": "Angalia",
+    "noneTitle": "Hakuna kumbukumbu",
+    "none": {
+      "lease": "Hakuna mkataba unaolingana na namba hiyo. Angalia namba au skani QR tena.",
+      "receipt": "Hakuna risiti inayolingana na namba hiyo. Angalia namba au skani QR tena.",
+      "agent": "Hakuna leseni ya wakala inayolingana na namba hiyo. Angalia namba au skani QR tena.",
+      "unit": "Hakuna usajili wa uniti unaolingana na namba hiyo. Angalia namba au skani QR tena."
+    },
+    "valid": "Ni sahihi",
+    "notVerified": "Haijathibitishwa",
+    "status": {
+      "signed": "Imesainiwa na pande zote",
+      "awaiting_signature": "Inasubiri sahihi",
+      "awaiting_tenant": "Inasubiri mpangaji",
+      "draft": "Rasimu",
+      "terminated": "Imefungwa",
+      "amended": "Imebadilishwa",
+      "confirmed": "Imethibitishwa",
+      "pending": "Inasubiri uthibitisho",
+      "disputed": "Imepingwa",
+      "approved": "Imethibitishwa",
+      "suspended": "Imesimamishwa",
+      "revoked": "Imefutwa",
+      "rejected": "Imekataliwa",
+      "verified": "Imethibitishwa",
+      "registered": "Imeandikwa",
+      "evidence_pending": "Inasubiri ushahidi",
+      "unverified": "Haijathibitishwa"
+    },
+    "period": "Kipindi: {period}",
+    "council": "Halmashauri: {council}",
+    "scope": "Imesajiliwa kwa: {scope}",
+    "scopes": {
+      "rental": "Kupangisha",
+      "sale": "Mauzo",
+      "both": "Kupangisha na mauzo"
+    },
+    "rateLimited": "Ukaguzi umepunguzwa kasi kuzuia uvunaji wa kumbukumbu."
   }
 }

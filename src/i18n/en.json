@@ -1383,5 +1383,107 @@
     "taxStatement": "Tax statement",
     "receiptTitle": "A receipt comes from confirmation",
     "receiptBody": "You cannot confirm a record you entered yourself. The receipt is issued when the tenant confirms, and the receipt number is issued at the same time."
+  },
+  "leasePublic": {
+    "searching": "Looking up the lease…",
+    "noMatch": "This number does not match any lease. Check the number or scan the QR code again.",
+    "home": "Back to the home page",
+    "kicker": "Lease verification",
+    "rent": "Rent",
+    "landlordSigned": "Landlord has signed",
+    "tenantSigned": "Tenant has signed",
+    "notYet": "Not yet",
+    "stampBody": "Stamp duty on the lease will be confirmed. No amount is charged here.",
+    "notOwnershipTitle": "This page does not prove ownership",
+    "notOwnershipBody": "No name, address, house number or meter number is shown here. The page only confirms that a lease with this number is registered in IBMT Rent."
+  },
+  "certPublic": {
+    "kicker": "Certificate verification",
+    "title": "Check a registration certificate",
+    "lede": "This page confirms that a certificate was issued by IBMT. It does not show the house address or the meter number.",
+    "searching": "Searching…",
+    "noAnswerTitle": "No answer",
+    "noAnswerBody": "Verification is not available right now. Try again later.",
+    "notFound": "Certificate not found",
+    "notFoundBody": "No approved certificate has this number. A valid certificate is issued only after the Mtaa officer approves the registration.",
+    "valid": "Valid certificate",
+    "unit": "Unit number",
+    "ward": "Ward",
+    "mtaa": "Mtaa",
+    "district": "District",
+    "owner": "Registered owner",
+    "verifiedOn": "Verified",
+    "shownTitle": "What is shown here",
+    "shownBody": "Ward, mtaa, district, unit number, date and the owner's name in short. The address, meter and rent are never shown."
+  },
+  "certOwn": {
+    "notVisible": "This certificate is not visible to you.",
+    "registration": "Registration {unit}",
+    "officerReason": "Reason from the Mtaa officer",
+    "onlyAfterApproval": "A certificate is issued only after the Mtaa officer approves.",
+    "scanHint": "Scan the QR code to verify the certificate without showing the address.",
+    "privacy": "This certificate shows only the ward and mtaa. The full address, meter number and rent are not shown."
+  },
+  "verifyPublic": {
+    "kicker": "Public check",
+    "title": "Verify a record",
+    "lede": "Check a lease, a receipt, an agent licence or a unit registration. You get the status only: no name, address or phone number.",
+    "kind": {
+      "lease": "Lease",
+      "receipt": "Receipt",
+      "agent": "Agent",
+      "unit": "Unit"
+    },
+    "number": {
+      "lease": "Lease number",
+      "receipt": "Receipt number",
+      "agent": "Agent licence number",
+      "unit": "Unit registration number"
+    },
+    "hint": {
+      "lease": "Lease number or QR number",
+      "receipt": "Receipt number, for example IBMT-RCT-2026-000021",
+      "agent": "Licence number, for example IBMT-AGL-2026-0014",
+      "unit": "Unit number, for example IBMT-UNIT-2026-002315"
+    },
+    "checking": "Checking…",
+    "check": "Check",
+    "noneTitle": "No record found",
+    "none": {
+      "lease": "No lease matches that number. Check the number or scan the QR code again.",
+      "receipt": "No receipt matches that number. Check the number or scan the QR code again.",
+      "agent": "No agent licence matches that number. Check the number or scan the QR code again.",
+      "unit": "No unit registration matches that number. Check the number or scan the QR code again."
+    },
+    "valid": "Valid",
+    "notVerified": "Not verified",
+    "status": {
+      "signed": "Signed by both parties",
+      "awaiting_signature": "Awaiting signature",
+      "awaiting_tenant": "Awaiting tenant",
+      "draft": "Draft",
+      "terminated": "Closed",
+      "amended": "Amended",
+      "confirmed": "Confirmed",
+      "pending": "Awaiting confirmation",
+      "disputed": "Disputed",
+      "approved": "Verified",
+      "suspended": "Suspended",
+      "revoked": "Revoked",
+      "rejected": "Rejected",
+      "verified": "Verified",
+      "registered": "Registered",
+      "evidence_pending": "Awaiting evidence",
+      "unverified": "Not verified"
+    },
+    "period": "Period: {period}",
+    "council": "Council: {council}",
+    "scope": "Registered for: {scope}",
+    "scopes": {
+      "rental": "Rentals",
+      "sale": "Sales",
+      "both": "Rentals and sales"
+    },
+    "rateLimited": "Checks are rate-limited to prevent scraping of records."
   }
 }
