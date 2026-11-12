@@ -22,7 +22,7 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
     setError('');
     try {
       const data = await callFn('leaseSignature', { action: 'request', lease_id: lease.lease_id });
-      setChallenge(data.otp);
+      setChallenge({ ...data.otp, id: data.challenge_id });
     } catch (err) {
       setError(fnError(err));
     } finally {
@@ -34,7 +34,12 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
     setBusy(true);
     setError('');
     try {
-      const data = await callFn('leaseSignature', { action: 'sign', lease_id: lease.lease_id, code });
+      const data = await callFn('leaseSignature', {
+        action: 'sign',
+        lease_id: lease.lease_id,
+        challenge_id: challenge && challenge.id,
+        code,
+      });
       setChallenge(null);
       setCode('');
       if (onUpdated) onUpdated(data);

@@ -109,7 +109,28 @@
     },
     "otp": {
       "type": "object",
-      "description": "One signing challenge at a time: the party, the code and its expiry"
+      "description": "Retired. Signing codes live only as salted hashes on the admin-only OtpChallenge; leaseSignature always writes null here.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "signing_lock": {
+      "type": "string",
+      "description": "Token of the signature currently being written. Null when free. Written only by the leaseSignature function.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "signing_lock_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current signing claim was taken.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
     },
     "lease_version": {
       "type": "number",
