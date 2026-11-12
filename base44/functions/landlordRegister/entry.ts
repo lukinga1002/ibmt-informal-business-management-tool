@@ -1,6 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { asRows, cleanText, earliestFirst, fail, json, reserveSerials, settleUniqueReference } from '../../shared/moneyOps.ts';
 import { ClaimBusyError, withRecordClaim } from '../../shared/recordClaim.ts';
+import { DISCLAIMER, reference } from '../../shared/registration.ts';
+
+const CONSENT_VERSION = '2026.1-stage1';
 
 /**
  * Landlord self-registration: one submit carries the landlord, the street and
@@ -23,6 +26,13 @@ import { ClaimBusyError, withRecordClaim } from '../../shared/recordClaim.ts';
  * that key and removes its own if it lost, so all of them converge on one
  * property. Units are added only while holding that property's registration
  * claim, from a fresh read, and each new unit reference is settled unique.
+ *
+ * Verification (fixed 2026-11-12): units registered here used to get no
+ * verification case, so no officer could ever decide them and they could never
+ * carry a lease or a Stage 2 payment. Each unit now gets a case, as in the
+ * wizard: channel 'self', status 'submitted', the unit 'pending', and the
+ * registration consent recorded on the case. The required consent is checked
+ * before anything is written. A retry creates any case that is still missing.
  */
 const MAX_UNITS = 20;
 const REGISTRATION_KEY = /^reg-[A-Za-z0-9-]{16,64}$/;
@@ -60,6 +70,7 @@ export default async function (req) {
     const street = cleanText(payload.street);
     const houseNo = cleanText(payload.house_no);
     const rawUnits = Array.isArray(payload.units) ? payload.units : [];
+    const consent = payload.consent && typeof payload.consent === 'object' ? payload.consent : {};
 
     if (!REGISTRATION_KEY.test(registrationKey)) {
       return fail(422, 'VALIDATION', 'Reload the page and submit the form again', { registration_key: 'Missing or invalid registration key.' });
@@ -77,6 +88,11 @@ export default async function (req) {
     if (street.length < 2) return fail(422, 'VALIDATION', 'The street name is required', { street: 'Enter the street name.' });
     if (!houseNo) return fail(422, 'VALIDATION', 'The house number is required', { house_no: 'Enter the house number.' });
     if (!rawUnits.length) return fail(422, 'VALIDATION', 'At least one unit is required', { units: 'Add at least one unit.' });
+    if (consent.core !== true) {
+      return fail(422, 'CONSENT_REQUIRED', 'Registration needs your consent to store these details', {
+        consent: 'Tick the required consent to continue.',
+      });
+    }
     if (rawUnits.length > MAX_UNITS) return fail(422, 'VALIDATION', `One registration can carry up to ${MAX_UNITS} units`, { units: `Register up to ${MAX_UNITS} units at a time.` });
 
     const seen = new Set();
@@ -190,7 +206,48 @@ export default async function (req) {
           created.set(row.key, await settleUniqueReference(base44, 'RentalUnit', 'unit_ref', written, prefix));
           progress.created_units = created.size;
         }
-        return { created };
+
+        // Every unit gets its verification case, found again on retry.
+        stage = 'cases';
+        const cases = new Map();
+        for (const row of rows) {
+          const unit = created.get(row.key);
+          const known = asRows(await svc.VerificationCase.filter({ unit_id: unit.id }, '-created_date', 1))[0];
+          const record = known || (await svc.VerificationCase.create({
+            case_ref: reference('REG'),
+            unit_id: unit.id,
+            unit_ref: unit.unit_ref,
+            property_id: property.id,
+            property_ref: property.property_ref,
+            landlord_id: user.id,
+            landlord_name: landlordName,
+            landlord_phone: phone,
+            channel: 'self',
+            evidence: [],
+            status: 'submitted',
+            duplicate_flag: false,
+            consent: {
+              core: true,
+              council_sharing: consent.council_sharing === true,
+              granted_at: new Date().toISOString(),
+              policy_version: CONSENT_VERSION,
+            },
+            council_id: councilId,
+            region,
+            district,
+            ward,
+            mtaa: street,
+            disclaimer: DISCLAIMER,
+            idempotency_key: `${registrationKey}:${unit.unit_ref}`,
+            policy_version: CONSENT_VERSION,
+          }));
+          if (!known && !['pending', 'in_review', 'verified'].includes(unit.verification_status)) {
+            await svc.RentalUnit.update(unit.id, { verification_status: 'pending' });
+          }
+          cases.set(row.key, record);
+          progress.created_cases = cases.size;
+        }
+        return { created, cases };
       },
       {
         busy: () =>
@@ -202,6 +259,7 @@ export default async function (req) {
     );
     if (outcome.refused) return outcome.refused;
     const created = outcome.created;
+    const cases = outcome.cases;
 
     // A landlord who registers here is a landlord: set the workspace role only
     // when nothing else has been assigned, and never overwrite an existing value.
@@ -231,6 +289,8 @@ export default async function (req) {
           unit_id: unit.id,
           unit_name: unit.unit_name,
           unit_ref: unit.unit_ref,
+          case_ref: cases.get(row.key)?.case_ref || null,
+          case_status: cases.get(row.key)?.status || null,
           rent_amount: unit.rent_amount,
           occupancy: unit.occupancy,
           tenant_link_code: unit.tenant_link_code || null,

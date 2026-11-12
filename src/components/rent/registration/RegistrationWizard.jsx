@@ -35,7 +35,7 @@ export default function RegistrationWizard({ channel = 'self', landlordId = '', 
     helper_licence: '',
     helper_relation: '',
   });
-  const [consent, setConsent] = useState({ core: false, council_sharing: true });
+  const [consent, setConsent] = useState({ core: false, council_sharing: false });
 
   const council = councilForWard(form.ward);
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));

@@ -35,7 +35,7 @@ function matches(row, query) {
 /** An in-memory Base44 stand-in that rejects the cursor-page form the local store lacks. */
 function world({ user: given, units = [], failures = {}, jitter = false } = {}) {
   const user = given ? { ...given, data: { ...given.data } } : null;
-  const records = { Council: [SIM_COUNCIL, PILOT], Property: [], RentalUnit: [...units], User: [user], RentPayment: [], Tenancy: [], PolicyVersion: [] };
+  const records = { Council: [SIM_COUNCIL, PILOT], Property: [], RentalUnit: [...units], User: [user], RentPayment: [], Tenancy: [], PolicyVersion: [], VerificationCase: [] };
   const writes = [];
   let sequence = 0;
   // With jitter, every call yields for a random moment so simultaneous requests interleave.
@@ -109,6 +109,7 @@ const body = (overrides = {}) => ({
   council_id: "sim",
   street: "SIMULATION Test Street",
   house_no: "SIM-001",
+  consent: { core: true },
   units: [
     { name: "SIM Unit A", rent_amount: 500000 },
     { name: "SIM Unit B", rent_amount: 500000 },
@@ -141,6 +142,8 @@ test("jurisdiction is checked before any write", async () => {
     [body({ council_id: "pilot" }), "JURISDICTION_MISMATCH"],
     [body({ ward: "Msasani" }), "JURISDICTION_MISMATCH"],
     [body({ registration_key: "" }), "VALIDATION"],
+    [body({ consent: undefined }), "CONSENT_REQUIRED"],
+    [body({ consent: { core: false, council_sharing: true } }), "CONSENT_REQUIRED"],
     [body({ units: [{ name: "SIM Unit A", rent_amount: 1 }, { name: "sim unit a", rent_amount: 1 }] }), "VALIDATION"],
   ]) {
     const { writes } = world({ user: landlord });
@@ -300,4 +303,46 @@ test("a live registration claim makes a second submit wait, then report it is in
   assert.equal(busy.body.code, "REGISTRATION_IN_PROGRESS");
   assert.equal(busy.body.retryable, true);
   assert.equal(state.records.Property[0].registration_lock, "other-request", "someone else's claim is never released");
+});
+
+// Found on the hosted test app (2026-11-12): units registered through /rent/join
+// had no verification case, so no officer could decide them and they could
+// never carry a lease or a Stage 2 payment.
+test("every joined unit gets one verification case with the consent recorded", async () => {
+  const state = world({ user: landlord });
+  const res = await call(register, body({ consent: { core: true, council_sharing: false } }));
+  assert.equal(res.status, 200);
+  assert.equal(state.records.VerificationCase.length, 2);
+  for (const unit of state.records.RentalUnit) {
+    const found = state.records.VerificationCase.filter((c) => c.unit_id === unit.id);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].status, "submitted");
+    assert.equal(found[0].channel, "self");
+    assert.equal(found[0].landlord_id, "L1");
+    assert.equal(found[0].ward, "SIMULATION - Test Ward");
+    assert.equal(found[0].consent.core, true);
+    assert.equal(found[0].consent.council_sharing, false, "optional sharing stays off unless ticked");
+    assert.equal(unit.verification_status, "pending");
+  }
+  assert.ok(res.body.units.every((u) => u.case_ref && u.case_status === "submitted"));
+  const again = await call(register, body());
+  assert.equal(again.status, 200);
+  assert.equal(state.records.VerificationCase.length, 2, "a retry never opens a second case");
+});
+
+test("a retry opens the case a unit is missing (units joined before this fix)", async () => {
+  const state = world({ user: landlord });
+  assert.equal((await call(register, body())).status, 200);
+  state.records.VerificationCase.splice(0, 1);
+  const again = await call(register, body());
+  assert.equal(again.status, 200);
+  assert.equal(state.records.VerificationCase.length, 2);
+  assert.equal(new Set(state.records.VerificationCase.map((c) => c.unit_id)).size, 2);
+});
+
+test("simultaneous submits open one case per unit", async () => {
+  const state = world({ user: landlord, jitter: true });
+  await Promise.all(Array.from({ length: 4 }, () => call(register, body())));
+  assert.equal(state.records.VerificationCase.length, 2);
+  assert.equal(new Set(state.records.VerificationCase.map((c) => c.unit_id)).size, 2);
 });

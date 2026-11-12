@@ -47,6 +47,9 @@ export default function RentJoin() {
   const [units, setUnits] = useState([{ ...EMPTY_UNIT }]);
   const [sameRent, setSameRent] = useState(true);
   const [allTenants, setAllTenants] = useState(false);
+  // Registration consent is recorded on each unit's verification case. The
+  // council-sharing choice is optional and starts unticked.
+  const [consent, setConsent] = useState({ core: false, council_sharing: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -158,6 +161,7 @@ export default function RentJoin() {
         council_id: form.council_id,
         street: form.street,
         house_no: form.house_no,
+        consent: { core: consent.core, council_sharing: consent.council_sharing },
         units: units.map((unit) => ({
           name: unit.name,
           rent_amount: Number(unit.rent_amount) || 0,
@@ -197,6 +201,13 @@ export default function RentJoin() {
             ))}
           </ul>
         </SectionCard>
+
+        <Notice tone="policy" title="Hatua inayofuata: uhakiki / Next: verification">
+          Kila uniti limefunguliwa kesi ya uhakiki ({result.units.map((unit) => unit.case_ref).filter(Boolean).join(', ') || '—'}).
+          Pakia hati ya umiliki kwa kila uniti; afisa anaamua. Uniti haliwezi kupangishwa kwa mkataba au malipo ya Hatua 2 kabla
+          ya kuthibitishwa. / Each unit has a verification case. Upload ownership evidence for each unit; an officer decides. A
+          unit cannot carry a lease or Stage 2 payment until it is verified.
+        </Notice>
 
         <Stage2PayoutPanel />
         <ShareLinks units={result.units} />
@@ -261,6 +272,35 @@ export default function RentJoin() {
               onUnitOccupied={(index, value) => patchUnit(index, { occupied: value })}
             />
           )}
+          {step === 2 && (
+            <div className="mt-5 space-y-3">
+              <label className="flex items-start gap-3 rounded-md border border-border px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={consent.core}
+                  onChange={(event) => setConsent({ ...consent, core: event.target.checked })}
+                  className="mt-1"
+                />
+                <span className="text-[13px] leading-relaxed">
+                  <strong>Inahitajika / Required:</strong> nakubali taarifa zangu na za nyumba hii zihifadhiwe na IBMT kwa ajili ya
+                  usajili na uhakiki wa umiliki. / I agree that IBMT stores my details and this property's details to register it and
+                  verify ownership.
+                </span>
+              </label>
+              <label className="flex items-start gap-3 rounded-md border border-border px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={consent.council_sharing}
+                  onChange={(event) => setConsent({ ...consent, council_sharing: event.target.checked })}
+                  className="mt-1"
+                />
+                <span className="text-[13px] leading-relaxed">
+                  <strong>Hiari / Optional:</strong> nakubali halmashauri yangu ione taarifa hizi kwa ufuatiliaji. / I agree that my
+                  council may see these details for follow-up.
+                </span>
+              </label>
+            </div>
+          )}
 
           {error && (
             <p role="alert" className="mt-4 text-[12px] font-medium text-destructive">
@@ -285,7 +325,7 @@ export default function RentJoin() {
                 type="button"
                 className="ibmt-tap gap-2 bg-navy font-semibold text-primary-foreground hover:bg-navy-deep"
                 onClick={submit}
-                disabled={busy}
+                disabled={busy || !consent.core}
               >
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 {busy ? 'Inasajili.' : 'Sajili uniti zangu'}
