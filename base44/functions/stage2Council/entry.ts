@@ -3,6 +3,7 @@ import { requestUser } from "../../shared/requestUser.ts";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { allRows } from "../../shared/stage2Payout.ts";
 import { reconciliation, invoiceLines } from "../../shared/stage2Settlement.ts";
+import { BillingBusyError, withCouncilBillingClaim } from "../../shared/billingClaim.ts";
 
 export default async function (req) {
   try {
@@ -20,12 +21,13 @@ export default async function (req) {
       return fail(403, "JURISDICTION", "Council access required");
     const db = app.asServiceRole.entities;
     await db.Council.get(id);
-    const settlements = await allRows(db.SimSettlement, { council_id: id }),
-      bills = await allRows(db.SimCouncilBill, { council_id: id }),
-      invoices = await allRows(db.SimCouncilInvoice, { council_id: id }),
-      adjustments = await allRows(db.SimSettlementAdjustment, {
-        council_id: id,
-      });
+    const load = async () => ({
+      settlements: await allRows(db.SimSettlement, { council_id: id }),
+      bills: await allRows(db.SimCouncilBill, { council_id: id }),
+      invoices: await allRows(db.SimCouncilInvoice, { council_id: id }),
+      adjustments: await allRows(db.SimSettlementAdjustment, { council_id: id }),
+    });
+    const { settlements, bills, invoices, adjustments } = await load();
     if (input.action === "read")
       return json({
         simulation: true,
@@ -58,6 +60,11 @@ export default async function (req) {
     if (input.action === "batch") {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(input.day))
         return fail(422, "VALIDATION", "Settlement date required");
+      // Decide and create under the council's billing claim, from a fresh read,
+      // so a concurrent run can neither add a second bill for the day nor bill
+      // a settlement or adjustment another bill already carries.
+      return await withCouncilBillingClaim(db, id, async () => {
+      const { settlements, bills, adjustments } = await load();
       const old = bills.filter((b) => b.day === input.day);
       if (old.length > 1)
         return fail(
@@ -99,10 +106,13 @@ export default async function (req) {
         settled_at: new Date().toISOString(),
       });
       return json({ bill, simulation: true });
+      });
     }
     if (input.action === "invoice") {
       if (!/^\d{4}-\d{2}$/.test(input.month))
         return fail(422, "VALIDATION", "Invoice month required");
+      return await withCouncilBillingClaim(db, id, async () => {
+      const { settlements, bills, invoices, adjustments } = await load();
       const old = invoices.find(
         (i) => i.month === input.month && i.state === "issued",
       );
@@ -154,6 +164,7 @@ export default async function (req) {
       };
       if (eligible) await db.SimCouncilInvoice.create(invoice);
       return json({ invoice, simulation: true });
+      });
     }
     if (input.action === "reconcile") {
       const ledger = [];
@@ -175,7 +186,9 @@ export default async function (req) {
       return json({ result, simulation: true });
     }
     return fail(422, "VALIDATION", "Unknown action");
-  } catch {
+  } catch (error) {
+    if (error instanceof BillingBusyError)
+      return fail(409, "BILLING_BUSY", error.message);
     return fail(
       500,
       "SERVER",

@@ -150,6 +150,23 @@
     "fee_placeholder_status": {
       "type": "string",
       "default": "placeholder"
+    },
+    "billing_lock": {
+      "type": "string",
+      "description": "Token of the billing run that currently holds this council (simulation). Null when free. Written only by the stage2Council function.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "billing_lock_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current billing claim was taken. A claim older than the timeout may be taken over.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
     }
   },
   "required": [
