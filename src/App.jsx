@@ -12,6 +12,7 @@ import { DEMO_MODE } from '@/lib/demoMode';
 import DemoBanner from '@/components/ibmt/DemoBanner';
 import ModuleGate from '@/components/gates/ModuleGate';
 import WorkspaceGuard from '@/components/gates/WorkspaceGuard';
+import PayoutOwnerGuard from '@/components/gates/PayoutOwnerGuard';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -161,7 +162,7 @@ const AuthenticatedApp = () => {
         <Route path="/rent/council/agents" element={<WorkspaceGuard allow={['council_official', 'district_commissioner']}><CouncilAgents /></WorkspaceGuard>} />
         <Route path="/rent/lease/:leaseId" element={<WorkspaceGuard allow={['landlord', 'tenant']}><LeaseDetail /></WorkspaceGuard>} />
         <Route path="/rent/landlord/cases" element={<WorkspaceGuard allow={['landlord']}><LandlordCases /></WorkspaceGuard>} />
-        <Route path="/rent/landlord/payouts" element={<WorkspaceGuard allow={['landlord']}><LandlordPayouts /></WorkspaceGuard>} />
+        <Route path="/rent/landlord/payouts" element={<PayoutOwnerGuard><LandlordPayouts /></PayoutOwnerGuard>} />
         <Route path="/rent/sim" element={<WorkspaceGuard adminOnly><MoneyEngine /></WorkspaceGuard>} />
         <Route path="/privacy" element={<PrivacyCentre />} />
         <Route path="/rent/landlord/register" element={<WorkspaceGuard allow={['landlord']}><LandlordRegister /></WorkspaceGuard>} />
