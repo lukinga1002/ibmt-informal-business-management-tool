@@ -27,16 +27,19 @@ function matches(row, query) {
       if ("$lt" in expected && !(row[key] < expected.$lt)) return false;
       return true;
     }
+    if (expected === null) return row[key] == null; // hosted: null matches a missing field
     return row[key] === expected;
   });
 }
 
 /** An in-memory Base44 stand-in that rejects the cursor-page form the local store lacks. */
-function world({ user: given, units = [], failures = {} } = {}) {
+function world({ user: given, units = [], failures = {}, jitter = false } = {}) {
   const user = given ? { ...given, data: { ...given.data } } : null;
   const records = { Council: [SIM_COUNCIL, PILOT], Property: [], RentalUnit: [...units], User: [user], RentPayment: [], Tenancy: [], PolicyVersion: [] };
   const writes = [];
   let sequence = 0;
+  // With jitter, every call yields for a random moment so simultaneous requests interleave.
+  const tick = () => (jitter ? new Promise((resolve) => setTimeout(resolve, Math.random() * 4)) : null);
   const handler = (name) => ({
     get: async (id) => {
       const row = (records[name] || []).find((r) => r.id === id);
@@ -44,6 +47,7 @@ function world({ user: given, units = [], failures = {} } = {}) {
       return row;
     },
     filter: async (query = {}, sort, limit = 50) => {
+      await tick();
       if (sort && typeof sort === "object") throw Object.assign(Error("This app is private"), { status: 403 });
       let rows = (records[name] || []).filter((row) => matches(row, query));
       if (typeof sort === "string") {
@@ -54,6 +58,7 @@ function world({ user: given, units = [], failures = {} } = {}) {
       return rows.slice(0, limit);
     },
     create: async (data) => {
+      await tick();
       const fail = failures[name];
       if (fail && fail(records[name].length)) throw Object.assign(Error("This app is private, You do not have access to this app"), { status: 500 });
       const row = { ...data, id: `${name}-${++sequence}`, created_date: new Date(Date.now() + sequence).toISOString() };
@@ -68,6 +73,19 @@ function world({ user: given, units = [], failures = {} } = {}) {
       Object.assign(row, data);
       writes.push(`${name}.update`);
       return row;
+    },
+    // One atomic step per call, as measured on hosted.
+    updateMany: async (query, change) => {
+      await tick();
+      const hits = (records[name] || []).filter((row) => matches(row, query));
+      for (const row of hits) Object.assign(row, change.$set);
+      return { success: true, updated: hits.length };
+    },
+    delete: async (id) => {
+      await tick();
+      records[name] = records[name].filter((row) => row.id !== id);
+      writes.push(`${name}.delete`);
+      return { success: true };
     },
   });
   const entities = new Proxy({}, { get: (_, name) => handler(name) });
@@ -233,4 +251,53 @@ test("landlordOverview sums this month's recorded payments without the aggregate
   const res = await call(overview);
   assert.equal(res.status, 200);
   assert.equal(res.body.counters.find((c) => c.key === "collected").value, "TZS 500,000");
+});
+
+// Found on the hosted test app (2026-11-12): four simultaneous first submits
+// with one key made two properties (…7a78, …bc11) whose units shared
+// IBMT-UNIT-2026-94777020.
+test("simultaneous first submits with one key make one property and unique unit references", async () => {
+  const state = world({ user: landlord, jitter: true });
+  const results = await Promise.all(Array.from({ length: 4 }, () => call(register, body())));
+  for (const r of results) {
+    assert.ok(r.status === 200 || (r.status === 409 && r.body.code === "REGISTRATION_IN_PROGRESS" && r.body.retryable), JSON.stringify(r.body));
+  }
+  assert.equal(state.records.Property.length, 1, "one property per registration key");
+  const mine = state.records.RentalUnit.filter((u) => u.landlord_id === "L1");
+  assert.deepEqual(mine.map((u) => u.unit_name).sort(), ["SIM Unit A", "SIM Unit B"]);
+  assert.equal(new Set(mine.map((u) => u.unit_ref)).size, 2);
+  assert.equal(state.records.Property[0].registration_lock, null, "claim released");
+  const again = await call(register, body());
+  assert.equal(again.status, 200);
+  assert.deepEqual(again.body.units.map((u) => u.unit_ref).sort(), mine.map((u) => u.unit_ref).sort());
+});
+
+test("two landlords registering at the same moment never share a unit reference", async () => {
+  const state = world({ user: landlord, jitter: true });
+  const other = { id: "L2", role: "user", full_name: "SIM Second Landlord", data: {} };
+  state.records.User.push(other);
+  const as = (who, payload) => {
+    globalThis.stage2TestClient = { ...globalThis.stage2TestClient, auth: { me: async () => who } };
+    return call(register, payload);
+  };
+  const results = await Promise.all([
+    as(landlord, body()),
+    as(other, body({ registration_key: "reg-9999bbbb-1111-2222-3333-444455556666", house_no: "SIM-002" })),
+  ]);
+  assert.ok(results.every((r) => r.status === 200), JSON.stringify(results.map((r) => r.body.code)));
+  const refs = state.records.RentalUnit.map((u) => u.unit_ref);
+  assert.equal(refs.length, 4);
+  assert.equal(new Set(refs).size, 4, `duplicate unit reference: ${refs}`);
+});
+
+test("a live registration claim makes a second submit wait, then report it is in progress", async () => {
+  const state = world({ user: landlord });
+  assert.equal((await call(register, body())).status, 200);
+  state.records.Property[0].registration_lock = "other-request";
+  state.records.Property[0].registration_lock_at = new Date().toISOString();
+  const busy = await call(register, body());
+  assert.equal(busy.status, 409);
+  assert.equal(busy.body.code, "REGISTRATION_IN_PROGRESS");
+  assert.equal(busy.body.retryable, true);
+  assert.equal(state.records.Property[0].registration_lock, "other-request", "someone else's claim is never released");
 });

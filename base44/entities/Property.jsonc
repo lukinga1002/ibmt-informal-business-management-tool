@@ -60,6 +60,23 @@
     },
     "notes": {
       "type": "string"
+    },
+    "registration_lock": {
+      "type": "string",
+      "description": "Token of the registration request currently adding units to this property. Null when free. Written only by the landlordRegister function.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
+    },
+    "registration_lock_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current registration claim was taken. A claim older than the timeout may be taken over.",
+      "rls": {
+        "create": false,
+        "update": false
+      }
     }
   },
   "required": [

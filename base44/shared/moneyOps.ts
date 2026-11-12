@@ -197,6 +197,32 @@ export async function reserveSerials(base44, entity, prefix, fieldName = 'refere
   return references;
 }
 
+/** Oldest first, with the id as a deterministic tie-break. */
+export function earliestFirst(a, b) {
+  const byDate = String(a.created_date || '').localeCompare(String(b.created_date || ''));
+  return byDate || String(a.id).localeCompare(String(b.id));
+}
+
+/**
+ * Closes the window reserveSerials leaves open. Found on the hosted test app
+ * (2026-11-12): two simultaneous registrations each reserved and wrote
+ * IBMT-UNIT-2026-94777020. After a write, the earliest holder of a reference
+ * keeps it; any later holder takes a fresh reference and checks again.
+ */
+export async function settleUniqueReference(base44, entity, fieldName, row, prefix, rounds = 5) {
+  const db = base44.asServiceRole.entities[entity];
+  let current = row;
+  for (let round = 0; round < rounds; round++) {
+    const holders = asRows(await db.filter({ [fieldName]: current[fieldName] }, 'created_date', 10)).sort(earliestFirst);
+    if (!holders.length || holders[0].id === current.id) return current;
+    const [next] = await reserveSerials(base44, entity, prefix, fieldName, 1);
+    current = { ...current, ...(await db.update(current.id, { [fieldName]: next })), [fieldName]: next };
+  }
+  const error = new Error('Could not settle a unique reference');
+  error.code = 'SERIALS_EXHAUSTED';
+  throw error;
+}
+
 export async function nextReceiptReference(base44) {
   const year = new Date().getFullYear();
   return nextSerial(base44, 'Receipt', `IBMT-RCP-${year}-`);
