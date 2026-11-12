@@ -4,7 +4,6 @@
     "full": "Informal Business Management Tool",
     "events": "IBMT Events",
     "rent": "IBMT Rent",
-    "rentLocal": "Kodi ya Nyumba",
     "tagline": "Business records and transaction evidence",
     "subtitle": "One shared product for operators, consumers, councils and TRA"
   },
@@ -357,9 +356,8 @@
     "noAutoEnforcement": "Nothing here is an enforcement action. Human review comes before any decision."
   },
   "landing": {
-    "kicker": "IBMT Rent · Kodi ya Nyumba · Tanzania",
+    "kicker": "IBMT Rent · Tanzania",
     "title": "Registered Homes. Registered Agents. Rent Receipts.",
-    "titleEn": "Registered Homes. Fair Leases. Rent With Receipts.",
     "lede": "IBMT Rent is a register of rented homes, leases and rent records for landlords, tenants, licensed agents and councils. The lease exists in writing, and rent is recorded with a receipt that both sides can see.",
     "entryTitle": "Four ways in",
     "accessTitle": "Confirm it is you",
@@ -391,7 +389,7 @@
     "verifyBody": "Check a lease, a rent record or an agent licence by its reference. No personal details are needed to check.",
     "verifyTitle": "Hakiki — check a record",
     "verifyLede": "Enter a lease, rent-record or agent-licence reference to see what is publicly confirmable.",
-    "verifyCta": "Hakiki",
+    "verifyCta": "Verify",
     "verifyPlaceholder": "e.g. IBMT-UNIT-2026-002315",
     "verifyHint": "Try a demonstration reference: IBMT-UNIT-2026-002315",
     "pilotNote": "Pilot: Kinondoni and Ubungo, Dar es Salaam. Registration is voluntary.",

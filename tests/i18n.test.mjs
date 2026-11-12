@@ -175,3 +175,11 @@ test("release gate: no untranslated strings remain", { skip: process.env.RELEASE
   for (const file of releaseScreens()) for (const hit of literalText(read(file))) problems.push(`${file}:${hit}`);
   assert.deepEqual(problems, []);
 });
+
+// A string that reads the same in both files is usually an untranslated leak.
+// Only proper names and the language names themselves may be identical.
+const SAME_IN_BOTH = new Set(["brand.name", "lang.en", "lang.sw", "term.mtaa", "wizard.mtaa", "wizard.summary.mtaa", "certPublic.mtaa"]);
+test("no string is left identical in English and Swahili except proper names", () => {
+  const leaks = [...enKeys].filter(([k, v]) => swKeys.get(k) === v && !SAME_IN_BOTH.has(k)).map(([k, v]) => `${k}=${v}`);
+  assert.deepEqual(leaks, []);
+});

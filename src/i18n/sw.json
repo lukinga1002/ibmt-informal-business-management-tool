@@ -4,7 +4,6 @@
     "full": "Kifaa cha Usimamizi wa Biashara Isiyo Rasmi",
     "events": "IBMT Matukio",
     "rent": "IBMT Kodi",
-    "rentLocal": "Kodi ya Nyumba",
     "tagline": "Kumbukumbu za biashara na ushahidi wa malipo",
     "subtitle": "Bidhaa moja kwa wafanyabiashara, wateja, halmashauri na TRA"
   },
@@ -357,9 +356,8 @@
     "noAutoEnforcement": "Hakuna kitendo cha utekelezaji hapa. Mapitio ya mtu yanatangulia uamuzi wowote."
   },
   "landing": {
-    "kicker": "IBMT Rent · Kodi ya Nyumba · Tanzania",
+    "kicker": "IBMT Kodi · Tanzania",
     "title": "Nyumba Zilizosajiliwa. Mawakala Waliosajiliwa. Kodi Yenye Risiti.",
-    "titleEn": "Registered Homes. Fair Leases. Rent With Receipts.",
     "lede": "IBMT Rent ni daftari la nyumba zinazopangishwa, mikataba na kumbukumbu za kodi kwa wenye nyumba, wapangaji, mawakala walioidhinishwa na halmashauri. Mkataba uko kwa maandishi, na kodi inarekodiwa na risiti ambayo pande zote mbili zinaweza kuiona.",
     "entryTitle": "Njia nne za kuingia",
     "accessTitle": "Thibitisha ni wewe",
@@ -920,7 +918,7 @@
   },
   "leaseDoc": {
     "draftLabel": "RASIMU – inasubiri ukaguzi wa kisheria",
-    "template": "Template {version}",
+    "template": "Kiolezo {version}",
     "dueDay": "Siku ya malipo: {day}",
     "standardTerms": "Masharti ya kawaida",
     "signatures": "Sahihi",
