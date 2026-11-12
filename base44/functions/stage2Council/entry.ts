@@ -2,7 +2,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.54";
 import { requestUser } from "../../shared/requestUser.ts";
 import { cleanText, fail, json } from "../../shared/moneyOps.ts";
 import { allRows } from "../../shared/stage2Payout.ts";
-import { reconciliation, invoiceLines } from "../../shared/stage2Settlement.ts";
+import { invoiceEligibility, invoiceLines, reconciliation } from "../../shared/stage2Settlement.ts";
 import { BillingBusyError, withCouncilBillingClaim } from "../../shared/billingClaim.ts";
 
 export default async function (req) {
@@ -16,6 +16,7 @@ export default async function (req) {
     if (
       !admin &&
       (user.data?.ibmt_role !== "council_official" ||
+        !id ||
         user.data?.council_id !== id)
     )
       return fail(403, "JURISDICTION", "Council access required");
@@ -149,14 +150,22 @@ export default async function (req) {
         input.month,
         invoices,
       );
-      const eligible =
-        lines.length && lines.every((l) => l.contract_status === "signed");
+      // Signed-contract lines are invoiced; lines settled while the contract
+      // was still draft are listed separately and never invoiced, so one
+      // draft-era line no longer blocks the whole month (found 2026-11-12).
+      const split = invoiceEligibility(lines);
+      const eligible = split.payable.length > 0 && split.amount > 0;
       const invoice = {
         council_id: id,
         month: input.month,
         reference: "SIM-INVOICE-" + id + "-" + input.month,
-        lines,
-        amount: lines.reduce((s, l) => s + l.amount, 0),
+        lines: split.payable,
+        amount: split.amount,
+        excluded_lines: split.excluded,
+        excluded_amount: split.excluded_amount,
+        excluded_reason: split.excluded.length
+          ? "Settled while the IBMT-council contract was not signed; not invoiceable"
+          : null,
         state: eligible ? "issued" : "non_payable_preview",
         bill_ids: bills
           .filter((b) => b.day.startsWith(input.month))

@@ -13,8 +13,15 @@ export async function recordSettlement(app, payment) {
   const tenancy = await db.Tenancy.get(payment.tenancy_id);
   const unit = await db.RentalUnit.get(tenancy.unit_id);
   const payout = await payoutFor(db, unit.property_id);
-  if (!payout.account)
-    throw new Error("Payout approval or payment consent is missing");
+  // A Stage 2 payment can only start with consent and an approved account
+  // (settlementRules, leasePayoutGuard). If consent was withdrawn, or the
+  // account lapsed, before the tenant's money arrived, the money is still
+  // collected. It used to throw here after the ledger was written, leaving no
+  // settlement, a broken council reconciliation and the landlord's share held
+  // nowhere (found 2026-11-12). The settlement is now recorded with the
+  // landlord's share held ('held_account') until an eligible account exists,
+  // and the case goes to the alert queue for review.
+  const heldForAccount = !payout.account;
   const policy = await getPolicyRules(app);
   if (!policy) throw new Error("Configure the active payment policy");
   const terms = await db.CouncilSettlementTerms.get(payment.fee_revision_id);
@@ -31,7 +38,7 @@ export async function recordSettlement(app, payment) {
       partner_rebate_rate: payment.rates_snapshot?.partner_rebate_rate ?? policy.partner_rebate_rate,
     },
   );
-  return db.SimSettlement.create({
+  const settlement = await db.SimSettlement.create({
     payment_id: payment.id,
     fee_status: payment.fee_status,
     council_id: payment.council_id,
@@ -45,6 +52,9 @@ export async function recordSettlement(app, payment) {
       policy.mobile_wallet_limit,
     ),
     settled_at: payment.succeeded_at,
+    held_reason: heldForAccount
+      ? (payout.consent ? "no_eligible_payout_account" : "payment_consent_withdrawn")
+      : null,
     fee_revision_id: terms.id,
     income: {
       ...income,
@@ -52,6 +62,16 @@ export async function recordSettlement(app, payment) {
       contract_reference: terms.ibmt_contract_reference,
     },
   });
+  if (heldForAccount)
+    await db.PaymentAlert.create({
+      payment_id: payment.id,
+      kind: "state_violation",
+      state: "open",
+      detail:
+        "Simulation: landlord share held because the property has no eligible payout account or consent was withdrawn after the payment started",
+      observed: { settlement_id: settlement.id, consent: payout.consent },
+    });
+  return settlement;
 }
 
 export function reconciliation(settlements, ledger, bills) {
@@ -70,6 +90,17 @@ export function reconciliation(settlements, ledger, bills) {
   };
 }
 
+/**
+ * The IBMT system-fee lines a council invoice may consider for a month: every
+ * settled-bill line not yet carried by an issued invoice, either as a billed
+ * line or as an excluded one.
+ *
+ * Eligibility is per line. A line is invoiceable only when the IBMT-council
+ * contract was signed when its settlement happened (`contract_status`). A
+ * reversal credit inherits the status of the settlement it reverses: crediting
+ * a fee that was never invoiceable would understate the invoice (found
+ * 2026-11-12: credits were hard-coded as signed).
+ */
 export function invoiceLines(
   bills,
   settlements,
@@ -80,7 +111,7 @@ export function invoiceLines(
   const used = new Set(
     invoices
       .filter((i) => i.state === "issued")
-      .flatMap((i) => (i.lines || []).map((l) => l.source_id)),
+      .flatMap((i) => [...(i.lines || []), ...(i.excluded_lines || [])].map((l) => l.source_id)),
   );
   const ids = new Set(
     bills
@@ -98,13 +129,25 @@ export function invoiceLines(
       })),
     ...adjustments
       .filter((a) => !used.has(a.id) && ids.has(a.id))
-      .map((a) => ({
-        source_id: a.id,
-        basis: "reversal_credit",
-        amount: a.system_fee,
-        contract_status: "signed",
-      })),
+      .map((a) => {
+        const original = settlements.find((s) => s.id === a.source_id);
+        return {
+          source_id: a.id,
+          reverses: a.source_id,
+          basis: "reversal_credit",
+          amount: a.system_fee,
+          contract_status: original?.income?.contract_status || "unknown",
+        };
+      }),
   ];
+}
+
+/** Splits invoice lines into the payable part and the part that may never be invoiced. */
+export function invoiceEligibility(lines) {
+  const payable = lines.filter((l) => l.contract_status === "signed");
+  const excluded = lines.filter((l) => l.contract_status !== "signed");
+  const sum = (rows) => rows.reduce((s, l) => s + l.amount, 0);
+  return { payable, excluded, amount: sum(payable), excluded_amount: sum(excluded) };
 }
 
 export async function reverseSettlement(app, paymentId) {

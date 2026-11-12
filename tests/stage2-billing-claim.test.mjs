@@ -110,3 +110,35 @@ test("an abandoned claim is taken over after the timeout, a fresh one is respect
   assert.equal(busy.body.code, "BILLING_BUSY");
   assert.equal(records.Council[0].billing_lock, "live-run", "someone else's claim is never released");
 });
+
+// Found on the hosted test app (2026-11-12): SIM-TEST's November invoice stayed a
+// non-payable preview because one line was settled under the draft contract,
+// and a reversal credit was counted as signed even though it reversed a draft line.
+test("signed lines are invoiced, draft-era lines and their credits are excluded, and none repeat", async () => {
+  const records = world({ settlements: 3, signed: true });
+  records.SimSettlement[2].income.contract_status = "draft";
+  records.SimSettlementAdjustment.push({ id: "adj3", payment_id: "p3", council_id: "c", source_id: "s3", council_amount: -15000, system_fee: -7500, created_at: "2026-11-12T09:00:00.000Z" });
+  records.LedgerEntry.push({ id: "l3r", payment_id: "p3", account: "council_fee_payable", side: "debit", amount: 15000 });
+  await call({ action: "batch", day: "2026-11-12" });
+  const first = await call({ action: "invoice", month: "2026-11" });
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  const invoice = first.body.invoice;
+  assert.equal(invoice.state, "issued");
+  assert.deepEqual(invoice.lines.map((l) => l.source_id).sort(), ["s1", "s2"]);
+  assert.equal(invoice.amount, 15000);
+  assert.deepEqual(invoice.excluded_lines.map((l) => l.source_id).sort(), ["adj3", "s3"]);
+  assert.equal(invoice.excluded_amount, 0, "the draft fee and its reversal credit net to zero, outside the invoice");
+  assert.equal(records.SimCouncilInvoice.length, 1);
+  const next = await call({ action: "invoice", month: "2026-12" });
+  assert.equal(next.body.invoice.state, "non_payable_preview");
+  assert.equal(next.body.invoice.lines.length + next.body.invoice.excluded_lines.length, 0, "nothing is listed twice");
+});
+
+test("a month with only draft-era lines stays a preview and stores nothing", async () => {
+  const records = world({ settlements: 2, signed: false });
+  await call({ action: "batch", day: "2026-11-12" });
+  const res = await call({ action: "invoice", month: "2026-11" });
+  assert.equal(res.body.invoice.state, "non_payable_preview");
+  assert.equal(res.body.invoice.excluded_lines.length, 2);
+  assert.equal(records.SimCouncilInvoice.length, 0);
+});
