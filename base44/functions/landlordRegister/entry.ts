@@ -232,6 +232,9 @@ export default async function (req) {
               council_sharing: consent.council_sharing === true,
               granted_at: new Date().toISOString(),
               policy_version: CONSENT_VERSION,
+              // The wording version and the language it was shown in, as accepted.
+              text_version: cleanText(consent.text_version) || null,
+              language: ['sw', 'en'].includes(consent.language) ? consent.language : null,
             },
             council_id: councilId,
             region,

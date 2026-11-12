@@ -1,8 +1,10 @@
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import { PILOT_COUNCILS, REGIONS } from '@/config/r3';
+import { useT } from '@/i18n/I18nContext';
 
 /** Where the landlord works and where the house stands: region, district, ward. */
 export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
+  const { t } = useT();
   const choice = councils.find((item) => item.council_id === form.council_id) || councils[0];
   const region = form.region || choice.region;
   const districts = councils.filter((item) => item.region === region);
@@ -11,11 +13,11 @@ export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Jina lako" required className="sm:col-span-2">
+      <Field label={t('joinForm.name')} required className="sm:col-span-2">
         {(props) => <TextInput {...props} value={form.landlord_name} onChange={(event) => set({ landlord_name: event.target.value })} />}
       </Field>
 
-      <Field label="Namba ya simu" required hint="Mfano 0712345678">
+      <Field label={t('joinForm.phone')} required hint={t('joinForm.phoneHint')}>
         {(props) => (
           <TextInput
             {...props}
@@ -27,13 +29,13 @@ export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
         )}
       </Field>
 
-      <Field label="Barua pepe" hint="Si lazima. Ukiitoa, tutaitumia kukutumia taarifa.">
+      <Field label={t('joinForm.email')} hint={t('joinForm.emailHint')}>
         {(props) => (
           <TextInput {...props} type="email" value={form.email} onChange={(event) => set({ email: event.target.value })} />
         )}
       </Field>
 
-      <Field label="Mkoa" required>
+      <Field label={t('joinForm.region')} required>
         {(props) => (
           <SelectControl
             {...props}
@@ -53,7 +55,7 @@ export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
         )}
       </Field>
 
-      <Field label="Wilaya unayofanyia kazi" required>
+      <Field label={t('joinForm.district')} required>
         {(props) => (
           <SelectControl
             {...props}
@@ -72,7 +74,7 @@ export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
         )}
       </Field>
 
-      <Field label="Kata" required>
+      <Field label={t('joinForm.ward')} required>
         {(props) => (
           <SelectControl {...props} value={form.ward} onChange={(event) => set({ ward: event.target.value })}>
             {choice.wards.map((ward) => (
@@ -84,11 +86,11 @@ export default function JoinProfile({ form, set, councils = PILOT_COUNCILS }) {
         )}
       </Field>
 
-      <Field label="Jina la mtaa" required hint="Mtaa ambamo nyumba ipo">
+      <Field label={t('joinForm.street')} required hint={t('joinForm.streetHint')}>
         {(props) => <TextInput {...props} value={form.street} onChange={(event) => set({ street: event.target.value })} />}
       </Field>
 
-      <Field label="Namba ya nyumba" required>
+      <Field label={t('joinForm.houseNo')} required>
         {(props) => (
           <TextInput
             {...props}

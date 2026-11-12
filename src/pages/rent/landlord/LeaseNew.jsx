@@ -6,7 +6,8 @@ import SectionCard from '@/components/ibmt/SectionCard';
 import Notice from '@/components/ibmt/Notice';
 import Field, { SelectControl, TextArea, TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError, newKey, todayIso } from '@/lib/r4';
+import { callFn, errorText, newKey, todayIso } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 const BLANK = {
   unit_id: '',
@@ -23,12 +24,13 @@ const BLANK = {
 
 /** Builds a standard lease from a verified unit, then hands the landlord its claim code. */
 export default function LeaseNew() {
+  const { t } = useT();
   const [units, setUnits] = useState(null);
   const [form, setForm] = useState(BLANK);
   const [preview, setPreview] = useState(null);
   const [saved, setSaved] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const keyRef = useRef(null);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function LeaseNew() {
 
   const run = async (mode) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       if (mode === 'preview') {
         const data = await callFn('createLease', { ...payload(), preview: true });
@@ -69,31 +71,31 @@ export default function LeaseNew() {
         setSaved(data);
       }
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
   };
 
   if (units === null) {
-    return <p className="text-[13px] text-muted-foreground">Inapakia nyumba…</p>;
+    return <p className="text-[13px] text-muted-foreground">{t('leaseNew.loading')}</p>;
   }
 
   if (saved) {
     return (
       <div className="space-y-6">
-        <PageHeader kicker="Mkataba mpya" title="Mkataba umeundwa" lede="Mkataba uko kwenye rasimu hadi pande zote mbili zisaini." />
-        <Notice tone="positive" title={`Mkataba ${saved.lease_ref || ''}`}>
-          Mpe mpangaji namba hii ili afungue mkataba kutoka akaunti yake:
+        <PageHeader kicker={t('leaseNew.kicker')} title={t('leaseNew.createdTitle')} lede={t('leaseNew.createdLede')} />
+        <Notice tone="positive" title={t('leaseNew.leaseRef', { ref: saved.lease_ref || '' })}>
+          {t('leaseNew.giveCode')}
           <span className="ibmt-num mt-1 block font-heading text-lg font-semibold text-navy">{saved.claim_code}</span>
-          Baada ya kufunguliwa, kila upande unasaini kwa namba yake ya siri.
+          {t('leaseNew.eachSigns')}
         </Notice>
         <div className="flex flex-wrap gap-2">
           <Button asChild className="ibmt-tap bg-navy font-semibold text-primary-foreground hover:bg-navy-deep">
-            <Link to={`/rent/lease/${saved.lease_id}`}>Fungua mkataba</Link>
+            <Link to={`/rent/lease/${saved.lease_id}`}>{t('leaseNew.openLease')}</Link>
           </Button>
           <Button asChild variant="outline" className="ibmt-tap">
-            <Link to="/rent/landlord/leases">Mikataba yote</Link>
+            <Link to="/rent/landlord/leases">{t('leaseNew.allLeases')}</Link>
           </Button>
         </div>
       </div>
@@ -103,12 +105,12 @@ export default function LeaseNew() {
   if (!units.length) {
     return (
       <div className="space-y-6">
-        <PageHeader kicker="Mkataba mpya" title="Mkataba mpya" />
-        <Notice tone="caution" title="Hakuna nyumba iliyothibitishwa">
-          Mkataba unaundwa tu kwa nyumba iliyopitia uthibitisho wa mmiliki. Wasilisha vielelezo vya nyumba yako kwanza.
+        <PageHeader kicker={t('leaseNew.kicker')} title={t('leaseNew.kicker')} />
+        <Notice tone="caution" title={t('leaseNew.noVerifiedTitle')}>
+          {t('leaseNew.noVerifiedBody')}
         </Notice>
         <Button asChild variant="outline" className="ibmt-tap">
-          <Link to="/rent/landlord/portfolio">Nenda kwenye nyumba</Link>
+          <Link to="/rent/landlord/portfolio">{t('leaseNew.goToUnits')}</Link>
         </Button>
       </div>
     );
@@ -117,21 +119,21 @@ export default function LeaseNew() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Mkataba mpya"
-        title="Unda mkataba wa kawaida"
-        lede="Masharti ya kawaida yanajazwa na mfumo. Unajaza kiasi, kipindi na masharti maalum ya nyumba hii."
-        meta={[{ label: 'Rasimu: inasubiri ukaguzi wa kisheria' }]}
+        kicker={t('leaseNew.kicker')}
+        title={t('leaseNew.title')}
+        lede={t('leaseNew.lede')}
+        meta={[{ label: t('leaseNew.draftLegal') }]}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <SectionCard title="Taarifa za mkataba">
+        <SectionCard title={t('leaseNew.details')}>
           <div className="space-y-4">
-            <Field label="Nyumba" required>
+            <Field label={t('leaseNew.unit')} required>
               {(props) => (
                 <SelectControl {...props} value={form.unit_id} onChange={(event) => setForm({ ...form, unit_id: event.target.value })}>
                   {units.map((unit) => (
                     <option key={unit.id} value={unit.id}>
-                      {unit.unit_ref} · {unit.ward} · {unit.unit_type}
+                      {unit.unit_ref} · {unit.ward} · {t(`leaseNew.unitType.${unit.unit_type || 'room'}`)}
                     </option>
                   ))}
                 </SelectControl>
@@ -139,7 +141,7 @@ export default function LeaseNew() {
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Kodi (TZS)" required>
+              <Field label={t('leaseNew.rent')} required>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -150,15 +152,15 @@ export default function LeaseNew() {
                   />
                 )}
               </Field>
-              <Field label="Mzunguko" required>
+              <Field label={t('leaseNew.frequency')} required>
                 {(props) => (
                   <SelectControl {...props} value={form.frequency} onChange={(event) => setForm({ ...form, frequency: event.target.value })}>
-                    <option value="monthly">Kila mwezi</option>
-                    <option value="quarterly">Kila robo mwaka</option>
+                    <option value="monthly">{t('leaseNew.monthly')}</option>
+                    <option value="quarterly">{t('leaseNew.quarterly')}</option>
                   </SelectControl>
                 )}
               </Field>
-              <Field label="Amana (miezi)" hint="Si zaidi ya miezi 3">
+              <Field label={t('leaseNew.deposit')} hint={t('leaseNew.depositHint')}>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -169,7 +171,7 @@ export default function LeaseNew() {
                   />
                 )}
               </Field>
-              <Field label="Siku ya malipo" hint="1 – 28">
+              <Field label={t('leaseNew.dueDay')} hint="1 – 28">
                 {(props) => (
                   <TextInput
                     {...props}
@@ -180,7 +182,7 @@ export default function LeaseNew() {
                   />
                 )}
               </Field>
-              <Field label="Taarifa ya kuondoka (siku)">
+              <Field label={t('leaseNew.notice')}>
                 {(props) => (
                   <TextInput
                     {...props}
@@ -191,24 +193,24 @@ export default function LeaseNew() {
                   />
                 )}
               </Field>
-              <Field label="Tarehe ya kuanza" required>
+              <Field label={t('leaseNew.start')} required>
                 {(props) => (
                   <TextInput {...props} type="date" value={form.start_date} onChange={(event) => setForm({ ...form, start_date: event.target.value })} />
                 )}
               </Field>
-              <Field label="Tarehe ya kumaliza" required>
+              <Field label={t('leaseNew.end')} required>
                 {(props) => (
                   <TextInput {...props} type="date" value={form.end_date} onChange={(event) => setForm({ ...form, end_date: event.target.value })} />
                 )}
               </Field>
             </div>
 
-            <Field label="Majukumu ya matengenezo" hint="Mfano: mmiliki anarekebisha paa na mfumo wa maji">
+            <Field label={t('leaseNew.repairs')} hint={t('leaseNew.repairsHint')}>
               {(props) => (
                 <TextArea {...props} rows={3} value={form.repair_duties} onChange={(event) => setForm({ ...form, repair_duties: event.target.value })} />
               )}
             </Field>
-            <Field label="Kanuni za nyumba" hint="Mfano: hakuna wanyama, utulivu baada ya saa 10 jioni">
+            <Field label={t('leaseNew.rules')} hint={t('leaseNew.rulesHint')}>
               {(props) => (
                 <TextArea {...props} rows={3} value={form.house_rules} onChange={(event) => setForm({ ...form, house_rules: event.target.value })} />
               )}
@@ -216,13 +218,13 @@ export default function LeaseNew() {
 
             {error && (
               <p role="alert" className="text-[12px] font-medium text-destructive">
-                {error}
+                {errorText(error)}
               </p>
             )}
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" className="ibmt-tap" onClick={() => run('preview')} disabled={busy}>
-                {busy ? 'Inatayarisha…' : 'Onyesha masharti'}
+                {busy ? t('leaseNew.preparing') : t('leaseNew.showTerms')}
               </Button>
               <Button
                 type="button"
@@ -230,22 +232,23 @@ export default function LeaseNew() {
                 onClick={() => run('save')}
                 disabled={busy}
               >
-                {busy ? 'Inahifadhi…' : 'Hifadhi mkataba'}
+                {busy ? t('leaseNew.saving') : t('leaseNew.save')}
               </Button>
             </div>
           </div>
         </SectionCard>
 
-        <SectionCard title="Masharti yatakayowekwa" description="Yanatoka kwenye template ya kawaida ya mkataba.">
+        <SectionCard title={t('leaseNew.termsTitle')} description={t('leaseNew.termsBody')}>
           {!preview ? (
             <p className="text-[13px] leading-relaxed text-muted-foreground">
-              Bonyeza “Onyesha masharti” kuona maneno ya mkataba kabla ya kuhifadhi.
+              {t('leaseNew.termsHint')}
             </p>
           ) : (
-            <ol className="space-y-3">
+            <ol className="space-y-3" aria-label={t('leaseNew.documentText')}>
+              {/* Document text: shown exactly as the lease will store it, in both of its languages. */}
               {(preview.terms?.clauses || []).map((clause, index) => (
                 <li key={index} className="border-b border-border pb-3 text-[12px] leading-relaxed last:border-b-0">
-                  <p>{clause.sw}</p>
+                  <p lang="sw">{clause.sw}</p>
                   <p lang="en" className="mt-1 text-muted-foreground">
                     {clause.en}
                   </p>

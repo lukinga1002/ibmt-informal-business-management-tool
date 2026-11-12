@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Field, { TextInput } from '@/components/ibmt/Field';
 import Notice from '@/components/ibmt/Notice';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
 import { formatDateTime } from '@/lib/format';
 import { useT } from '@/i18n/I18nContext';
 
@@ -11,20 +11,20 @@ import { useT } from '@/i18n/I18nContext';
  * only. The code is displayed in the app until an SMS gateway is connected.
  */
 export default function LeaseSignPanel({ lease, onUpdated }) {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const [challenge, setChallenge] = useState(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const request = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('leaseSignature', { action: 'request', lease_id: lease.lease_id });
       setChallenge({ ...data.otp, id: data.challenge_id });
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -32,7 +32,7 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
 
   const sign = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('leaseSignature', {
         action: 'sign',
@@ -44,7 +44,7 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
       setCode('');
       if (onUpdated) onUpdated(data);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -52,24 +52,24 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
 
   if (lease.status === 'signed') {
     return (
-      <Notice tone="positive" title="Mkataba umesainiwa na pande zote">
-        Tenancy imeanza. Rekodi ya kodi inaweza kuandikwa sasa.
+      <Notice tone="positive" title={t('leaseSign.signedTitle')}>
+        {t('leaseSign.signedBody')}
       </Notice>
     );
   }
 
   if (lease.i_have_signed) {
     return (
-      <Notice tone="policy" title="Sahihi yako imepokelewa">
-        Inasubiri upande wa pili kusaini. Mkataba unakamilika pale sahihi zote mbili zinapokuwepo.
+      <Notice tone="policy" title={t('leaseSign.mineTitle')}>
+        {t('leaseSign.mineBody')}
       </Notice>
     );
   }
 
   if (!lease.can_request && !lease.i_have_signed) {
     return (
-      <Notice tone="neutral" title="Bado haujawa upande wa mkataba huu">
-        Mpangaji hajalitumia bado namba ya mkataba. Namba hiyo inatumwa kwa mpangaji peke yake.
+      <Notice tone="neutral" title={t('leaseSign.notPartyTitle')}>
+        {t('leaseSign.notPartyBody')}
       </Notice>
     );
   }
@@ -78,18 +78,18 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
     <div className="space-y-4">
       {!challenge ? (
         <Button type="button" variant="outline" className="ibmt-tap w-full" onClick={request} disabled={busy}>
-          {busy ? 'Inatuma…' : 'Tuma namba ya kusaini'}
+          {busy ? t('leaseSign.sending') : t('leaseSign.send')}
         </Button>
       ) : (
         <>
           <div className="rounded-md border border-border bg-muted/40 px-3 py-3">
-            <p className="ibmt-kicker">Namba yako ya kusaini</p>
+            <p className="ibmt-kicker">{t('leaseSign.yourCode')}</p>
             <p className="ibmt-num mt-1 font-heading text-xl font-semibold text-navy">{challenge.code}</p>
             <p className="ibmt-hint mt-1">
-              Namba hii inaonekana kwako peke yako. Inaisha {formatDateTime(challenge.expires_at, lang)}.
+              {t('leaseSign.codeNote', { when: formatDateTime(challenge.expires_at, lang) })}
             </p>
           </div>
-          <Field label="Weka namba ya kusaini" required>
+          <Field label={t('leaseSign.enterCode')} required>
             {(props) => (
               <TextInput
                 {...props}
@@ -107,14 +107,14 @@ export default function LeaseSignPanel({ lease, onUpdated }) {
             onClick={sign}
             disabled={busy || code.length !== 6}
           >
-            {busy ? 'Inasaini…' : 'Saini mkataba'}
+            {busy ? t('leaseSign.signing') : t('leaseSign.sign')}
           </Button>
         </>
       )}
 
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
     </div>

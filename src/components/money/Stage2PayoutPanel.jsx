@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { callFn, fnError } from "@/lib/r4";
+import { callFn, errorText } from "@/lib/r4";
+import { formatDateTime } from "@/lib/format";
+import { useT } from "@/i18n/I18nContext";
+
+/** Version of the payment consent wording below; sent with the language it was shown in. */
+const CONSENT_TEXT_VERSION = "stage2-payments-1";
 import SectionCard from "@/components/ibmt/SectionCard";
 import Field from "@/components/ibmt/Field";
 import { Button } from "@/components/ui/button";
 
 export default function Stage2PayoutPanel() {
+  const { t, lang } = useT();
   const [legacyUnits, setLegacyUnits] = useState(""),
     [legacyName, setLegacyName] = useState("");
   const [properties, setProperties] = useState([]),
@@ -17,7 +23,7 @@ export default function Stage2PayoutPanel() {
     account_name: "",
     consent: false,
   });
-  const [error, setError] = useState(""),
+  const [error, setError] = useState(null),
     [busy, setBusy] = useState(false),
     [otp, setOtp] = useState(null),
     [code, setCode] = useState(""),
@@ -31,7 +37,7 @@ export default function Stage2PayoutPanel() {
         setProperties(p.properties);
         setAdmin(p.admin);
       })
-      .catch((e) => setError(fnError(e)));
+      .catch((err) => setError({ err }));
   }, []);
   async function load(propertyId) {
     setData(
@@ -41,11 +47,11 @@ export default function Stage2PayoutPanel() {
   useEffect(() => {
     setData(null);
     setOtp(null);
-    if (id) load(id).catch((e) => setError(fnError(e)));
+    if (id) load(id).catch((err) => setError({ err }));
   }, [id]);
   async function run(action, extra = {}) {
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       const result = await callFn("stage2Payout", {
         action,
@@ -54,30 +60,27 @@ export default function Stage2PayoutPanel() {
       });
       if (action === "requestOtp") setOtp({ ...result, id: extra.id });
       await load(id);
-    } catch (e) {
-      setError(fnError(e));
+    } catch (err) {
+      setError({ err });
     } finally {
       setBusy(false);
     }
   }
+  const disclosure = data?.withdrawal_disclosure?.[lang] || [];
   return (
     <SectionCard
-      title="Akaunti ya malipo / Payout account"
-      description="Simulation / Majaribio · Ongeza sasa au baadaye / Add now or later (Stage 1)"
+      title={t("payout.title")}
+      description={t("payout.description")}
     >
-      <p>
-        Hatua 2: akaunti na idhini za wamiliki wote zinahitajika kabla ya
-        mkataba kuanza. / Stage 2 requires all owners to approve before
-        activation.
-      </p>
+      <p>{t("payout.stage2Rule")}</p>
       <label className="block py-3">
-        Jengo / Property{" "}
+        {t("payout.property")}{" "}
         <select
           className="min-h-11 w-full max-w-full min-w-0 truncate border p-2"
           value={id}
           onChange={(e) => setId(e.target.value)}
         >
-          <option value="">Chagua / Select</option>
+          <option value="">{t("payout.select")}</option>
           {properties.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} · {p.property_ref}
@@ -88,12 +91,12 @@ export default function Stage2PayoutPanel() {
       {admin && (
         <div className="space-y-2 border p-3">
           <Field
-            label="Jengo la vitengo vilivyopo / Property for existing units"
+            label={t("payout.legacyName")}
             value={legacyName}
             onChange={(e) => setLegacyName(e.target.value)}
           />
           <Field
-            label="Unit IDs separated by semicolons (reviewed grouping)"
+            label={t("payout.legacyUnits")}
             value={legacyUnits}
             onChange={(e) => setLegacyUnits(e.target.value)}
           />
@@ -114,14 +117,14 @@ export default function Stage2PayoutPanel() {
                   action: "properties",
                 });
                 setProperties(response.properties);
-              } catch (e) {
-                setError(fnError(e));
+              } catch (err) {
+                setError({ err });
               } finally {
                 setBusy(false);
               }
             }}
           >
-            Unganisha vitengo vilivyohakikiwa / Link reviewed existing units
+            {t("payout.linkUnits")}
           </Button>
         </div>
       )}
@@ -130,7 +133,7 @@ export default function Stage2PayoutPanel() {
           {admin && (
             <div>
               <Field
-                label="Wamiliki waliohakikiwa / Verified owners (user ID,phone; user ID,phone)"
+                label={t("payout.rosterLabel")}
                 value={rosterText}
                 onChange={(e) => setRosterText(e.target.value)}
               />
@@ -145,36 +148,33 @@ export default function Stage2PayoutPanel() {
                   })
                 }
               >
-                Hakiki wamiliki / Verify owner roster
+                {t("payout.verifyRoster")}
               </Button>
             </div>
           )}
           {!data.roster_id && (
-            <p>
-              Wasimamizi wathibitishe wamiliki na simu kwanza. / Reviewer must
-              verify owners and phones first.
-            </p>
+            <p>{t("payout.rosterFirst")}</p>
           )}
           <label>
-            Aina / Type{" "}
+            {t("payout.type")}{" "}
             <select
               value={form.account_type}
               onChange={(e) =>
                 setForm({ ...form, account_type: e.target.value })
               }
             >
-              <option value="mobile_money">Mobile money</option>
-              <option value="bank">Bank</option>
+              <option value="mobile_money">{t("payout.mobileMoney")}</option>
+              <option value="bank">{t("payout.bank")}</option>
             </select>
           </label>
           {[
-            ["provider", "Mtoa huduma / Provider"],
-            ["account_number", "Namba ya akaunti / Account number"],
-            ["account_name", "Jina la akaunti / Account name"],
+            ["provider", "payout.provider"],
+            ["account_number", "payout.accountNumber"],
+            ["account_name", "payout.accountName"],
           ].map(([key, label]) => (
             <Field
               key={key}
-              label={label}
+              label={t(label)}
               value={form[key]}
               onChange={(e) => setForm({ ...form, [key]: e.target.value })}
             />
@@ -185,37 +185,32 @@ export default function Stage2PayoutPanel() {
               checked={form.consent}
               onChange={(e) => setForm({ ...form, consent: e.target.checked })}
             />
-            Ninakubali malipo kupitia IBMT (majaribio), toleo 1. / I consent to
-            payments through IBMT (simulation), version 1.
+            {t("payout.consent")}
           </label>
           <div className="flex flex-wrap gap-3">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
               disabled={busy || !data.roster_id}
-              onClick={() => run("nominate", form)}
+              onClick={() => run("nominate", { ...form, consent_language: lang, consent_text_version: CONSENT_TEXT_VERSION })}
             >
-              Pendekeza akaunti / Nominate
+              {t("payout.nominate")}
             </Button>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
               variant="outline"
               disabled={busy || !data.roster_id || !data.consent}
               onClick={() => setConfirmWithdraw(true)}
             >
-              Ondoa idhini / Withdraw consent
+              {t("payout.withdraw")}
             </Button>
           </div>
           <p className="text-[13px]">
-            {data.consent
-              ? "Idhini ya malipo: imetolewa / Payment consent: given"
-              : "Idhini ya malipo: imeondolewa. Malipo mapya ni Hatua 1; kiasi kinachoshikiliwa kinabaki kimeshikiliwa. Pendekeza akaunti ili kutoa idhini tena. / Payment consent: withdrawn. New payments are Stage 1; held amounts stay held. Nominate an account to consent again."}
+            {data.consent ? t("payout.consentGiven") : t("payout.consentWithdrawn")}
           </p>
           {confirmWithdraw && data.withdrawal_disclosure && (
             <div role="alertdialog" className="border border-destructive p-3 space-y-2 text-[13px]">
-              <p className="font-semibold">Kabla ya kuondoa idhini / Before you withdraw consent</p>
+              <p className="font-semibold">{t("payout.beforeWithdraw")}</p>
               <ul className="list-disc pl-5 space-y-1">
-                {data.withdrawal_disclosure.sw.map((line, i) => (
-                  <li key={i}>
-                    {line} / {data.withdrawal_disclosure.en[i]}
-                  </li>
+                {disclosure.map((line, i) => (
+                  <li key={i}>{line}</li>
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
@@ -223,20 +218,20 @@ export default function Stage2PayoutPanel() {
                   variant="destructive"
                   disabled={busy}
                   onClick={async () => {
-                    await run("withdraw", { acknowledged: true });
+                    await run("withdraw", { acknowledged: true, language: lang });
                     setConfirmWithdraw(false);
                   }}
                 >
-                  Ndiyo, ondoa idhini / Yes, withdraw consent
+                  {t("payout.withdrawYes")}
                 </Button>
                 <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left" variant="outline" disabled={busy} onClick={() => setConfirmWithdraw(false)}>
-                  Hapana / Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </div>
           )}
           <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left" disabled={busy} onClick={() => run("releaseHeld")}>
-            Toa malipo yaliyoshikiliwa / Release held simulated payouts
+            {t("payout.release")}
           </Button>
           {data.records.map((r) => (
             <div className="border p-3 space-y-2" key={r.id}>
@@ -244,21 +239,22 @@ export default function Stage2PayoutPanel() {
                 {r.provider} · {r.account_number} · {r.account_name}
               </p>
               <p>
-                {r.name_check} ·{" "}
-                {r.effective ? "Inatumika / Effective" : "Inasubiri / Pending"}
+                {t(`payout.nameCheck.${r.name_check}`)} ·{" "}
+                {r.effective ? t("payout.effective") : t("payout.pending")}
               </p>
               <p>
-                Idhini / Approvals {r.approvals.length} / {data.owners.length}
+                {t("payout.approvals", { done: r.approvals.length, total: data.owners.length })}
               </p>
               {r.cooling_off_ends_at && (
-                <p>
-                  Muda wa kusubiri / Cooling-off ends {r.cooling_off_ends_at}
-                </p>
+                <p>{t("payout.coolingOffEnds", { when: formatDateTime(r.cooling_off_ends_at, lang) })}</p>
+              )}
+              {!r.effective && r.name_check === "mismatch" && r.approvals.length >= data.owners.length && (
+                <p>{t("payout.mismatchBlocks")}</p>
               )}
               {admin && r.name_check === "mismatch" && (
                 <div>
                   <Field
-                    label="Sababu ya ukaguzi / Review reason"
+                    label={t("payout.reviewReason")}
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                   />
@@ -268,24 +264,27 @@ export default function Stage2PayoutPanel() {
                       run("reviewName", { id: r.id, note: reviewNote })
                     }
                   >
-                    Kubali baada ya ukaguzi / Accept after review
+                    {t("payout.acceptAfterReview")}
                   </Button>
                 </div>
               )}
+              {r.i_approved ? (
+                <p>{t("payout.youApproved")}</p>
+              ) : (
               <Button className="h-auto min-h-10 max-w-full whitespace-normal text-left"
                 disabled={busy}
                 onClick={() => run("requestOtp", { id: r.id })}
               >
-                Omba OTP yangu / Request my OTP
+                {t("payout.requestOtp")}
               </Button>
+              )}
               {otp?.id === r.id && (
                 <div>
                   <p>
-                    Simulation / Majaribio · OTP {otp.simulation_code} →{" "}
-                    {otp.to}
+                    {t("payout.simulatedCode", { code: otp.simulation_code, to: otp.to })}
                   </p>
                   <Field
-                    label="OTP"
+                    label={t("payout.code")}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                   />
@@ -299,7 +298,7 @@ export default function Stage2PayoutPanel() {
                       })
                     }
                   >
-                    Idhinisha / Approve
+                    {t("common.approve")}
                   </Button>
                 </div>
               )}
@@ -307,7 +306,7 @@ export default function Stage2PayoutPanel() {
           ))}
         </div>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{errorText(error)}</p>}
     </SectionCard>
   );
 }

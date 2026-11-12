@@ -2,6 +2,10 @@
   "name": "Consent",
   "type": "object",
   "properties": {
+    "language": {
+      "type": "string",
+      "description": "Language the consent or withdrawal wording was shown in (sw or en)"
+    },
     "subject_id": {
       "type": "string",
       "description": "User id the consent belongs to; always the creator"

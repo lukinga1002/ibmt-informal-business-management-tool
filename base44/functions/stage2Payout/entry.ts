@@ -119,6 +119,7 @@ export default async function (req) {
             : "****" + r.account_number.slice(-4),
           name_check: r.name_check,
           approvals: r.approvals || [],
+          i_approved: (r.approvals || []).some((a) => a.owner_id === user.id),
           cooling_off_ends_at: r.cooling_off_ends_at,
           effective: r.id === current.account?.id,
         })),
@@ -223,6 +224,9 @@ export default async function (req) {
             : "mismatch",
         consent: true,
         consent_version: "stage2-payments-1",
+        // Wording version and the language it was shown in, as accepted.
+        consent_text_version: cleanText(input.consent_text_version) || "stage2-payments-1",
+        consent_language: ["sw", "en"].includes(input.consent_language) ? input.consent_language : null,
         approvals: [],
         cooling_off_hours: hours,
         status: "requested",
@@ -234,6 +238,7 @@ export default async function (req) {
         purpose: "payments_through_ibmt",
         version: "stage2-payments-1",
         granted: true,
+        language: ["sw", "en"].includes(input.consent_language) ? input.consent_language : null,
         granted_at: new Date().toISOString(),
       });
       for (const o of current.roster.owners)
@@ -266,6 +271,7 @@ export default async function (req) {
         property_id: property.id,
         landlord_id: property.landlord_id,
         record_kind: "consent_withdrawal",
+        disclosure_language: ["sw", "en"].includes(input.language) ? input.language : null,
         status: "effective",
         disclosure_version: WITHDRAWAL_DISCLOSURE.version,
         withdrawn_by: user.id,
@@ -277,6 +283,7 @@ export default async function (req) {
         purpose: "payments_through_ibmt",
         version: "stage2-payments-1",
         granted: false,
+        language: ["sw", "en"].includes(input.language) ? input.language : null,
         withdrawn_at: new Date().toISOString(),
       });
       return json({ record_only: true, disclosure: WITHDRAWAL_DISCLOSURE, simulation: true });

@@ -6,17 +6,16 @@ import { LEASE_LABEL } from '@/lib/r4';
 import { useT } from '@/i18n/I18nContext';
 import { formatDate, formatDateTime } from '@/lib/format';
 
-const PARTY_LABEL = { landlord: 'Mmiliki', tenant: 'Mpangaji' };
 
 /** The standard bilingual lease as it was saved, clause by clause. */
 export default function LeaseDocument({ lease, showQr = false }) {
-  const { lang } = useT();
+  const { t, tt, lang } = useT();
   if (!lease) return null;
 
   const terms = lease.terms || {};
   const stamp = lease.stamp_duty || {};
   const clauses = terms.clauses || [];
-  const label = lease.template_label?.sw || lease.template_label?.en || 'DRAFT - inasubiri ukaguzi wa kisheria';
+  const label = lease.template_label ? tt(lease.template_label) : t('leaseDoc.draftLabel');
 
   return (
     <div className="space-y-5">
@@ -28,7 +27,7 @@ export default function LeaseDocument({ lease, showQr = false }) {
         </span>
         {lease.template_version && (
           <span className="ibmt-num rounded-sm border border-border px-2 py-1 text-[11px] text-muted-foreground">
-            Template {lease.template_version}
+            {t('leaseDoc.template', { version: lease.template_version })}
           </span>
         )}
       </div>
@@ -37,20 +36,21 @@ export default function LeaseDocument({ lease, showQr = false }) {
         <Money
           amount={lease.rent_amount}
           strong
-          note={lease.frequency === 'quarterly' ? 'Kila robo mwaka' : 'Kila mwezi'}
+          note={lease.frequency === 'quarterly' ? t('leaseNew.quarterly') : t('leaseNew.monthly')}
         />
         <div className="text-[12px] leading-relaxed text-muted-foreground">
           <p>{lease.unit_ref} · {lease.ward}</p>
           <p className="ibmt-num mt-1">
             {formatDate(lease.start_date, lang)} - {formatDate(lease.end_date, lang)}
           </p>
-          {terms.due_day ? <p className="mt-1">Siku ya malipo: {terms.due_day}</p> : null}
+          {terms.due_day ? <p className="mt-1">{t('leaseDoc.dueDay', { day: terms.due_day })}</p> : null}
         </div>
       </div>
 
       <div>
-        <p className="ibmt-kicker">Masharti ya kawaida</p>
-        <ol className="mt-2 space-y-3">
+        <p className="ibmt-kicker">{t('leaseDoc.standardTerms')}</p>
+        {/* Document text: the clauses exactly as saved with the lease, in both of its languages. */}
+        <ol className="mt-2 space-y-3" aria-label={t('leaseNew.documentText')}>
           {clauses.map((clause, index) => (
             <li key={`${index}-${clause.en || index}`} className="grid gap-2 border-b border-border pb-3 last:border-b-0 md:grid-cols-2">
               <p lang="en" className="text-[12px] leading-relaxed">
@@ -65,23 +65,23 @@ export default function LeaseDocument({ lease, showQr = false }) {
       </div>
 
       <div>
-        <p className="ibmt-kicker">Sahihi</p>
+        <p className="ibmt-kicker">{t('leaseDoc.signatures')}</p>
         <ul className="mt-2 space-y-2">
           {(lease.parties || []).map((party) => (
             <li key={party.party} className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2 last:border-b-0">
-              <span className="text-[13px] font-medium">{PARTY_LABEL[party.party] || party.party}</span>
+              <span className="text-[13px] font-medium">{t(`leaseDoc.party.${party.party}`)}</span>
               {party.signed ? (
-                <StatusBadge status="confirmed" label={`Imesainiwa ${formatDateTime(party.signed_at, lang)}`} />
+                <StatusBadge status="confirmed" label={t('leaseDoc.signedAt', { when: formatDateTime(party.signed_at, lang) })} />
               ) : (
-                <StatusBadge status="pending" label="Bado kusaini" />
+                <StatusBadge status="pending" label={t('leaseDoc.notSigned')} />
               )}
             </li>
           ))}
         </ul>
       </div>
 
-      <Notice tone="caution" title="Stampu (stamp duty)">
-        {stamp.label?.sw || stamp.sw || 'Nafasi tu. Hakuna kiasi kinachokokotolewa au kudaiwa katika hatua hii.'}
+      <Notice tone="caution" title={t('leaseDoc.stampTitle')}>
+        {stamp.label ? tt(stamp.label) : stamp.sw || stamp.en ? tt(stamp) : t('leaseDoc.stampBody')}
       </Notice>
 
       {showQr && <LeaseQr code={lease.verify_code} />}

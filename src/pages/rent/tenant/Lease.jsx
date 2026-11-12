@@ -7,7 +7,7 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Notice from '@/components/ibmt/Notice';
 import Field, { TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { LEASE_LABEL, callFn, fnError } from '@/lib/r4';
+import { LEASE_LABEL, callFn, errorText } from '@/lib/r4';
 import { formatDate } from '@/lib/format';
 import { useT } from '@/i18n/I18nContext';
 
@@ -16,11 +16,11 @@ import { useT } from '@/i18n/I18nContext';
  * them, then signs it from their own account.
  */
 export default function TenantLease() {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [leases, setLeases] = useState(null);
 
   const load = useCallback(() => {
@@ -36,14 +36,14 @@ export default function TenantLease() {
 
   const claim = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('leaseSignature', { action: 'claim', code: code.trim() });
       setCode('');
       load();
       navigate(`/rent/lease/${data.lease_id}`);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -52,16 +52,16 @@ export default function TenantLease() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Mkataba wa kodi"
-        title="Mkataba wangu"
-        lede="Fungua mkataba kwa namba uliyopewa na mmiliki, kisha usaini kwa namba yako mwenyewe."
-        meta={[{ label: 'Mkataba unakuwa hai baada ya sahihi zote mbili' }]}
+        kicker={t('myLeases.kicker')}
+        title={t('myLeases.title')}
+        lede={t('myLeases.lede')}
+        meta={[{ label: t('myLeases.activeWhen') }]}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <SectionCard title="Fungua mkataba" description="Namba ya mkataba inakuja kwa mmiliki au wakala.">
+        <SectionCard title={t('myLeases.openTitle')} description={t('myLeases.openBody')}>
           <div className="space-y-4">
-            <Field label="Namba ya mkataba" required>
+            <Field label={t('myLeases.code')} required>
               {(props) => (
                 <TextInput
                   {...props}
@@ -74,7 +74,7 @@ export default function TenantLease() {
             </Field>
             {error && (
               <p role="alert" className="text-[12px] font-medium text-destructive">
-                {error}
+                {errorText(error)}
               </p>
             )}
             <Button
@@ -83,16 +83,16 @@ export default function TenantLease() {
               onClick={claim}
               disabled={busy || code.trim().length < 4}
             >
-              {busy ? 'Inafungua…' : 'Fungua mkataba'}
+              {busy ? t('myLeases.opening') : t('myLeases.open')}
             </Button>
           </div>
         </SectionCard>
 
-        <SectionCard title="Mikataba yangu" description="Mkataba mmoja kwa nyumba moja inayoendelea.">
+        <SectionCard title={t('myLeases.listTitle')} description={t('myLeases.listBody')}>
           {leases === null ? (
-            <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+            <p className="text-[13px] text-muted-foreground">{t('common.loading')}…</p>
           ) : leases.length === 0 ? (
-            <Notice tone="neutral">Hakuna mkataba uliofunguliwa bado.</Notice>
+            <Notice tone="neutral">{t('myLeases.none')}</Notice>
           ) : (
             <ul className="space-y-3">
               {leases.map((lease) => (
@@ -106,7 +106,7 @@ export default function TenantLease() {
                   <div className="flex items-center gap-2">
                     <StatusBadge status={lease.status} label={LEASE_LABEL[lease.status] || lease.status} />
                     <Button asChild size="sm" variant="outline" className="ibmt-tap">
-                      <Link to={`/rent/lease/${lease.id}`}>Fungua</Link>
+                      <Link to={`/rent/lease/${lease.id}`}>{t('common.open')}</Link>
                     </Button>
                   </div>
                 </li>
@@ -116,9 +116,8 @@ export default function TenantLease() {
         </SectionCard>
       </div>
 
-      <Notice tone="policy" title="Ukaguzi wa kisheria">
-        Maneno ya mkataba ni template ya kawaida ya awali. Yanasubiri ukaguzi wa kisheria kabla ya kutumika kama mkataba
-        rasmi wa kisheria.
+      <Notice tone="policy" title={t('myLeases.legalTitle')}>
+        {t('myLeases.legalBody')}
       </Notice>
     </div>
   );

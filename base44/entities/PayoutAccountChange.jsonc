@@ -2,6 +2,18 @@
   "name": "PayoutAccountChange",
   "type": "object",
   "properties": {
+    "consent_text_version": {
+      "type": "string",
+      "description": "Version of the payment consent wording accepted"
+    },
+    "consent_language": {
+      "type": "string",
+      "description": "Language the consent wording was shown in (sw or en)"
+    },
+    "disclosure_language": {
+      "type": "string",
+      "description": "Language the withdrawal disclosure was shown in (sw or en)"
+    },
     "disclosure_version": {
       "type": "string",
       "description": "Version of the withdrawal disclosure the owner confirmed"

@@ -1,4 +1,5 @@
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
+import { useT } from '@/i18n/I18nContext';
 
 const COUNTS = Array.from({ length: 20 }, (_, index) => index + 1);
 
@@ -7,9 +8,10 @@ const COUNTS = Array.from({ length: 20 }, (_, index) => index + 1);
  * will pick from later, so it has to be a name they recognise.
  */
 export default function JoinUnits({ units, onCount, onRename }) {
+  const { t } = useT();
   return (
     <div className="space-y-4">
-      <Field label="Unazo uniti ngapi?" required hint="Kila uniti linapata namba yake ya kumbukumbu. Upeo ni 20 kwa usajili mmoja.">
+      <Field label={t('joinForm.unitCount')} required hint={t('joinForm.unitCountHint')}>
         {(props) => (
           <SelectControl {...props} value={String(units.length)} onChange={(event) => onCount(Number(event.target.value))}>
             {COUNTS.map((count) => (
@@ -25,9 +27,9 @@ export default function JoinUnits({ units, onCount, onRename }) {
         {units.map((unit, index) => (
           <Field
             key={index}
-            label={`Jina la uniti ${index + 1}`}
+            label={t('joinForm.unitName', { n: index + 1 })}
             required
-            hint={index === 0 ? 'Jina unalolitambua, mf. Nyumba ya mbele, Chumba A1' : undefined}
+            hint={index === 0 ? t('joinForm.unitNameHint') : undefined}
           >
             {(props) => (
               <TextInput {...props} value={unit.name} onChange={(event) => onRename(index, event.target.value)} />

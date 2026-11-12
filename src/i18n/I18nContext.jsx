@@ -1,22 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import en from './en.json';
-import sw from './sw.json';
 import { prefs } from '@/lib/prefs';
-
-const RESOURCES = { en, sw };
+import { RESOURCES, interpolate } from './translate';
 
 const I18nContext = createContext(null);
 
 function lookup(resource, path) {
   return path.split('.').reduce((node, part) => (node && typeof node === 'object' ? node[part] : undefined), resource);
-}
-
-function interpolate(text, vars) {
-  if (!vars) return text;
-  return Object.keys(vars).reduce(
-    (out, key) => out.replace(new RegExp(`\\{${key}\\}`, 'g'), String(vars[key])),
-    text,
-  );
 }
 
 export function I18nProvider({ children }) {
