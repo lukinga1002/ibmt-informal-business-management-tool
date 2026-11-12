@@ -8,7 +8,7 @@ const B = (en, sw) => ({ en, sw });
 export const LANDLORD_OVERVIEW = {
   jurisdiction: { region: 'Dar es Salaam', wards: ['Mwananyamala'], mtaa: ['Mwananyamala', 'Mabatini'] },
   counters: [
-    { key: 'units', label: B('Units registered', 'Vitego vilivyosajiliwa'), value: '6' },
+    { key: 'units', label: B('Units registered', 'Vitengo vilivyosajiliwa'), value: '6' },
     { key: 'occupancy', label: B('Occupancy', 'Ukaaji'), value: '5 of 6' },
     { key: 'rent_due', label: B('Rent due this month', 'Kodi inayotakiwa mwezi huu'), value: 'TZS 2,300,000' },
     { key: 'collected', label: B('Collected through the payment partner', 'Iliyokusanywa kupitia mshirika wa malipo'), value: 'TZS 1,800,000' },
@@ -331,7 +331,7 @@ export const MANAGER_SCOPE = {
     },
     {
       mandate_id: 'mnd-m2', landlord_display: B('Kariakoo Holdings', 'Kariakoo Holdings'), landlord_ref: 'IBMT-LND-000512',
-      scope: [B('Market units', 'Kutangaza vitego'), B('Conduct viewings', 'Kufanya ziara')],
+      scope: [B('Market units', 'Kutangaza vitengo'), B('Conduct viewings', 'Kufanya ziara')],
       not_granted: [B('Collect rent', 'Kukusanya kodi'), B('Hold deposit instructions', 'Kushikilia maelekezo ya amana')],
       expires_at: '2026-12-31', status: 'active',
     },
