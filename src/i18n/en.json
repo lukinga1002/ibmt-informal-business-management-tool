@@ -1505,5 +1505,93 @@
     "licenceActive": "licence active",
     "licenceExpired": "licence expired",
     "rentOut": "Rent out"
+  },
+  "agentLicences": {
+    "title": "Agent licences",
+    "lede": "A broker holds one licence per council. Every decision except approval needs a reason, and it stays in the registration history.",
+    "endsMandates": "Suspending or revoking ends active mandates",
+    "queueTitle": "Applications and registrations",
+    "submittedIn": "Submitted in {council}.",
+    "submittedInYours": "Submitted in your council.",
+    "scope": {
+      "rental": "Rentals",
+      "sale": "Sales",
+      "both": "Both"
+    },
+    "none": "No licence application yet.",
+    "individual": "Individual broker",
+    "noNumber": "No number yet",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "suspended": "Suspended",
+      "revoked": "Revoked"
+    },
+    "reasonHint": "Required to reject, suspend or revoke",
+    "decision": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "suspend": "Suspend",
+      "revoke": "Revoke licence"
+    }
+  },
+  "listings": {
+    "title": "Unit listings",
+    "lede": "List a verified unit. The public sees only the ward and mtaa; the address opens after a viewing is booked.",
+    "noViewingFee": "No viewing fee: the tenant pays TZS 0",
+    "verifiedTitle": "Verified units",
+    "verifiedBody": "A unit that is not verified cannot be listed.",
+    "noneWaiting": "No verified unit is waiting to be listed.",
+    "publish": "List",
+    "mine": "My listings",
+    "mineBody": "What the public can see.",
+    "none": "No listing yet.",
+    "addressHidden": "the public does not see the address",
+    "status": {
+      "listed": "Listed",
+      "paused": "Paused",
+      "let": "Let",
+      "draft": "Draft"
+    },
+    "pause": "Pause",
+    "markLet": "Mark as let",
+    "republish": "List again"
+  },
+  "tax": {
+    "title": "Tax statement (estimate)",
+    "lede": "Tax estimated from confirmed rent records. This is not a tax assessment or a payment.",
+    "period": "Period",
+    "from": "From",
+    "to": "To",
+    "calculating": "Calculating…",
+    "noRuleTitle": "No tax rule",
+    "noRuleBody": "No tax rule has been set yet, so no amount is shown.",
+    "statement": "Statement {from} – {to}",
+    "summary": "{records} confirmed record(s) · {months} month(s)",
+    "placeholderRule": "Placeholder rule",
+    "confirmedRule": "Confirmed rule",
+    "exemption": "Exemption for the period",
+    "taxable": "Taxable amount",
+    "indicative": "Estimated tax · {rate}%"
+  },
+  "migrate": {
+    "kicker": "Registering an existing tenancy",
+    "title": "Register a current tenant",
+    "lede": "The terms stay as they are. The standard lease applies only when this tenancy is renewed.",
+    "noNewLease": "No new lease",
+    "existing": "Existing details",
+    "addedTitle": "Tenancy added to the register",
+    "addedBody": "terms unchanged · no new lease was prepared.",
+    "unit": "House / room",
+    "noUnits": "No registered unit",
+    "tenantName": "Tenant's name",
+    "tenantPhone": "Tenant's phone",
+    "currentRent": "Current rent (TZS)",
+    "started": "When it started",
+    "send": "Send to the tenant",
+    "termsTitle": "The terms do not change",
+    "termsBody": "Rent, dates and other terms stay as they are. The standard lease comes only at renewal.",
+    "addressBody": "The full address is not shown on the certificate; only the ward and mtaa."
   }
 }

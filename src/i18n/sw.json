@@ -1505,5 +1505,93 @@
     "licenceActive": "leseni hai",
     "licenceExpired": "leseni imeisha",
     "rentOut": "Pangisha"
+  },
+  "agentLicences": {
+    "title": "Leseni za mawakala",
+    "lede": "Dalali mmoja ana leseni moja kwa kila halmashauri. Kila uamuzi isipokuwa kuidhinisha unahitaji sababu, na unabaki kwenye historia ya usajili.",
+    "endsMandates": "Kusimamisha au kufuta kunamaliza mamlaka yaliyo hai",
+    "queueTitle": "Maombi na usajili",
+    "submittedIn": "Yaliyowasilishwa katika {council}.",
+    "submittedInYours": "Yaliyowasilishwa katika halmashauri yako.",
+    "scope": {
+      "rental": "Kupangisha",
+      "sale": "Mauzo",
+      "both": "Zote mbili"
+    },
+    "none": "Hakuna ombi la leseni bado.",
+    "individual": "Dalali binafsi",
+    "noNumber": "Hakuna namba bado",
+    "status": {
+      "pending": "Inasubiri",
+      "approved": "Imethibitishwa",
+      "rejected": "Imekataliwa",
+      "suspended": "Imesimamishwa",
+      "revoked": "Imefutwa"
+    },
+    "reasonHint": "Inahitajika kwa kukataa, kusimamisha au kufuta",
+    "decision": {
+      "approve": "Thibitisha",
+      "reject": "Kataa",
+      "suspend": "Simamisha",
+      "revoke": "Futa leseni"
+    }
+  },
+  "listings": {
+    "title": "Matangazo ya uniti",
+    "lede": "Tangaza uniti iliyothibitishwa. Umma unaona kata na mtaa pekee; anwani inafunguka baada ya miadi ya kuona.",
+    "noViewingFee": "Hakuna ada ya kuona: mpangaji analipa TZS 0",
+    "verifiedTitle": "Uniti zilizothibitishwa",
+    "verifiedBody": "Uniti isiyothibitishwa haiwezi kutangazwa.",
+    "noneWaiting": "Hakuna uniti iliyothibitishwa inayosubiri kutangazwa.",
+    "publish": "Tangaza",
+    "mine": "Matangazo yangu",
+    "mineBody": "Kinachoonekana kwa umma.",
+    "none": "Hakuna tangazo bado.",
+    "addressHidden": "umma hauoni anwani",
+    "status": {
+      "listed": "Linatangazwa",
+      "paused": "Limesimamishwa",
+      "let": "Limepangishwa",
+      "draft": "Rasimu"
+    },
+    "pause": "Simamisha",
+    "markLet": "Limepangishwa",
+    "republish": "Tangaza tena"
+  },
+  "tax": {
+    "title": "Taarifa ya kodi (makadirio)",
+    "lede": "Kodi inayokadiriwa kutoka kwenye kumbukumbu za kodi zilizothibitishwa. Hii si tathmini ya kodi wala malipo.",
+    "period": "Kipindi",
+    "from": "Kuanzia",
+    "to": "Hadi",
+    "calculating": "Inakokotoa…",
+    "noRuleTitle": "Hakuna kanuni ya kodi",
+    "noRuleBody": "Hakuna kanuni ya kodi iliyowekwa bado, kwa hiyo hakuna kiasi kinachoonyeshwa.",
+    "statement": "Taarifa {from} – {to}",
+    "summary": "Kumbukumbu {records} zilizothibitishwa · miezi {months}",
+    "placeholderRule": "Kanuni ya majaribio",
+    "confirmedRule": "Kanuni iliyothibitishwa",
+    "exemption": "Msamaha wa kipindi",
+    "taxable": "Kiasi kinachotozwa",
+    "indicative": "Kodi inayokadiriwa · {rate}%"
+  },
+  "migrate": {
+    "kicker": "Usajili wa upangaji uliopo",
+    "title": "Sajili mpangaji aliyepo",
+    "lede": "Masharti yanabaki kama yalivyo. Mkataba wa kawaida unatumika tu upangaji huu unapohuishwa.",
+    "noNewLease": "Hakuna mkataba mpya",
+    "existing": "Taarifa zilizopo",
+    "addedTitle": "Upangaji umeingizwa kwenye rejista",
+    "addedBody": "masharti hayakubadilishwa · hakuna mkataba mpya ulioandaliwa.",
+    "unit": "Nyumba / chumba",
+    "noUnits": "Hakuna uniti iliyosajiliwa",
+    "tenantName": "Jina la mpangaji",
+    "tenantPhone": "Simu ya mpangaji",
+    "currentRent": "Kodi ya sasa (TZS)",
+    "started": "Ulianza lini",
+    "send": "Tuma kwa mpangaji",
+    "termsTitle": "Masharti hayabadiliki",
+    "termsBody": "Kodi, tarehe na masharti mengine yanabaki kama yalivyo. Mkataba wa kawaida unakuja tu wakati wa kuhuisha.",
+    "addressBody": "Anwani kamili haionyeshwi kwenye cheti; ni kata na mtaa pekee."
   }
 }
