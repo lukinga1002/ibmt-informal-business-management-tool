@@ -6,36 +6,34 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import Notice from '@/components/ibmt/Notice';
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
 import { formatDateTime } from '@/lib/format';
 import { useT } from '@/i18n/I18nContext';
 
-const BLANK_ROWS = [
-  { area: 'Sebule', condition: '', photo_uri: '' },
-  { area: 'Jikoni', condition: '', photo_uri: '' },
-  { area: 'Choo na bafu', condition: '', photo_uri: '' },
-];
+// Suggested areas, in the language in use when the checklist starts; once
+// saved they are the parties' own words and are not translated afterwards.
+const blankRows = (t) => ['living', 'kitchen', 'bathroom'].map((key) => ({ area: t(`condition.area.${key}`), condition: '', photo_uri: '' }));
 
 /**
  * Move-in and move-out photo checklists. Both sides sign with a one-time code;
  * the report is agreed only when both signatures exist.
  */
 export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const [reports, setReports] = useState([]);
   const [kind, setKind] = useState('move_in');
-  const [rows, setRows] = useState(BLANK_ROWS);
+  const [rows, setRows] = useState(() => blankRows(t));
   const [otp, setOtp] = useState({});
   const [codes, setCodes] = useState({});
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const data = await callFn('conditionReport', { action: 'list', tenancy_id: tenancyId });
       setReports(data.rows || []);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     }
   }, [tenancyId]);
 
@@ -55,7 +53,7 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
 
   const create = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('conditionReport', {
         action: 'create',
@@ -63,10 +61,10 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
         kind,
         items: rows.filter((row) => row.area && row.condition),
       });
-      setRows(BLANK_ROWS);
+      setRows(blankRows(t));
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -74,12 +72,12 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
 
   const requestSign = async (report) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('conditionReport', { action: 'request_otp', report_id: report.report_id });
       setOtp((prev) => ({ ...prev, [report.report_id]: data.otp }));
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -87,7 +85,7 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
 
   const sign = async (report) => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await callFn('conditionReport', {
         action: 'sign',
@@ -98,17 +96,17 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
       setCodes((prev) => ({ ...prev, [report.report_id]: '' }));
       await load();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SectionCard title="Orodha ya hali ya nyumba" description="Picha na hali ya kila eneo, imesainiwa na pande zote mbili.">
+    <SectionCard title={t('condition.title')} description={t('condition.description')}>
       <div className="space-y-4">
         {reports.length === 0 ? (
-          <Notice tone="neutral">Hakuna orodha bado. Andaa orodha ya kuingia au ya kuondoka.</Notice>
+          <Notice tone="neutral">{t('condition.none')}</Notice>
         ) : (
           <ul className="space-y-3">
             {reports.map((report) => {
@@ -117,31 +115,31 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
                 <li key={report.report_id} className="border-b border-border pb-3 last:border-b-0">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium">{report.kind === 'move_in' ? 'Orodha ya kuingia' : 'Orodha ya kuondoka'}</p>
+                      <p className="text-[13px] font-medium">{report.kind === 'move_in' ? t('condition.moveInList') : t('condition.moveOutList')}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {report.items.length} eneo · mmiliki {report.signed.landlord ? 'amesaini' : 'hajasaini'} · mpangaji{' '}
-                        {report.signed.tenant ? 'amesaini' : 'hajasaini'}
+                        {t('condition.areas', { count: report.items.length })} · {report.signed.landlord ? t('condition.landlordSigned') : t('condition.landlordNotSigned')} ·{' '}
+                        {report.signed.tenant ? t('condition.tenantSigned') : t('condition.tenantNotSigned')}
                       </p>
                       {report.signatures.map((item) => (
                         <p key={item.party} className="ibmt-num text-[11px] text-muted-foreground">
-                          {item.party === 'landlord' ? 'Mmiliki' : 'Mpangaji'}: {formatDateTime(item.signed_at, lang)}
+                          {t(`leaseDoc.party.${item.party === 'landlord' ? 'landlord' : 'tenant'}`)}: {formatDateTime(item.signed_at, lang)}
                         </p>
                       ))}
                     </div>
-                    <StatusBadge status={report.agreed ? 'agreed' : 'pending'} label={report.agreed ? 'Imekubaliwa' : 'Inasubiri sahihi'} />
+                    <StatusBadge status={report.agreed ? 'agreed' : 'pending'} label={report.agreed ? t('condition.agreed') : t('labels.lease.awaiting_signature')} />
                   </div>
 
                   {!report.agreed && report.my_party && !signed && (
                     <div className="mt-2 space-y-2">
                       {!otp[report.report_id] ? (
                         <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => requestSign(report)} disabled={busy}>
-                          Pata namba ya kusaini
+                          {t('condition.getCode')}
                         </Button>
                       ) : (
                         <div className="space-y-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-                          <p className="ibmt-kicker">Namba yako</p>
+                          <p className="ibmt-kicker">{t('condition.yourCode')}</p>
                           <p className="ibmt-num font-heading text-lg font-semibold text-navy">{otp[report.report_id].code}</p>
-                          <Field label="Weka namba" required>
+                          <Field label={t('condition.enterCode')} required>
                             {(props) => (
                               <TextInput
                                 {...props}
@@ -161,7 +159,7 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
                             onClick={() => sign(report)}
                             disabled={busy || (codes[report.report_id] || '').length !== 6}
                           >
-                            Saini
+                            {t('common.sign')}
                           </Button>
                         </div>
                       )}
@@ -174,26 +172,26 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
         )}
 
         <div className="space-y-3 border-t border-border pt-4">
-          <Field label="Aina ya orodha" required>
+          <Field label={t('condition.kind')} required>
             {(props) => (
               <SelectControl {...props} value={kind} onChange={(event) => setKind(event.target.value)}>
-                <option value="move_in">Kuingia (move-in)</option>
-                <option value="move_out">Kuondoka (move-out)</option>
+                <option value="move_in">{t('condition.moveIn')}</option>
+                <option value="move_out">{t('condition.moveOut')}</option>
               </SelectControl>
             )}
           </Field>
 
           {rows.map((row, index) => (
             <div key={index} className="grid gap-2 rounded-md border border-border px-3 py-3 sm:grid-cols-[1fr_1.4fr_auto]">
-              <Field label="Eneo">
+              <Field label={t('condition.area.label')}>
                 {(props) => <TextInput {...props} value={row.area} onChange={(event) => setRow(index, { area: event.target.value })} />}
               </Field>
-              <Field label="Hali">
+              <Field label={t('condition.state')}>
                 {(props) => <TextInput {...props} value={row.condition} onChange={(event) => setRow(index, { condition: event.target.value })} />}
               </Field>
               <label className="flex cursor-pointer items-end gap-2 pb-1 text-[11px] text-muted-foreground">
                 <Camera className="h-4 w-4" aria-hidden="true" />
-                {row.photo_uri ? 'Picha imeambatishwa (stored privately)' : 'Picha'}
+                {row.photo_uri ? t('condition.photoAttached') : t('condition.photo')}
                 <input
                   type="file"
                   accept="image/*"
@@ -211,12 +209,12 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
             onClick={() => setRows((prev) => [...prev, { area: '', condition: '', photo_uri: '' }])}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Ongeza eneo
+            {t('condition.addArea')}
           </Button>
 
           {error && (
             <p role="alert" className="text-[12px] font-medium text-destructive">
-              {error}
+              {errorText(error)}
             </p>
           )}
 
@@ -226,7 +224,7 @@ export default function ConditionPanel({ tenancyId, role = 'landlord' }) {
             onClick={create}
             disabled={busy || !rows.some((row) => row.area && row.condition)}
           >
-            {busy ? 'Inatuma…' : role === 'tenant' ? 'Anzisha orodha ya hali' : 'Hifadhi orodha ya hali'}
+            {busy ? t('otpConfirm.sending') : role === 'tenant' ? t('condition.startList') : t('condition.saveList')}
           </Button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import Field, { TextInput } from '@/components/ibmt/Field';
 import Money from '@/components/ibmt/Money';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import ReceiptSheet from './ReceiptSheet';
-import { METHOD_LABEL, RECORD_LABEL, callFn, fnError } from '@/lib/r4';
+import { METHOD_LABEL, RECORD_LABEL, callFn, errorText } from '@/lib/r4';
 import { formatDate } from '@/lib/format';
 import { useT } from '@/i18n/I18nContext';
 
@@ -14,23 +14,23 @@ import { useT } from '@/i18n/I18nContext';
  * other party does, and only then does a receipt exist.
  */
 export default function RecordList({ rows = [], myId, onChanged }) {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const [busyId, setBusyId] = useState(null);
   const [disputeId, setDisputeId] = useState(null);
   const [reason, setReason] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [receipt, setReceipt] = useState(null);
 
   const decide = async (row, action) => {
     setBusyId(row.id);
-    setError('');
+    setError(null);
     try {
       await callFn('rentRecord', { action, id: row.id, reason: action === 'dispute' ? reason : undefined });
       setDisputeId(null);
       setReason('');
       if (onChanged) onChanged();
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusyId(null);
     }
@@ -38,26 +38,26 @@ export default function RecordList({ rows = [], myId, onChanged }) {
 
   const openReceipt = async (row) => {
     setBusyId(row.id);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('rentRecord', { action: 'receipt', id: row.id });
       setReceipt(data.receipt);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusyId(null);
     }
   };
 
   if (!rows.length) {
-    return <p className="text-[13px] leading-relaxed text-muted-foreground">Hakuna rekodi ya kodi bado.</p>;
+    return <p className="text-[13px] leading-relaxed text-muted-foreground">{t('recordList.none')}</p>;
   }
 
   return (
     <div className="space-y-3">
       {error && (
         <p role="alert" className="text-[12px] font-medium text-destructive">
-          {error}
+          {errorText(error)}
         </p>
       )}
 
@@ -74,11 +74,11 @@ export default function RecordList({ rows = [], myId, onChanged }) {
                   {row.mobile_money_ref ? ` · ${row.mobile_money_ref}` : ''}
                 </p>
                 <p className="mt-1 text-[12px] text-muted-foreground">
-                  Iliandikwa na {row.entered_by_role === 'tenant' ? 'mpangaji' : 'mmiliki'}
+                  {row.entered_by_role === 'tenant' ? t('recordList.byTenant') : t('recordList.byLandlord')}
                   {row.entered_by_name ? ` (${row.entered_by_name})` : ''} · {formatDate(row.entered_at, lang)}
                 </p>
                 {row.dispute_reason && (
-                  <p className="mt-1 text-[12px] text-destructive">Sababu ya pingamizi: {row.dispute_reason}</p>
+                  <p className="mt-1 text-[12px] text-destructive">{t('recordList.disputeReason', { reason: row.dispute_reason })}</p>
                 )}
               </div>
               <div className="text-right">
@@ -93,10 +93,10 @@ export default function RecordList({ rows = [], myId, onChanged }) {
               {row.record_status === 'confirmed' && row.receipt_reference && (
                 <>
                   <span className="ibmt-num rounded-sm border border-dashed border-gold-ink/50 bg-gold-soft px-2 py-1 text-[11px] text-gold-ink">
-                    Risiti {row.receipt_reference}
+                    {t('recordList.receiptRef', { ref: row.receipt_reference })}
                   </span>
                   <Button type="button" size="sm" variant="outline" className="ibmt-tap" onClick={() => openReceipt(row)} disabled={busyId === row.id}>
-                    Onyesha risiti
+                    {t('recordList.showReceipt')}
                   </Button>
                 </>
               )}
@@ -110,7 +110,7 @@ export default function RecordList({ rows = [], myId, onChanged }) {
                     onClick={() => decide(row, 'confirm')}
                     disabled={busyId === row.id}
                   >
-                    Thibitisha
+                    {t('common.confirm')}
                   </Button>
                   <Button
                     type="button"
@@ -119,23 +119,23 @@ export default function RecordList({ rows = [], myId, onChanged }) {
                     className="ibmt-tap"
                     onClick={() => setDisputeId(disputeId === row.id ? null : row.id)}
                   >
-                    Pinga
+                    {t('recordList.dispute')}
                   </Button>
                 </>
               )}
 
-              {waiting && <p className="text-[12px] text-muted-foreground">Inasubiri upande wa pili kuthibitisha.</p>}
+              {waiting && <p className="text-[12px] text-muted-foreground">{t('recordList.waiting')}</p>}
             </div>
 
             {disputeId === row.id && (
               <div className="mt-3 space-y-2 border-t border-border pt-3">
-                <Field label="Eleza tatizo" required hint="Angalau herufi 8">
+                <Field label={t('dispute.describe')} required hint={t('recordList.min8')}>
                   {(props) => (
                     <TextInput
                       {...props}
                       value={reason}
                       onChange={(event) => setReason(event.target.value)}
-                      placeholder="Mfano: kiasi si sahihi, kumbukumbu haipo"
+                      placeholder={t('recordList.disputePlaceholder')}
                     />
                   )}
                 </Field>
@@ -147,7 +147,7 @@ export default function RecordList({ rows = [], myId, onChanged }) {
                   onClick={() => decide(row, 'dispute')}
                   disabled={busyId === row.id || reason.trim().length < 8}
                 >
-                  Tuma pingamizi
+                  {t('recordList.sendDispute')}
                 </Button>
               </div>
             )}
@@ -158,7 +158,7 @@ export default function RecordList({ rows = [], myId, onChanged }) {
       <Dialog open={Boolean(receipt)} onOpenChange={(open) => !open && setReceipt(null)}>
         <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Risiti</DialogTitle>
+            <DialogTitle>{t('recordList.receipt')}</DialogTitle>
           </DialogHeader>
           <ReceiptSheet receipt={receipt} />
         </DialogContent>

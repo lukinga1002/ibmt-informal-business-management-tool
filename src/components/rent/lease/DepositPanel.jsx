@@ -5,24 +5,21 @@ import Money from '@/components/ibmt/Money';
 import StatusBadge from '@/components/ibmt/StatusBadge';
 import Field, { SelectControl, TextInput } from '@/components/ibmt/Field';
 import { Button } from '@/components/ui/button';
-import { callFn, fnError } from '@/lib/r4';
+import { callFn, errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
-const HOLDERS = [
-  { value: 'landlord', label: 'Mmiliki' },
-  { value: 'agent', label: 'Wakala' },
-  { value: 'tenant', label: 'Mpangaji' },
-  { value: 'other', label: 'Mtu mwingine' },
-];
+const HOLDERS = ['landlord', 'agent', 'tenant', 'other'];
 
 /**
  * Stage 1 deposit: the amount and who holds it are recorded here. IBMT never
  * holds the money and escrow starts in Stage 2 only.
  */
 export default function DepositPanel({ tenancyId, role = 'landlord' }) {
+  const { t, tt } = useT();
   const [deposit, setDeposit] = useState(null);
   const [form, setForm] = useState({ amount: '', held_by: 'landlord', held_by_name: '' });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -30,7 +27,7 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
       const data = await callFn('depositRecord', { action: 'get', tenancy_id: tenancyId });
       setDeposit(data.deposit);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setLoading(false);
     }
@@ -42,7 +39,7 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
 
   const save = async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const data = await callFn('depositRecord', {
         action: 'record',
@@ -53,35 +50,35 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
       });
       setDeposit(data);
     } catch (err) {
-      setError(fnError(err));
+      setError({ err });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SectionCard title="Amana" description="Kiasi na nani anayeishikilia. Hakuna escrow katika Hatua ya 1.">
+    <SectionCard title={t('deposit.title')} description={t('deposit.description')}>
       {loading ? (
-        <p className="text-[13px] text-muted-foreground">Inapakia…</p>
+        <p className="text-[13px] text-muted-foreground">{t('common.loading')}…</p>
       ) : (
         <div className="space-y-4">
           {deposit ? (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Money amount={deposit.amount} strong note={`Inashikiliwa na: ${deposit.held_by_name || deposit.held_by}`} />
-                <StatusBadge status={deposit.status} label={deposit.status === 'held' ? 'Inashikiliwa' : deposit.status} />
+                <Money amount={deposit.amount} strong note={t('deposit.heldByNote', { who: deposit.held_by_name || t(`deposit.holder.${deposit.held_by}`) })} />
+                <StatusBadge status={deposit.status} label={t(`deposit.status.${deposit.status === 'held' ? 'held' : 'other'}`)} />
               </div>
-              <Notice tone="privacy" title="IBMT haishikilii pesa hii.">
-                {deposit.escrow_note?.sw}
+              <Notice tone="privacy" title={t('deposit.notHeldByIbmt')}>
+                {deposit.escrow_note ? tt(deposit.escrow_note) : null}
               </Notice>
-              <p className="ibmt-hint">Imeandikwa na {deposit.recorded_by_role === 'tenant' ? 'mpangaji' : 'mmiliki'}.</p>
+              <p className="ibmt-hint">{deposit.recorded_by_role === 'tenant' ? t('deposit.recordedByTenant') : t('deposit.recordedByLandlord')}</p>
             </div>
           ) : (
-            <Notice tone="neutral">Amana haijaandikwa bado.</Notice>
+            <Notice tone="neutral">{t('deposit.none')}</Notice>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Kiasi (TZS)" required>
+            <Field label={t('deposit.amount')} required>
               {(props) => (
                 <TextInput
                   {...props}
@@ -92,18 +89,18 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
                 />
               )}
             </Field>
-            <Field label="Inashikiliwa na" required>
+            <Field label={t('deposit.heldBy')} required>
               {(props) => (
                 <SelectControl {...props} value={form.held_by} onChange={(event) => setForm({ ...form, held_by: event.target.value })}>
-                  {HOLDERS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
+                  {HOLDERS.map((value) => (
+                    <option key={value} value={value}>
+                      {t(`deposit.holder.${value}`)}
                     </option>
                   ))}
                 </SelectControl>
               )}
             </Field>
-            <Field label="Jina la anayeshikilia" className="sm:col-span-2">
+            <Field label={t('deposit.holderName')} className="sm:col-span-2">
               {(props) => (
                 <TextInput {...props} value={form.held_by_name} onChange={(event) => setForm({ ...form, held_by_name: event.target.value })} />
               )}
@@ -112,7 +109,7 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
 
           {error && (
             <p role="alert" className="text-[12px] font-medium text-destructive">
-              {error}
+              {errorText(error)}
             </p>
           )}
 
@@ -122,7 +119,7 @@ export default function DepositPanel({ tenancyId, role = 'landlord' }) {
             onClick={save}
             disabled={busy || !form.amount}
           >
-            {busy ? 'Inahifadhi…' : role === 'tenant' ? 'Rekodi amana niliyolipa' : 'Rekodi amana'}
+            {busy ? t('wardVerify.saving') : role === 'tenant' ? t('deposit.recordPaid') : t('deposit.record')}
           </Button>
         </div>
       )}

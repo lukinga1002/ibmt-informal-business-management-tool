@@ -8,19 +8,11 @@ import { formatDate, formatDateTime } from '@/lib/format';
 import { downloadReceiptPdf } from '@/lib/receiptPdf';
 import { useT } from '@/i18n/I18nContext';
 
-const ROWS = [
-  ['record_reference', 'Namba ya rekodi'],
-  ['unit_ref', 'Nyumba'],
-  ['period_month', 'Kipindi'],
-  ['method', 'Njia ya malipo'],
-  ['paid_on', 'Ilipwa tarehe'],
-  ['confirmed_by_name', 'Ilithibitishwa na'],
-  ['lease_ref', 'Mkataba'],
-];
+const ROWS = ['record_reference', 'unit_ref', 'period_month', 'method', 'paid_on', 'confirmed_by_name', 'lease_ref'];
 
 /** The printable receipt. Every figure here came back from the backend. */
 export default function ReceiptSheet({ receipt }) {
-  const { lang } = useT();
+  const { t, tt, lang } = useT();
   if (!receipt) return null;
 
   return (
@@ -28,17 +20,17 @@ export default function ReceiptSheet({ receipt }) {
       <div className="ibmt-sheet space-y-4">
         <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
           <div>
-            <p className="ibmt-kicker">Risiti ya kodi ya nyumba</p>
+            <p className="ibmt-kicker">{t('receipt.title')}</p>
             <p className="ibmt-num mt-1 font-heading text-lg font-semibold text-navy">{receipt.receipt_reference}</p>
-            <p className="ibmt-hint mt-1">Imetolewa {formatDateTime(receipt.issued_at, lang)}</p>
+            <p className="ibmt-hint mt-1">{t('receipt.issued', { when: formatDateTime(receipt.issued_at, lang) })}</p>
           </div>
-          <Money amount={receipt.amount} strong note="Kodi iliyothibitishwa" />
+          <Money amount={receipt.amount} strong note={t('receipt.confirmedRent')} />
         </div>
 
         <dl className="space-y-2">
-          {ROWS.map(([key, label]) => (
+          {ROWS.map((key) => (
             <div key={key} className="flex items-start justify-between gap-4 border-b border-border/70 pb-2 last:border-b-0">
-              <dt className="ibmt-kicker shrink-0 pt-0.5">{label}</dt>
+              <dt className="ibmt-kicker shrink-0 pt-0.5">{t(`receipt.row.${key}`)}</dt>
               <dd className="ibmt-num min-w-0 text-right text-[13px]">
                 {key === 'method'
                   ? METHOD_LABEL[receipt.method] || receipt.method || '—'
@@ -50,13 +42,13 @@ export default function ReceiptSheet({ receipt }) {
           ))}
           {receipt.mobile_money_ref && (
             <div className="flex items-start justify-between gap-4">
-              <dt className="ibmt-kicker shrink-0 pt-0.5">Kumbukumbu ya malipo</dt>
+              <dt className="ibmt-kicker shrink-0 pt-0.5">{t('recordForm.reference')}</dt>
               <dd className="ibmt-num min-w-0 text-right text-[13px]">{receipt.mobile_money_ref}</dd>
             </div>
           )}
           {Number(receipt.deposit_amount) > 0 && (
             <div className="flex items-start justify-between gap-4">
-              <dt className="ibmt-kicker shrink-0 pt-0.5">Amana</dt>
+              <dt className="ibmt-kicker shrink-0 pt-0.5">{t('deposit.title')}</dt>
               <dd className="min-w-0 text-right">
                 <Money amount={receipt.deposit_amount} />
               </dd>
@@ -64,14 +56,17 @@ export default function ReceiptSheet({ receipt }) {
           )}
         </dl>
 
-        <LeaseQr code={receipt.qr_url} label="Namba ya risiti" />
+        <LeaseQr code={receipt.qr_url} label={t('receipt.number')} />
         <p className="ibmt-hint">
-          Iliyoandikwa na {receipt.entered_by_role || '—'} ({receipt.entered_by_name || '—'}), imethibitishwa na{' '}
-          {receipt.confirmed_by_name || '—'}.
+          {t('receipt.enteredConfirmed', {
+            role: receipt.entered_by_role ? t(`leaseDoc.party.${receipt.entered_by_role === 'tenant' ? 'tenant' : 'landlord'}`) : '—',
+            enteredBy: receipt.entered_by_name || '—',
+            confirmedBy: receipt.confirmed_by_name || '—',
+          })}
         </p>
       </div>
 
-      <Notice tone="privacy">{receipt.disclaimer?.sw || receipt.disclaimer?.en}</Notice>
+      <Notice tone="privacy">{receipt.disclaimer ? tt(receipt.disclaimer) : null}</Notice>
 
       <Button
         type="button"
@@ -80,7 +75,7 @@ export default function ReceiptSheet({ receipt }) {
         onClick={() => downloadReceiptPdf({ ...receipt, ward: receipt.ward })}
       >
         <Download className="h-4 w-4" aria-hidden="true" />
-        Pakua PDF
+        {t('receipt.downloadPdf')}
       </Button>
     </div>
   );
