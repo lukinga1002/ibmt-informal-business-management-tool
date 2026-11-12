@@ -191,7 +191,7 @@ export default async function (req) {
       }
 
       const reference = await nextSerial(base44, 'SimPayment', `IBMT-SIM-${new Date().getFullYear()}-`);
-      const created = await base44.entities.SimPayment.create({
+      const created = await base44.asServiceRole.entities.SimPayment.create({
         reference,
         stage,
         council_id: context.council?.id || null,

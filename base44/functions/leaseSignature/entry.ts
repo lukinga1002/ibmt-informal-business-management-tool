@@ -83,7 +83,7 @@ export default async function (req) {
 
       const code = String(Math.floor(100000 + Math.random() * 900000));
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      await base44.entities.Lease.update(lease.id, {
+      await base44.asServiceRole.entities.Lease.update(lease.id, {
         otp: { party, code, issued_at: isoNow(), expires_at: expiresAt },
       });
       return json({
@@ -114,7 +114,7 @@ export default async function (req) {
       }];
       const both = ['landlord', 'tenant'].every((party) => signatures.some((row) => row.party === party));
       if (both) await leasePayoutGuard(base44,lease);
-      const updated = await base44.entities.Lease.update(lease.id, {
+      const updated = await base44.asServiceRole.entities.Lease.update(lease.id, {
         signatures,
         otp: null,
         status: both ? 'signed' : 'awaiting_signature',

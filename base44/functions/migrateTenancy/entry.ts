@@ -49,7 +49,7 @@ export default async function (req) {
     const gate = await issuanceAllowed(base44, { subjectId: `migration:${unit.id}`, phone: tenantPhone });
     if (!gate.allowed) return fail(429, 'RATE_LIMITED', 'Too many codes requested. Try again in an hour.');
 
-    const tenancy = await base44.entities.Tenancy.create({
+    const tenancy = await base44.asServiceRole.entities.Tenancy.create({
       unit_id: unit.id,
       unit_ref: unit.unit_ref,
       landlord_id: unit.landlord_id,

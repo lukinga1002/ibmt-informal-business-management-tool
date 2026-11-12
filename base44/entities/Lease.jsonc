@@ -93,7 +93,7 @@
     },
     "template_label": {
       "type": "object",
-      "description": "The wording shown on the lease itself, e.g. DRAFT \u2014 pending legal review"
+      "description": "The wording shown on the lease itself, e.g. DRAFT — pending legal review"
     },
     "stamp_duty": {
       "type": "object",
@@ -193,24 +193,8 @@
         }
       ]
     },
-    "create": {
-      "data.landlord_id": "{{user.id}}"
-    },
-    "update": {
-      "$or": [
-        {
-          "data.landlord_id": "{{user.id}}"
-        },
-        {
-          "data.tenant_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": false,
+    "update": false,
     "delete": {
       "user_condition": {
         "role": "admin"

@@ -57,7 +57,7 @@ export default async function (req) {
       idempotency_key: idempotencyKey || null,
     });
 
-    await base44.entities.RentalUnit.update(unit.id, {
+    await base44.asServiceRole.entities.RentalUnit.update(unit.id, {
       status: 'evidence_pending',
       version: (Number(unit.version) || 1) + 1,
     });
