@@ -55,6 +55,11 @@ export function literalText(source) {
   const EN_SW = /\{\s*en:\s*(['"`])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*sw:\s*(['"`])(?:(?!\2)[^\\\n]|\\.)*\2\s*,?\s*\}/g;
   const SW_EN = /\{\s*sw:\s*(['"`])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*en:\s*(['"`])(?:(?!\2)[^\\\n]|\\.)*\2\s*,?\s*\}/g;
   const blank = (m) => m.replace(/[^\n]/g, " ");
+  // A file may opt out only with a stated reason: `// i18n-ignore-file: <why>`.
+  if (/\/\/\s*i18n-ignore-file:\s*\S{5,}/.test(source)) return [];
+  source = source
+    .replace(/\bconsole\.\w+\([^\n]*\)/g, blank) // developer diagnostics, never shown
+    .replace(/\bthrow new Error\((['"`])[^\n]*?\1\)/g, blank); // programming errors (misused hooks), never shown
   const code = source
     .replace(/\/\*[\s\S]*?\*\//g, blank)
     .replace(/^\s*\/\/.*$/gm, "")
@@ -68,8 +73,10 @@ export function literalText(source) {
     const text = m[1].trim();
     if (!text || NEUTRAL.test(text)) continue;
     if (/^[\w.]+\s*=>|&&|\?\s|=>|\(\)/.test(text)) continue; // code fragments, not text
-    if (/^[\w$.]+$/.test(text)) continue; // a bare identifier from code such as `a.length < 2`
+    if (/^[\w$]*[.$_][\w$.]*$/.test(text)) continue; // an identifier from code such as `a.length < 2` (single words are text)
     if (/===|!==|\)\);|\breturn \(/.test(text)) continue; // spans of code between `=>` and `<`
+    // Code between a closing tag and the next {: `))`, `x.displayName = y`, `0) return;`, `cards: (`.
+    if (/^\)|\)\)|[=;]|^\w+:\s*\($|\bconst\b|\bawait\b/.test(text)) continue;
     found.push(`${lineOf(m.index)}: ${text}`);
   }
   // User-facing string props.
@@ -151,7 +158,7 @@ test("every translation key used on a release screen exists", () => {
 
 // Ratchet while the translation pass is in progress: the number of untranslated
 // strings on release screens may only go down. The release requires 0.
-const UNTRANSLATED_BUDGET = 734;
+const UNTRANSLATED_BUDGET = 645;
 
 test("release screens carry no more hard-coded or combined-language text than the budget", () => {
   const problems = [];

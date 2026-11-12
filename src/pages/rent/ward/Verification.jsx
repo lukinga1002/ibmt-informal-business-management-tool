@@ -8,11 +8,13 @@ import StatusBadge from '@/components/ibmt/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { DISCLAIMER } from '@/config/r3';
+import { errorText } from '@/lib/r4';
+import { useT } from '@/i18n/I18nContext';
 
 const FILTERS = [
-  { key: 'submitted', label: 'Zinasubiri' },
-  { key: 'queried', label: 'Zimeulizwa' },
-  { key: 'all', label: 'Zote' },
+  { key: 'submitted', label: 'wardVerify.filter.submitted' },
+  { key: 'queried', label: 'wardVerify.filter.queried' },
+  { key: 'all', label: 'wardVerify.filter.all' },
 ];
 
 /**
@@ -20,14 +22,15 @@ const FILTERS = [
  * rows arrive at all — the access rule decides that, not this screen.
  */
 export default function WardVerification() {
+  const { t, tt } = useT();
   const [rows, setRows] = useState({ state: 'loading', items: [], error: null });
   const [filter, setFilter] = useState('submitted');
   const [openCase, setOpenCase] = useState('');
   const [decision, setDecision] = useState('approved');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
 
   const load = async () => {
     setRows((prev) => ({ ...prev, state: prev.items.length ? 'refreshing' : 'loading' }));
@@ -51,8 +54,8 @@ export default function WardVerification() {
 
   const submitDecision = async (record) => {
     setBusy(true);
-    setError('');
-    setMessage('');
+    setError(null);
+    setMessage(null);
     try {
       const response = await base44.functions.invoke('decideRegistration', {
         case_id: record.id,
@@ -62,15 +65,15 @@ export default function WardVerification() {
       const data = response.data || {};
       setMessage(
         decision === 'approved'
-          ? `Certificate ${data.certificate_no} imetolewa kwa ${record.unit_ref}.`
-          : `Uamuzi umehifadhiwa; mmiliki ataona sababu yako.`,
+          ? { key: 'wardVerify.certificateIssued', vars: { certificate: data.certificate_no, unit: record.unit_ref } }
+          : { key: 'wardVerify.decisionSaved' },
       );
       setOpenCase('');
       setReason('');
       setDecision('approved');
       load();
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'The decision was not saved.');
+      setError({ err });
     } finally {
       setBusy(false);
     }
@@ -92,10 +95,10 @@ export default function WardVerification() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Uthibitisho wa usajili"
-        title="Foleni ya uthibitisho"
-        lede="Kagua kila usajili wa kata yako. Kila uamuzi unahitaji sababu, na mmiliki anaiona."
-        meta={[{ label: `${pending.length} zinasubiri` }, { label: DISCLAIMER.sw }]}
+        kicker={t('wardVerify.kicker')}
+        title={t('wardVerify.title')}
+        lede={t('wardVerify.lede')}
+        meta={[{ label: t('wardVerify.waiting', { count: pending.length }) }, { label: tt(DISCLAIMER) }]}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -108,15 +111,15 @@ export default function WardVerification() {
               filter === item.key ? 'border-navy bg-navy text-primary-foreground' : 'border-border text-muted-foreground'
             }`}
           >
-            {item.label}
+            {t(item.label)}
           </button>
         ))}
       </div>
 
-      {message && <Notice tone="positive">{message}</Notice>}
-      {error && <Notice tone="danger">{error}</Notice>}
+      {message && <Notice tone="positive">{errorText(message)}</Notice>}
+      {error && <Notice tone="danger">{errorText(error)}</Notice>}
 
-      <DataState query={query} skeleton="lines" emptyTitle="Hakuna usajili unaosubiri" emptyBody="Usajili mpya wa kata yako utaonekana hapa.">
+      <DataState query={query} skeleton="lines" emptyTitle={t('wardVerify.emptyTitle')} emptyBody={t('wardVerify.emptyBody')}>
         {() => (
           <ul className="space-y-4">
             {rows.items.map((record) => (
@@ -132,12 +135,12 @@ export default function WardVerification() {
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={record.status} />
                     <span className="rounded-sm border border-border px-2 py-1 text-[11px] text-muted-foreground">
-                      {record.channel === 'self' ? 'Mwenye nyumba' : record.channel === 'migrated' ? 'Tenancy iliyopo' : 'Msaidizi'}
+                      {t(`wardVerify.channel.${record.channel === 'self' || record.channel === 'migrated' ? record.channel : 'helper'}`)}
                     </span>
                     {record.duplicate_flag && (
                       <span className="inline-flex items-center gap-1 rounded-sm border border-dashed border-warning bg-warning/10 px-2 py-1 text-[11px] font-medium text-warning">
                         <Flag className="h-3 w-3" aria-hidden="true" />
-                        Kumbukumbu inayofanana
+                        {t('wardVerify.duplicate')}
                       </span>
                     )}
                   </div>
@@ -145,12 +148,12 @@ export default function WardVerification() {
 
                 <div className="border-t border-border px-5 py-3">
                   <p className="ibmt-hint">
-                    Nyaraka: {(record.evidence || []).map((item) => item.kind).join(', ') || '—'}
-                    {record.duplicate_note ? ` · ${record.duplicate_note}` : ''}
+                    {t('wardVerify.documents', { list: (record.evidence || []).map((item) => t(`wardVerify.evidence.${item.kind}`)).join(', ') || '—' })}
+                    {record.duplicate_flag ? ` · ${t('wardVerify.duplicateNote')}` : ''}
                   </p>
                   {record.decision_reason && record.status !== 'submitted' && (
                     <p className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-[12px]">
-                      Sababu: {record.decision_reason.sw || record.decision_reason.en}
+                      {t('wardVerify.reason', { reason: tt(record.decision_reason) })}
                     </p>
                   )}
                   {record.certificate_no && (
@@ -164,9 +167,9 @@ export default function WardVerification() {
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
                           {[
-                            { key: 'approved', label: 'Idhinisha', Icon: ShieldCheck },
-                            { key: 'queried', label: 'Uliza', Icon: ShieldAlert },
-                            { key: 'rejected', label: 'Kataa', Icon: ShieldAlert },
+                            { key: 'approved', label: 'common.approve', Icon: ShieldCheck },
+                            { key: 'queried', label: 'common.query', Icon: ShieldAlert },
+                            { key: 'rejected', label: 'common.reject', Icon: ShieldAlert },
                           ].map((item) => (
                             <button
                               key={item.key}
@@ -179,14 +182,14 @@ export default function WardVerification() {
                               }`}
                             >
                               <item.Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                              {item.label}
+                              {t(item.label)}
                             </button>
                           ))}
                         </div>
                         <Textarea
                           value={reason}
                           onChange={(event) => setReason(event.target.value)}
-                          placeholder="Sababu — mmiliki ataiona (angalau herufi 10)"
+                          placeholder={t('wardVerify.reasonPlaceholder')}
                           rows={3}
                         />
                         <div className="flex flex-wrap items-center gap-2">
@@ -197,13 +200,13 @@ export default function WardVerification() {
                             onClick={() => submitDecision(record)}
                           >
                             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                            {busy ? 'Inahifadhi…' : 'Hifadhi uamuzi'}
+                            {busy ? t('wardVerify.saving') : t('wardVerify.save')}
                           </Button>
                           <Button type="button" variant="outline" className="ibmt-tap" onClick={() => setOpenCase('')}>
-                            Ghairi
+                            {t('common.cancel')}
                           </Button>
                           {reason.trim().length > 0 && reason.trim().length < 10 && (
-                            <span className="text-[11px] text-destructive">Sababu fupi mno.</span>
+                            <span className="text-[11px] text-destructive">{t('wardVerify.reasonShort')}</span>
                           )}
                         </div>
                       </div>
@@ -218,7 +221,7 @@ export default function WardVerification() {
                           setDecision('approved');
                         }}
                       >
-                        Amua
+                        {t('wardVerify.decide')}
                       </Button>
                     )}
                   </div>
@@ -229,8 +232,8 @@ export default function WardVerification() {
         )}
       </DataState>
 
-      <Notice tone="policy" title="Usajili si umiliki">
-        {DISCLAIMER.sw} / {DISCLAIMER.en}
+      <Notice tone="policy" title={t('join.done.disclaimerTitle')}>
+        {tt(DISCLAIMER)}
       </Notice>
     </div>
   );
